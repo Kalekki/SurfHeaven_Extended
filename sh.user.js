@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.5.1
+// @version      4.2.5.2
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -49,6 +49,53 @@
     else if( window.location.pathname == "/") {
         dashboard_page();
     }
+    
+    // Follow list
+    const sidebar_div = document.querySelector('.navigation');
+    const follow_list_root_div = document.createElement('div');
+    const follow_list_row_div = document.createElement('div');
+    const follow_list_panel_div = document.createElement('div');
+    const follow_list_panel_body_div = document.createElement('div');
+    const follow_h5 = document.createElement('h5');
+
+    follow_h5.className = "text-center";
+    follow_h5.innerHTML = "FOLLOWED PLAYERS";
+    follow_list_root_div.className = "row-recentactivity";
+    follow_list_row_div.className = "col-sm-12";
+    follow_list_panel_div.className = "panel panel-filled";
+    follow_list_panel_body_div.className = "panel-body";
+    follow_list_root_div.appendChild(follow_list_row_div);
+    follow_list_row_div.appendChild(follow_list_panel_div);
+    follow_list_panel_div.appendChild(follow_list_panel_body_div);
+    
+    make_request("https://surfheaven.eu/api/online/", (data) => {
+        let follow_list = get_follow_list();
+        let online_players = [];
+        let friends_online = false;
+        data.forEach((player) => {
+            online_players.push([player.steamid, player.name, player.server, player.map]);
+        });
+        online_players.forEach((player) => {
+            if(follow_list.includes(player[0])){
+                friends_online = true;
+                let follow_list_item = document.createElement('h5');
+                follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/surf${player[2]}.surfheaven.eu" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
+                follow_list_panel_body_div.appendChild(follow_list_item);
+            }
+        });
+        if(!friends_online){
+            let follow_list_item = document.createElement('h5');
+            follow_list_item.innerHTML = "No friends online :(";
+            follow_list_panel_body_div.appendChild(follow_list_item);
+        }
+
+        if(follow_list != null && follow_list[0] != ""){
+            sidebar_div.insertBefore(follow_list_root_div, sidebar_div.firstChild);
+            sidebar_div.insertBefore(follow_h5, sidebar_div.firstChild); 
+        }
+        insert_flags_to_profiles(); // needed to be called again to get the flags on the follow list
+    });
+
 
     insert_flags_to_profiles();
     // update flags on table page changes etc
@@ -57,7 +104,7 @@
             insert_flags_to_profiles();
         }
     });
- 
+
     function make_request(url, func) {
         GM_xmlhttpRequest({
             method: "GET",
@@ -290,7 +337,7 @@
                         var _tier = j+1;
                         var map_percent = Math.floor(completions[j]/total[j]*100);
                         var bonus_percent = Math.floor(bonus_completions[j]/bonus_total[j]*100);
-                        completions_tbody.innerHTML += "<tr><td>Tier "+_tier+"</td><td>"+completions[j]+"/"+total[j]+"</td><td>"+map_percent+"%</td><td>"+bonus_completions[j]+"/"+bonus_total[j]+"</td><td>"+bonus_percent+"%</td></tr>";
+                        completions_tbody.innerHTML += "<tr><td>T"+_tier+"</td><td>"+completions[j]+"/"+total[j]+"</td><td>"+map_percent+"%</td><td>"+bonus_completions[j]+"/"+bonus_total[j]+"</td><td>"+bonus_percent+"%</td></tr>";
                     }
                     table.appendChild(completions_tbody);
                     var target_row = ".panel-c-warning > div:nth-child(1) > div:nth-child(1)"
@@ -651,6 +698,32 @@
         });
     }
 
+    function follow_user(id){
+        let follow_list = unsafeWindow.localStorage.getItem("follow_list");
+        if (follow_list == null){
+            unsafeWindow.localStorage.setItem("follow_list", id+",");
+        }else{
+            if(follow_list.includes(id)){
+                console.log('Unfollowing user '+id)
+                follow_list = follow_list.replace(id+",", "");
+            }else{
+                console.log('Following user '+id)
+                follow_list += id+",";
+            }
+            unsafeWindow.localStorage.setItem("follow_list", follow_list);
+        }
+    }
+
+    function get_follow_list(){
+        let follow_list = unsafeWindow.localStorage.getItem("follow_list");
+        if (follow_list == null){
+            return [];
+        }else{
+            follow_list = follow_list.slice(0, -1);
+            return follow_list.split(",");
+        }
+    }
+
     function dashboard_page(){
         // CTOP Panel 
         // this shit is such a mess
@@ -786,6 +859,33 @@
         // Avatar
         var steam_profile_url = document.querySelector('.m-t-xs > a:nth-child(2)') == null? document.querySelector('.m-t-xs > a:nth-child(1)').href : document.querySelector('.m-t-xs > a:nth-child(2)').href;
         var current_profile_id = url_path[url_path.length - 1];
+
+
+
+        var follow_button = document.createElement('button');
+        
+        if(get_follow_list().includes(current_profile_id)){
+            follow_button.className = 'btn btn-danger btn-md';
+            follow_button.innerHTML = "Unfollow";
+        }else{
+            follow_button.className = 'btn btn-success btn-md';
+            follow_button.innerHTML = "Follow";
+        }
+        follow_button.onclick = function(){
+            follow_user(current_profile_id);
+            // reverse follow button
+            if(follow_button.innerHTML == "Follow"){
+                follow_button.className = 'btn btn-danger btn-md';
+                follow_button.innerHTML = "Unfollow";
+            }else{
+                follow_button.className = 'btn btn-success btn-md';
+                follow_button.innerHTML = "Follow";
+            }
+        };
+
+        const username_h2 = document.querySelector('.m-t-xs')
+        username_h2.appendChild(follow_button);
+
 
         insert_steam_avatar(steam_profile_url);
         fetch_country_rank(current_profile_id);
