@@ -6,6 +6,7 @@ Server page ranks from the [original SH ranks](https://greasyfork.org/en/scripts
 
 Player flags everywhere!
 Follow list to quickly see who's online and in which server
+[Hover over players or maps to see some quick stats](https://iloveur.mom/i/cVjDAG3sWS.gif)
 
 [Dashboard](https://user-images.githubusercontent.com/1765167/220739743-3b09984d-fc90-498c-a8f7-bba4e943341d.png):
  - Country Top 100 list
@@ -17,13 +18,14 @@ Follow list to quickly see who's online and in which server
  - Time spent in spec and loc  
  - Steam avatar :)
 
-[Map page](https://user-images.githubusercontent.com/1765167/220740776-3ac6c990-88df-49fa-976f-bfd9fc05492e.png):
+[Map page](https://user-images.githubusercontent.com/1765167/221271072-1a0d2a01-696e-4981-9f2a-5c346ee4632e.png):
  - Show your map rank and time in map page  
  - CP Chart
+ - Map picture cover (pictures from  https://github.com/Sayt123/SurfMapPics)
 
 ### Issues
  - First time running, all flags might not load, as the api doesnt like getting railed quite that hard
- - ~~Uncached player flags might appear twice before the user is cached, refresh the page and they should go away~~ should be fixed
+ - Uncached player flags might appear twice before the user is cached, refresh the page and they should go away ~~should be fixed~~ (not fixed)
  - If your scores/ranks/stats seem wrong, set your ID manually in the servers page
  - for other shit, let me know
 
