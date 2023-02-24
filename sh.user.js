@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.6
+// @version      4.2.7
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -43,6 +43,8 @@
             steam_avatar: true,
             completions_by_tier: true,
             country_top_100: true,
+            hover_info: true,
+            map_cover_image: true,
         }
         unsafeWindow.localStorage.setItem('settings', JSON.stringify(settings));
     }else{
@@ -57,6 +59,8 @@
         steam_avatar: "Show steam avatar",
         completions_by_tier: "Show completions by tier",
         country_top_100: "Show country top 100",
+        hover_info: "Show player/map info on hover",
+        map_cover_image: "Show map cover image",
     }
 
     function validate_settings(){
@@ -66,6 +70,8 @@
         if (settings.steam_avatar == null) settings.steam_avatar = true;
         if (settings.completions_by_tier == null) settings.completions_by_tier = true;
         if (settings.country_top_100 == null) settings.country_top_100 = true;
+        if (settings.hover_info == null) settings.hover_info = true;
+        if (settings.map_cover_image == null) settings.map_cover_image = true;
     }
 
     // SERVERS PAGE
@@ -143,6 +149,112 @@
             insert_flags_to_profiles();
         }
     });
+
+    //Hover info
+    if (settings.hover_info) {
+        const hover_div = document.createElement('div');
+        hover_div.id = "hover-div";
+        document.body.appendChild(hover_div);
+
+        let hover_timeout;
+        let hover_length = 400; // ms to wait before showing hover info, cumulative with api response time
+
+        function fade_in(element){
+            element.classList.add('show')
+        }
+        function fade_out(element){
+            element.classList.remove('show')
+        }
+
+        document.addEventListener('mouseover', (e) => {
+            if(e.target.tagName == "A" && !e.target.href.includes("#")){
+                hover_timeout = setTimeout(() => {
+                    if(e.target.href.includes("player")){
+                        let steamid = e.target.href.split('/')[4];
+                        make_request(`https://surfheaven.eu/api/playerinfo/${steamid}`, (data) => {
+                            display_hover_info(data, 0, e)
+                        });
+
+                    }else if(e.target.href.includes('map')){
+                        let map_name = e.target.href.split('/')[4];
+                        make_request(`https://surfheaven.eu/api/mapinfo/${map_name}`, (data) => {
+                            display_hover_info(data, 1, e)
+                        });
+                    }
+                },hover_length)
+            }
+        });
+        document.addEventListener('mouseout', (e) => {
+            if(e.target.tagName == "A"){
+                clearTimeout(hover_timeout)
+            }
+            fade_out(hover_div);
+        });
+
+        function display_hover_info(data, type, e){
+            let left_offset = 10;
+            hover_div.style.top = (e.target.getBoundingClientRect().top+ Math.floor(window.scrollY))  + "px";
+            hover_div.style.left = (e.target.getBoundingClientRect().right + left_offset) + "px";
+            hover_div.style.paddingTop = "0px";
+            hover_div.style.paddingBottom = "0px";
+            hover_div.textContent = "Loading...";
+            fade_in(hover_div);
+
+            // type = 0 -> player
+            // type = 1 -> map
+            function format_date(time){
+                return time.split('T')[0];
+            }
+            function format_time(time){
+                return Math.floor(time/3600) + "." + Math.floor((time%3600)/60);
+            }
+            function format_points(points){
+                // 4300 -> 4.3k
+                if(points < 1000){
+                    return points;
+                }else{
+                    return Math.floor(points/1000) + "." + Math.floor((points%1000)/100) + "k";
+                }
+            }
+
+            if(type == 0){
+                hover_div.innerHTML = `<div class="row">
+                <div class="col-sm-5">
+                    <h5>Rank</h5>
+                    <h5>Points</h5>
+                    <h5>Playtime</h5>
+                    <h5>Last seen</h5>
+                </div>
+                <div class="col-sm-7">
+                    <h5>#${data[0].rank} (${create_flag(data[0].country_code)} #${data[0].country_rank})</h5>
+                    <h5>${format_points(data[0].points)} (${(data[0].rankname == "Custom" ? "#"+ data[0].rank : data[0].rankname)})</h5>
+                    <h5>${format_time(data[0].playtime)}h</h5>
+                    <h5>${format_date(data[0].lastplay)}</h5>
+                </div>
+            </div>
+            `;
+            }
+            if(type == 1){
+                hover_div.innerHTML = `<div class="row">
+                <div class="col-sm-4">
+                    <h5>Type</h5>
+                    <h5>Author</h5>
+                    <h5>Added</h5> 
+                    <h5>Finishes</h5>
+                </div>
+                <div class="col-sm-8">
+                    <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")}</h5>
+                    <h5>${data[0].author}</h5>
+                    <h5>${format_date(data[0].date_added)}</h5>
+                    <h5>${data[0].completions}</h5>
+                </div>
+            </div>
+            `;
+            }
+            hover_div.style.top = (e.target.getBoundingClientRect().top + Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height/2) + (e.target.getBoundingClientRect().height/2)) + "px";
+        }
+    }
+
 
     const navbar = document.querySelector('.nav');
     const li_wrapper = document.createElement('li');
@@ -323,26 +435,27 @@
                     if (cached_country) {
                         console.log("Using cached country for " + id)
                         country = cached_country;
-                        var flag = document.createElement('img');
-                        country == ("" || undefined) ? flag.src = "https://upload.wikimedia.org/wikipedia/commons/2/2a/Flag_of_None.svg" : flag.src = country_code_to_flag_url(country);
-                        flag.style = "margin-right: 2px; margin-bottom: 2px; width: 23px; height:14px;";
-                        link.innerHTML = flag.outerHTML + " " + link.innerHTML;
+                        link.innerHTML = create_flag(country) + " " + link.innerHTML;
                     } else {
                         console.log("Fetching country for " + id)
                         make_request("https://surfheaven.eu/api/playerinfo/" + id, (data) => {
                             if (data) {
                                 country = data[0].country_code;
                                 unsafeWindow.localStorage.setItem(id, country);
-                                var flag = document.createElement('img');
-                                country == ("" || undefined) ? flag.src = "https://upload.wikimedia.org/wikipedia/commons/2/2a/Flag_of_None.svg" : flag.src = country_code_to_flag_url(country);
-                                flag.style = "margin-right: 2px; margin-bottom: 2px; width: 23px; height:14px;";
-                                link.innerHTML = flag.outerHTML + " " + link.innerHTML;
+                                link.innerHTML = create_flag(country) + " " + link.innerHTML;
                             }
                         })
                     }
                 }
             }
         });
+    }
+
+    function create_flag(country) {
+        var flag = document.createElement('img');
+        flag.src = country_code_to_flag_url(country);
+        flag.style = "margin-right: 2px; margin-bottom: 2px; width: 23px; height:14px;";
+        return flag.outerHTML;
     }
 
     function fetch_map_rank(map_name) {
@@ -992,7 +1105,31 @@
         fetch_map_rank(current_map_name);
         cp_chart();
         map_youtube_link(current_map_name);
+        insert_map_picture(current_map_name);
+        
     }
+
+    function insert_map_picture(map_name){
+        if(!settings.map_cover_image) return;
+        var map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+map_name+".jpg"
+        let target_div = document.querySelector('.panel-c-warning');
+        target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
+        add_shadow_to_text_recursively(target_div);
+    }
+
+    function add_shadow_to_text_recursively(element) {
+        if(!settings.map_cover_image) return;
+        if (element.nodeType === Node.TEXT_NODE) {
+          const span = document.createElement('span');
+          span.style.textShadow = '1px 0px black, 0px 1px black, -1px 0px black, 0px -1px black';
+          span.textContent = element.textContent;
+          element.parentNode.replaceChild(span, element);
+        } else {
+          element.childNodes.forEach(childNode => {
+            add_shadow_to_text_recursively(childNode);
+          });
+        }
+      }
 
     function cp_chart() {
         if(!settings.cp_chart) return;
@@ -1057,6 +1194,7 @@
                     }
                 });
             }
+            
         });
     }
 
@@ -1171,9 +1309,9 @@
 
         //footer
         const settings_footer = document.createElement("div");
-        const footer_link = document.createElement("a");
-        footer_link.href = "https://www.youtube.com/watch?v=jUzLvjvuxgk&list=PLQlrPSd0QCwib-Yhbb3sQrsNI06CrVOpw&index=3";
-        footer_link.textContent = "cant stop wont stop";
+        const footer_link = document.createElement("span");
+        footer_link.style.color = "white";
+        footer_link.innerHTML = `<i class="fab fa-github fa-lg"></i><a href="https://github.com/Kalekki/SurfHeaven_Extended" target="_blank" style="color:white;"> Drop me a star, will ya?</a>`;
         settings_footer.appendChild(footer_link);
         settings_footer.classList.add("card-footer");
         settings_footer.style.marginTop = "1rem";
@@ -1196,7 +1334,11 @@
     }
 
     const changelog = 
-`___4.2.6___
+`___4.2.7___
+Added hover info to players and maps
+Added map cover images to map pages
+
+___4.2.6___
 Added settings menu
 Added ability to toggle individual features
 Added ability to purge flags cache
@@ -1309,6 +1451,38 @@ GM_addStyle(`
 
     .settings-div {
         background-color: #0D1117;
-      }
+    }
+
+    #hover-div{
+        position: absolute;
+        background-color: #0D1117;
+        white-space: nowrap;
+        width: auto;
+        border: 1px solid black;
+        border-radius: 0.5rem;
+        padding-top: 0px;
+        padding-bottom: 0px;
+        padding-left: 10px;
+        padding-right: 10px;
+        //display: none; 
+        opacity: 0;
+        //transition: opacity 0.5s;
+        animation: fadeOut 0.5s;
+    }
+    #hover-div.show{
+        display: block;
+        opacity: 1;
+        animation: fadeIn 0.5s;
+        z-index: 100;
+    }
+
+    @keyframes fadeIn {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+    @keyframes fadeOut {
+        0% { opacity: 1; }
+        100% { opacity: 0; }
+    }
       
 `);
