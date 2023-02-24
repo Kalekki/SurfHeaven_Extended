@@ -4,9 +4,9 @@ Server page ranks from the [original SH ranks](https://greasyfork.org/en/scripts
 
 ### Extra features
 
-Player flags everywhere!
-Follow list to quickly see who's online and in which server
-[Hover over players or maps to see some quick stats](https://iloveur.mom/i/cVjDAG3sWS.gif)
+Player flags everywhere!  
+Follow list to quickly see who's online and in which server  
+[Hover over players or maps to see some quick stats](https://iloveur.mom/i/cVjDAG3sWS.gif)  
 
 [Dashboard](https://user-images.githubusercontent.com/1765167/220739743-3b09984d-fc90-498c-a8f7-bba4e943341d.png):
  - Country Top 100 list
