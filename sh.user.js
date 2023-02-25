@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.7
+// @version      4.2.7.1
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -200,8 +200,6 @@
             hover_div.textContent = "Loading...";
             fade_in(hover_div);
 
-            // type = 0 -> player
-            // type = 1 -> map
             function format_date(time){
                 return time.split('T')[0];
             }
@@ -216,7 +214,8 @@
                     return Math.floor(points/1000) + "." + Math.floor((points%1000)/100) + "k";
                 }
             }
-
+            // type = 0 -> player
+            // type = 1 -> map
             if(type == 0){
                 hover_div.innerHTML = `<div class="row">
                 <div class="col-sm-5">
@@ -468,6 +467,7 @@
             var time = data[0].time;
             var formatted_time = new Date(time * 1000).toISOString().substr(11, 12);
             rank_elem.innerHTML = "Your rank: " + data[0].rank + " (" + formatted_time + ") <br> Points earned: " + data[0].points;
+            add_shadow_to_text_recursively(rank_elem);
         });
     }
 
@@ -932,11 +932,8 @@
                 ctop_table.className = "table table-striped table-hover";
                 ctop_table.id = "ctop_table";
                 ctop_th_crank.innerHTML = country + " #";
-                // Global Rank
                 ctop_th_grank.innerHTML = "#";
-                // "Name"
                 ctop_th_name.innerHTML = "Name";
-                // "Points"
                 ctop_th_points.innerHTML = "Points";
                 ctop_head_row.appendChild(ctop_th_crank);
                 ctop_head_row.appendChild(ctop_th_grank);
@@ -976,7 +973,7 @@
                 ctop_panel_div.appendChild(ctop_panel_heading_div);
                 ctop_panel_div.appendChild(ctop_panel_body_div);
                 ctop_root_div.appendChild(ctop_panel_div);
-                // Sandwich the new div between the two existing ones :3
+
                 top_wr_holders_div.parentNode.insertBefore(ctop_root_div, top_wr_holders_div);
                 $(document).ready(function () {
                     $('#ctop_table').DataTable({
@@ -1020,7 +1017,6 @@
         var steam_profile_url = document.querySelector('.m-t-xs > a:nth-child(2)') == null ? document.querySelector('.m-t-xs > a:nth-child(1)').href : document.querySelector('.m-t-xs > a:nth-child(2)').href;
         var current_profile_id = url_path[url_path.length - 1];
 
-        // no need for follow button if we don't have a follow list
         if(settings.follow_list){
             var follow_button = document.createElement('button');
             if (get_follow_list().includes(current_profile_id)) {
@@ -1102,6 +1098,10 @@
     }
 
     function map_page(current_map_name) {
+        // padding fix to not cut off the shadows
+        let padding_fix = document.querySelector('.media');
+        padding_fix.style = "padding-left: 10px;";
+
         fetch_map_rank(current_map_name);
         cp_chart();
         map_youtube_link(current_map_name);
@@ -1111,25 +1111,30 @@
 
     function insert_map_picture(map_name){
         if(!settings.map_cover_image) return;
-        var map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+map_name+".jpg"
+        let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+map_name+".jpg"
+
         let target_div = document.querySelector('.panel-c-warning');
         target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
-        add_shadow_to_text_recursively(target_div);
+        if(target_div.style.backgroundImage != "none"){
+            add_shadow_to_text_recursively(target_div);
+        }
     }
 
     function add_shadow_to_text_recursively(element) {
-        if(!settings.map_cover_image) return;
+        if (!settings.map_cover_image) return;
         if (element.nodeType === Node.TEXT_NODE) {
-          const span = document.createElement('span');
-          span.style.textShadow = '1px 0px black, 0px 1px black, -1px 0px black, 0px -1px black';
-          span.textContent = element.textContent;
-          element.parentNode.replaceChild(span, element);
+            const span = document.createElement('span');
+            // bold the span
+            span.style.fontWeight = 'bold';
+            span.style.textShadow = '1px 0px black, 0px 1px black, -1px 0px black, 0px -1px black, 1px 1px black, 1px -1px black, -1px 1px black, -1px -1px black, 0px 0px 10px black,0px 0px 10px black,0px 0px 10px black';
+            span.textContent = element.textContent;
+            element.parentNode.replaceChild(span, element);
         } else {
-          element.childNodes.forEach(childNode => {
-            add_shadow_to_text_recursively(childNode);
-          });
+            element.childNodes?.forEach(childNode => {
+                add_shadow_to_text_recursively(childNode);
+            });
         }
-      }
+    }
 
     function cp_chart() {
         if(!settings.cp_chart) return;
@@ -1168,6 +1173,10 @@
                 series: [cp_series],
                 labels: cp_labels
             });
+            cp_chart.on('draw', function () {
+                add_shadow_to_text_recursively(cp_chart_col)
+            });
+
             // if we are WR (🥳), we can skip checking our own time again
             if (data[0].steamid != get_id()) {
                 make_request('https://surfheaven.eu/api/checkpoints/' + current_map_name + '/' + get_id(), function (data2) {
@@ -1179,23 +1188,26 @@
                             };
                             var diff = (own_series[i] - cp_series[i]).toFixed(2);
                             // sometimes the api returns checkpoints with missing times, fun
-                            if (i != 0 && i < data2.length - 1 && !isNaN(diff)) cp_labels[i] += "\n (" + (diff > 0 ? "+" : "") + diff + ")";
+                            if (i != 0 && i < data2.length - 1 && !isNaN(diff)) cp_labels[i] = (diff > 0 ? "+" : "") + diff ;
                         }
                         // manually adding diff to the end, because mysteriously sometimes it's not added,
                         // and after i manually add it, sometimes its added twice, but still only visible once??? maybe im retarded, maybe its maybeline
                         var end_diff = (own_series[own_series.length - 1] - cp_series[cp_series.length - 1]).toFixed(2);
                         end_diff = (end_diff > 0 ? "+" : "") + end_diff;
-                        cp_labels[cp_labels.length - 1] += "\n (" + end_diff + ")";
+                        cp_labels[cp_labels.length - 1] = end_diff;
                         console.log(cp_series, own_series, cp_labels)
                         cp_chart.update({
                             series: [cp_series, own_series],
                             labels: cp_labels
                         });
                     }
+
                 });
             }
+
             
         });
+        
     }
 
     function insert_steam_avatar(steam_profile_url) {
@@ -1334,7 +1346,11 @@
     }
 
     const changelog = 
-`___4.2.7___
+`
+___4.2.7.1___
+Fixed cp chart text shadows
+
+___4.2.7___
 Added hover info to players and maps
 Added map cover images to map pages
 
