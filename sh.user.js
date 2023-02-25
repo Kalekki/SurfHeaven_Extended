@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.7.1
+// @version      4.2.7.2
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -1118,15 +1118,22 @@
         if(target_div.style.backgroundImage != "none"){
             add_shadow_to_text_recursively(target_div);
         }
+        let col_1 = document.querySelector('div.col-md-3:nth-child(2)');
+        let col_2 = document.querySelector('div.col-md-3:nth-child(4)');
+        let col_3 = document.querySelector('.col-md-5');
+        col_1.classList.add("text-center")
+        col_2.classList.add("text-center")
+        col_1.style = "background-color: rgba(0, 0, 0, 0.4); margin-right: 4.15%; border-radius: 1rem; height: 300px; box-shadow: 0px 2px 0px 0px #f6a821;";
+        col_2.style = "background-color: rgba(0, 0, 0, 0.4); margin-right: 4.15%; border-radius: 1rem; height: 300px; box-shadow: 0px 2px 0px 0px #f6a821;";
+        col_3.style = "background-color: rgba(0, 0, 0, 0.4); border-radius: 1rem; height: 300px; box-shadow: 0px 2px 0px 0px #f6a821;";
     }
 
     function add_shadow_to_text_recursively(element) {
         if (!settings.map_cover_image) return;
         if (element.nodeType === Node.TEXT_NODE) {
             const span = document.createElement('span');
-            // bold the span
             span.style.fontWeight = 'bold';
-            span.style.textShadow = '1px 0px black, 0px 1px black, -1px 0px black, 0px -1px black, 1px 1px black, 1px -1px black, -1px 1px black, -1px -1px black, 0px 0px 10px black,0px 0px 10px black,0px 0px 10px black';
+            span.style.textShadow = '1px 0px black, 0px 1px black, -1px 0px black, 0px -1px black, 1px 1px black, 1px -1px black, -1px 1px black, -1px -1px black';
             span.textContent = element.textContent;
             element.parentNode.replaceChild(span, element);
         } else {
@@ -1142,7 +1149,7 @@
         var map_info_col = document.querySelector('.panel-c-warning > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)')
         var map_stats_col = document.querySelector('.panel-c-warning > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)')
         var cp_chart_col = document.createElement('div');
-        cp_chart_col.className = "col-md-6 ct-chart";
+        cp_chart_col.className = "col-md-5 ct-chart";
         map_info_col.className = "col-md-3";
         map_stats_col.className = "col-md-3";
         top_panel_row.appendChild(cp_chart_col);
@@ -1346,7 +1353,9 @@
     }
 
     const changelog = 
-`
+`___4.2.7.2___
+Improved the map page, thanks for the feedback
+
 ___4.2.7.1___
 Fixed cp chart text shadows
 
@@ -1499,6 +1508,9 @@ GM_addStyle(`
     @keyframes fadeOut {
         0% { opacity: 1; }
         100% { opacity: 0; }
+    }
+    .ct-grid{
+        stroke: white;
     }
       
 `);
