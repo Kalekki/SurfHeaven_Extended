@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.7.2
+// @version      4.2.8
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -45,6 +45,7 @@
             country_top_100: true,
             hover_info: true,
             map_cover_image: true,
+            points_per_rank: true,
         }
         unsafeWindow.localStorage.setItem('settings', JSON.stringify(settings));
     }else{
@@ -61,6 +62,8 @@
         country_top_100: "Show country top 100",
         hover_info: "Show player/map info on hover",
         map_cover_image: "Show map cover image",
+        points_per_rank: "Show points per rank in map",
+        
     }
 
     function validate_settings(){
@@ -72,6 +75,7 @@
         if (settings.country_top_100 == null) settings.country_top_100 = true;
         if (settings.hover_info == null) settings.hover_info = true;
         if (settings.map_cover_image == null) settings.map_cover_image = true;
+        if (settings.points_per_rank == null) settings.points_per_rank = true;
     }
 
     // SERVERS PAGE
@@ -254,7 +258,6 @@
         }
     }
 
-
     const navbar = document.querySelector('.nav');
     const li_wrapper = document.createElement('li');
     const settings_link = document.createElement('a');
@@ -263,6 +266,7 @@
     settings_link.innerHTML = `SETTINGS <i class="fa fa-cog fa-lg" aria-hidden="true"></i>`;
     settings_link.addEventListener('click', open_settings_menu);
     navbar.insertBefore(li_wrapper, navbar.children[4]);
+
 
     function make_request(url, func) {
         GM_xmlhttpRequest({
@@ -432,11 +436,11 @@
                     var id = link.href.split("https://surfheaven.eu/player/")[1];
                     var cached_country = unsafeWindow.localStorage.getItem(id);
                     if (cached_country) {
-                        console.log("Using cached country for " + id)
+                        //console.log("Using cached country for " + id)
                         country = cached_country;
                         link.innerHTML = create_flag(country) + " " + link.innerHTML;
                     } else {
-                        console.log("Fetching country for " + id)
+                        //console.log("Fetching country for " + id)
                         make_request("https://surfheaven.eu/api/playerinfo/" + id, (data) => {
                             if (data) {
                                 country = data[0].country_code;
@@ -526,6 +530,9 @@
         if (use_custom) {
             id = custom_id;
         } else {
+            gm_getValue('sh_ranks_default_id').then((value) => {
+                if (value != null && value != undefined ) return value;
+            });
             make_request("https://surfheaven.eu/api/id", (data) => {
                 id = data[0].steamid;
                 GM.setValue('sh_ranks_default_id', id);
@@ -556,8 +563,11 @@
                 time_spent_spec = (time_spent_spec / 3600).toFixed(2);
                 var ts_tr = document.createElement('tr');
                 var ts_td = document.createElement('td');
-                ts_td.innerHTML = "Time in spec: " + time_spent_spec + "h, Time in loc: " + time_spent_loc + "h";
+                var ts_td2 = document.createElement('td');
+                ts_td.innerHTML = '<strong class="c-white">' + time_spent_spec + "</strong> Hours in spec";
+                ts_td2.innerHTML = '<strong class="c-white">' + time_spent_loc + "</strong> Hours in loc";
                 ts_tr.appendChild(ts_td);
+                ts_tr.appendChild(ts_td2);
                 var stats_table = document.querySelector('.medium > tbody:nth-child(1)');
                 stats_table.appendChild(ts_tr);
             }
@@ -603,7 +613,7 @@
         a_elements.forEach((a_element) => {
             var map_name = a_element.innerHTML;
             if (map_name.includes("completions")) {
-                return; // dont update if already updated
+                return;
             }
             var completions_txt = document.createElement('td');
             completions_txt.innerHTML = " " + map_completions[map_name] + " completions";
@@ -1041,12 +1051,27 @@
             username_h2.appendChild(follow_button);
         }
 
-
         insert_steam_avatar(steam_profile_url);
         fetch_country_rank(current_profile_id);
         fetch_completions_of_uncompleted_maps();
         fetch_time_spent(current_profile_id);
         completions_by_tier(current_profile_id);
+        
+        // total points from map completions
+        let map_points = 0;
+        make_request("https://surfheaven.eu/api/records/"+current_profile_id+"/track", function (data) {
+            for(let i = 0; i < data.length; i++){
+                map_points += data[i].points;
+            }
+            console.log("total points from map completions: " + map_points);
+            var stats_table = document.querySelector('.medium > tbody:nth-child(1)');
+            var stats_table_rows = stats_table.children;
+            var points_td = document.createElement('td');
+            points_td.innerHTML = '<strong class="c-white">'+map_points+'</strong> Points from map completions';
+            stats_table_rows[4].appendChild(points_td);
+
+        });
+
         // uncompleted maps table
         $('#DataTables_Table_1').on('draw.dt', function () {
             update_map_completions();
@@ -1106,7 +1131,77 @@
         cp_chart();
         map_youtube_link(current_map_name);
         insert_map_picture(current_map_name);
+        insert_points_per_rank(current_map_name);
         
+    }
+
+    function insert_points_per_rank(map_name){
+        // will error out if cp_chart is disabled, due to the queryselectors being wrong, perhaps i need to switch to finding the elements with regex instead
+        if(!settings.points_per_rank) return;
+        let total_completions_element 
+
+        if(settings.map_cover_image){total_completions_element = document.querySelector('table.table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(2) > td:nth-child(2) > strong:nth-child(2)')}
+        else{total_completions_element = document.querySelector('table.table-responsive > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) > strong:nth-child(1)')}
+        
+        let last_rank = Number(total_completions_element.textContent)
+        let ranks = [1,2,3,10,15,25,50,100,250,500,1000,last_rank];
+        let points = [];
+        let count = 0;
+        for (let i = 0; i < ranks.length; i++) {
+            if (ranks[i] >= last_rank) {
+              break;
+            }
+            count++;
+          }
+
+        console.log(`${count} ranks needed before we hit last rank, ${last_rank}`);
+        ranks = ranks.slice(0, count);
+        ranks.push(last_rank);
+        console.log("new ranks array: ",ranks)
+
+        for(let i = 0; i < ranks.length; i++){
+            make_request("https://surfheaven.eu/api/maprank/"+map_name+"/"+ranks[i]+"/0", function(data){
+                console.log("getting points for rank: ",ranks[i])
+                points.push(data[0].points);
+                console.log(data[0].name,data[0].rank,data[0].points);
+            });
+        }
+        // make_request isnt async so we need to wait for /some time/ before we can start using the data
+        setTimeout(function(){
+            points.sort(function(a, b){return b-a});
+            console.log(points,ranks)
+
+            let table = document.createElement('table');
+            table.className = "text-white";
+            table.style = "width: 100%;";
+
+            for (let i = 0; i < Math.ceil(ranks.length/2); i++) {
+                let row = table.insertRow(i);
+                if(points[i] != undefined){
+                    let cell1 = row.insertCell(0);
+                    cell1.innerHTML = `#<strong class="c-white">${ranks[i]}: ${points[i]}</strong> pts`;
+                }
+                if(points[i+Math.ceil(points.length/2)] != undefined){
+                    let cell2 = row.insertCell(1);
+                    cell2.innerHTML = `#<strong class="c-white">${ranks[i+Math.ceil(points.length/2)]}: ${points[i+Math.ceil(points.length/2)]}</strong> pts`;
+                }
+
+            }
+            let table_body = document.createElement('tbody');
+            let target_div = (settings.map_cover_image ? document.querySelector('div.col-md-3:nth-child(4)') : document.querySelector('div.col-md-3:nth-child(2)'));
+            let upper_table =(settings.map_cover_image ? document.querySelector('table.table:nth-child(2)') : document.querySelector('table.table-responsive')) ;
+            let table_title = document.createElement('h4');
+
+            upper_table.style = "margin-top: 0px; margin-bottom: 0px;";
+            table_title.style = "margin-top: 0px; margin-bottom: 5px;text-align: center;";
+            table_title.textContent = "Points per rank";
+            target_div.appendChild(table_title);
+            table.appendChild(table_body);
+            target_div.appendChild(table);
+
+            add_shadow_to_text_recursively(target_div);
+        }, 1500);
+
     }
 
     function insert_map_picture(map_name){
@@ -1118,14 +1213,22 @@
         if(target_div.style.backgroundImage != "none"){
             add_shadow_to_text_recursively(target_div);
         }
-        let col_1 = document.querySelector('div.col-md-3:nth-child(2)');
-        let col_2 = document.querySelector('div.col-md-3:nth-child(4)');
-        let col_3 = document.querySelector('.col-md-5');
+        let col_1;
+        let col_2;
+        let col_3;
+        if(settings.cp_chart){
+            col_1 = document.querySelector('div.col-md-3:nth-child(2)');
+            col_2 = document.querySelector('div.col-md-3:nth-child(4)');
+            col_3 = document.querySelector('.col-md-5');
+        }else{
+            col_1 = document.querySelector('div.col-sm-6');
+            col_2 = document.querySelector('.col-md-5');
+        }
         col_1.classList.add("text-center")
         col_2.classList.add("text-center")
         col_1.style = "background-color: rgba(0, 0, 0, 0.4); margin-right: 4.15%; border-radius: 1rem; height: 300px; box-shadow: 0px 2px 0px 0px #f6a821;";
         col_2.style = "background-color: rgba(0, 0, 0, 0.4); margin-right: 4.15%; border-radius: 1rem; height: 300px; box-shadow: 0px 2px 0px 0px #f6a821;";
-        col_3.style = "background-color: rgba(0, 0, 0, 0.4); border-radius: 1rem; height: 300px; box-shadow: 0px 2px 0px 0px #f6a821;";
+        if(settings.cp_chart) col_3.style = "background-color: rgba(0, 0, 0, 0.4); border-radius: 1rem; height: 300px; box-shadow: 0px 2px 0px 0px #f6a821;";
     }
 
     function add_shadow_to_text_recursively(element) {
@@ -1158,10 +1261,10 @@
             var cp_labels = ["Start"];
             var cp_series = [0];
             var own_series = [];
+            var all_series = [cp_series, own_series];
             var cp_chart = new Chartist.Line('.ct-chart', {
                 labels: cp_labels,
                 series: []
-
             }, {
                 fullWidth: true,
                 height: 300,
@@ -1169,7 +1272,6 @@
                     right: 40
                 }
             })
-
             for (var i = 0; i < data.length; i++) {
                 if (data[i].time != 0) {
                     cp_labels.push((i == data.length - 1 ? "End" : "CP" + (i + 1)));
@@ -1183,7 +1285,6 @@
             cp_chart.on('draw', function () {
                 add_shadow_to_text_recursively(cp_chart_col)
             });
-
             // if we are WR (🥳), we can skip checking our own time again
             if (data[0].steamid != get_id()) {
                 make_request('https://surfheaven.eu/api/checkpoints/' + current_map_name + '/' + get_id(), function (data2) {
@@ -1203,18 +1304,67 @@
                         end_diff = (end_diff > 0 ? "+" : "") + end_diff;
                         cp_labels[cp_labels.length - 1] = end_diff;
                         console.log(cp_series, own_series, cp_labels)
+                        all_series.push(own_series)
+                        console.log(all_series)
                         cp_chart.update({
-                            series: [cp_series, own_series],
+                            series: all_series,
                             labels: cp_labels
                         });
                     }
-
                 });
             }
 
+            let records_table
+            let target_div = document.querySelectorAll('div.col')
+            let correct_div = target_div[target_div.length -1]
+            let table_div = correct_div.querySelector('div.table-responsive.table-maps')
+            let table = table_div.childNodes[1]
+            //console.log(correct_div)
+            //console.log(table_div)
+            //console.log(table)
+            records_table = table.querySelectorAll('a')
             
+            let first_page = true
+            add_chart_buttons();
+
+            function add_chart_buttons (){
+                records_table.forEach((a_element, i) => {
+                    let button_element = document.createElement('button');
+                    button_element.className = 'btn btn-success btn-xs'
+                    button_element.textContent = 'Add to chart';
+                    button_element.style.float = 'right';
+                    if (i == 0 && first_page) button_element.style.display = 'none';
+                    first_page = false;
+                    let link = a_element.href.split('/')
+                    let id = link[link.length - 1]
+                    if (id == get_id()) button_element.style.display = 'none';
+                    if (a_element.nextElementSibling) return;
+                    if(!a_element.href.includes('#')) a_element.insertAdjacentElement('afterend', button_element);
+                    button_element.onclick = function () {
+                        make_request('https://surfheaven.eu/api/checkpoints/' + current_map_name + '/' + id, function (data3) {
+                            var new_series = [0];
+                            for (var i = 0; i < data3.length; i++) {
+                                if (data3[i].time != 0) {
+                                    new_series.push(data3[i].time);
+                                };
+                            }
+                            all_series.push(new_series);
+                            cp_chart.update({
+                                series: all_series,
+                                labels: cp_labels
+                            });
+                        });
+                        button_element.style.display = 'none';
+                    }
+                });
+            }
+
+            $(table).on('draw.dt', function () {
+                records_table = table.querySelectorAll('a')
+                add_chart_buttons();
+              });
         });
-        
+
     }
 
     function insert_steam_avatar(steam_profile_url) {
@@ -1353,7 +1503,12 @@
     }
 
     const changelog = 
-`___4.2.7.2___
+`___4.2.8___
+Added ability to add more players to charts
+Added points per rank to maps
+Added points from map completions to profile
+
+___4.2.7.2___
 Improved the map page, thanks for the feedback
 
 ___4.2.7.1___
@@ -1480,7 +1635,7 @@ GM_addStyle(`
 
     #hover-div{
         position: absolute;
-        background-color: #0D1117;
+        background-color: rgba(13,17,23,0.6);
         white-space: nowrap;
         width: auto;
         border: 1px solid black;
@@ -1502,15 +1657,39 @@ GM_addStyle(`
     }
 
     @keyframes fadeIn {
-        0% { opacity: 0; }
-        100% { opacity: 1; }
+        0% { opacity: 0;}
+        100% { opacity: 1;}
     }
     @keyframes fadeOut {
-        0% { opacity: 1; }
-        100% { opacity: 0; }
+        0% { opacity: 1;}
+        100% {opacity: 0;}
     }
     .ct-grid{
         stroke: white;
     }
+    .ct-series-a .ct-line,
+    .ct-series-a .ct-point {
+        stroke: lightgreen;
+    }
+
+    .ct-series-b .ct-line,
+    .ct-series-b .ct-point {
+        stroke: blue;
+    }
+
+    .ct-series-c .ct-line,
+    .ct-series-c .ct-point {
+        stroke: red;
+    }
+
+    .ct-series-d .ct-line,
+    .ct-series-d .ct-point {
+        stroke: yellow;
+    }
+    .ct-series-e .ct-line,
+    .ct-series-e .ct-point {
+        stroke: cyan;
+    }
+
       
 `);
