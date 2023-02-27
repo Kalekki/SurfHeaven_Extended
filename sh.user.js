@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.8
+// @version      4.2.8.1
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -530,9 +530,6 @@
         if (use_custom) {
             id = custom_id;
         } else {
-            gm_getValue('sh_ranks_default_id').then((value) => {
-                if (value != null && value != undefined ) return value;
-            });
             make_request("https://surfheaven.eu/api/id", (data) => {
                 id = data[0].steamid;
                 GM.setValue('sh_ranks_default_id', id);
@@ -1503,7 +1500,10 @@
     }
 
     const changelog = 
-`___4.2.8___
+`___4.2.8.1___
+revert get_id 
+
+___4.2.8___
 Added ability to add more players to charts
 Added points per rank to maps
 Added points from map completions to profile
