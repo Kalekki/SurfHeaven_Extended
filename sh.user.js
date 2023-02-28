@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.8.1
+// @version      4.2.8.2
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -31,6 +31,11 @@
     var map_types = {};
     var map_tiers = {};
     var bonus_completions = {};
+
+    // colors are approximate and might be wrong, let me know
+    const group_thresholds =   [1,      2,      3,      10,        25,      50,        75,       100,       150,       250,       500,       750,            1000,     1500,      2000,      3000,     6000,       15000,     25000]
+    const group_names =        ["#1",   "#2",   "#3",   "Master",  "Elite", "Veteran", "Expert", "Pro",     "TheSteve","Hotshot", "Skilled", "Intermediate", "Casual", "Amateur", "Regular", "Potato", "Beginner", "Burrito", "Calzone", "New"]
+    const group_colors =       ["gold", "gold", "gold", "#b57fe5", "red",   "#d731eb", "#6297d1","#6297d1", "#E94A4B", "#55ff4b", "#aef25d", "#ad8adc",      "#ebe58d","#b4c5d9", "#6297d1", "#dfa746","#ccccd4",  "#649ad8", "#ccccd4", "#FFFFFF"]
 
     // SETTINGS
     let settings
@@ -230,7 +235,7 @@
                 </div>
                 <div class="col-sm-7">
                     <h5>#${data[0].rank} (${create_flag(data[0].country_code)} #${data[0].country_rank})</h5>
-                    <h5>${format_points(data[0].points)} (${(data[0].rankname == "Custom" ? "#"+ data[0].rank : data[0].rankname)})</h5>
+                    <h5>${format_points(data[0].points)} [${(data[0].rankname == "Custom" ? "#"+ data[0].rank : '<span style="color:'+group_colors[group_names.indexOf(data[0].rankname)]+';">'+data[0].rankname)+"</span>"}]</h5>
                     <h5>${format_time(data[0].playtime)}h</h5>
                     <h5>${format_date(data[0].lastplay)}</h5>
                 </div>
@@ -1053,6 +1058,8 @@
         fetch_completions_of_uncompleted_maps();
         fetch_time_spent(current_profile_id);
         completions_by_tier(current_profile_id);
+        insert_points_until_next_rank();
+
         
         // total points from map completions
         let map_points = 0;
@@ -1130,6 +1137,44 @@
         insert_map_picture(current_map_name);
         insert_points_per_rank(current_map_name);
         
+    }
+
+    function insert_points_until_next_rank(){
+
+        const points_regex = /Points (\d+)/;
+        const rank_regex = /Rank (\d+)/;
+        const own_points = Number(document.body.innerText.match(points_regex)[1])
+        const own_rank = Number(document.body.innerText.match(rank_regex)[1])
+
+        if (own_rank == 1){
+            console.log("Already #1 :)");
+            return;
+        } 
+
+        function find_next_rank(rank){
+            let count = 0;
+            for(let i = 0; i < group_thresholds.length; i++){
+                if(group_thresholds[i] < rank) count++;
+            }
+            return group_thresholds[count-1];
+        };
+
+        let next_rank = find_next_rank(own_rank);
+        let points_until_next_rank = 0;
+        //console.log(`${own_points} points and rank ${own_rank}, next rank is ${next_rank}, which is ${[group_names[group_thresholds.indexOf(next_rank)]]}`);
+
+        make_request("https://surfheaven.eu/api/rank/"+next_rank, function(data){
+            let next_rank_points = data[0].points;
+            points_until_next_rank = next_rank_points - own_points;
+            console.log(`Points until next rank: ${points_until_next_rank}`);
+            let points_until_next_rank_element = document.createElement('h5');
+
+            points_until_next_rank_element.innerHTML = `
+            Points needed for [<span style="color: ${group_colors[group_thresholds.indexOf(next_rank)]}">${[group_names[group_thresholds.indexOf(next_rank)]]}</span>] : ${points_until_next_rank}`;
+            let insert_after = document.querySelector('.media > h5:nth-child(4)');
+            insert_after.parentNode.insertBefore(points_until_next_rank_element, insert_after.nextSibling);
+
+        });
     }
 
     function insert_points_per_rank(map_name){
@@ -1500,8 +1545,12 @@
     }
 
     const changelog = 
-`___4.2.8.1___
-revert get_id 
+`
+___4.2.8.2___
+Added points to rank up in profile
+
+___4.2.8.1___
+revert get_id
 
 ___4.2.8___
 Added ability to add more players to charts
