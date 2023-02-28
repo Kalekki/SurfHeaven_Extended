@@ -2,9 +2,6 @@ SurfHeaven.eu userscript that adds extra features to the page.
 
 Server page ranks from the [original SH ranks](https://greasyfork.org/en/scripts/438271-surfheaven-ranks) userscript by Link is included.
 
-### Installation
-Make sure you have [Tampermonkey](https://www.tampermonkey.net/) installed, then press [Here](https://iloveur.mom/i/sh.user.js)
-
 ### Extra features
 
 Player flags everywhere  
@@ -21,6 +18,7 @@ Follow list to quickly see who's online and in which server
  - Time spent in spec and loc  
  - Steam avatar :)
  - Points from map completions
+ - Points to rank up
 
 [Map page](https://iloveur.mom/i/M7NRwfPCUE.jpg):
  - Show your map rank and time in map page  
@@ -37,9 +35,6 @@ Follow list to quickly see who's online and in which server
 #### Stuff i'll probably add in the future:
  - Map favorites
  - Map notes
- - Add rank to map search results
- - points/rank to rankup in profile (25k, 15k, 6k, 3k, 1500, 1k, 750, 500, 250, 150, 100, 75, 50, 25, 10, 3, 2 ,1)
- - ~~Points chart history in profile would go hard~~
  - Other stuff that comes to my mind, or that people request
 
  ## Compatibility
