@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.8.2
+// @version      4.2.8.3
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -268,7 +268,7 @@
     const settings_link = document.createElement('a');
     settings_link.href = "#";
     li_wrapper.appendChild(settings_link);
-    settings_link.innerHTML = `SETTINGS <i class="fa fa-cog fa-lg" aria-hidden="true"></i>`;
+    settings_link.innerHTML = `SETTINGS <i class="fa fa-cog fa-lg"></i>`;
     settings_link.addEventListener('click', open_settings_menu);
     navbar.insertBefore(li_wrapper, navbar.children[4]);
 
@@ -939,8 +939,9 @@
                 ctop_root_div.className = thirds_class;
                 ctop_panel_div.className = "panel panel-filled";
                 ctop_panel_heading_div.className = "panel-heading";
+                ctop_panel_heading_div.style = "padding-bottom:0px; padding-top:6px; padding-left:6px;";
                 ctop_panel_body_div.className = "panel-body";
-                ctop_panel_body_div.style = "display: block;";
+                ctop_panel_body_div.style = "display: block; margin-bottom: 0px;";
                 ctop_table.className = "table table-striped table-hover";
                 ctop_table.id = "ctop_table";
                 ctop_th_crank.innerHTML = country + " #";
@@ -994,6 +995,9 @@
                         "info": false,
                         "searching": true,
                         "lengthChange": false,
+                        "oLanguage": {
+                            "sSearch": '<i class="fas fa-search"></i>'
+                        }
                     });
                     insert_flags_to_profiles();
                     add_country_dropdown();
@@ -1545,7 +1549,9 @@
     }
 
     const changelog = 
-`
+`___4.2.8.3___
+Ctop layout finetuning
+
 ___4.2.8.2___
 Added points to rank up in profile
 
