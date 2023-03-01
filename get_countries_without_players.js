@@ -25,7 +25,7 @@ countries = [
     "LSO","LBR","MWI","MHL","MYT","FSM","MSR","MOZ","NRU","NCL","NIC","NER","NIU","NFK","PLW","PNG","PCN","RWA","BLM","SHN","KNA","LCA","MAF",
     "VCT","WSM","STP","SLE","SXM","SLB","SOM","SGS","SSD","SUR","SJM","SWZ","TLS","TGO","TKL","TON","TKM","TCA","TUV","UGA","UMI","VUT","VIR",
     "WLF","ESH","YEM","ZWE"
-    ] // put those suckers in here
+    ]
 
 fetchData(countries)
   .then(emptyResponseCountries => {

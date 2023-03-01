@@ -25,7 +25,6 @@ function get_sh_maps() {
         maps.push(map.map);
     }
     return maps;
-
 }
 
 function httpGet(theUrl) {
