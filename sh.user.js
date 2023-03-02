@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.8.3
+// @version      4.2.9
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -207,6 +207,7 @@
             hover_div.style.paddingTop = "0px";
             hover_div.style.paddingBottom = "0px";
             hover_div.textContent = "Loading...";
+            hover_div.style.zIndex = "99999";
             fade_in(hover_div);
 
             function format_date(time){
@@ -272,6 +273,47 @@
     settings_link.addEventListener('click', open_settings_menu);
     navbar.insertBefore(li_wrapper, navbar.children[4]);
 
+
+
+    function show_overlay_window(window_title,element_to_append){
+        const overlay = document.createElement('div');
+        overlay.style.position = "fixed";
+        overlay.style.top = "50%";
+        overlay.style.left = "50%";
+        overlay.style.transform = "translate(-50%, -50%)";
+        overlay.style.zIndex = "9999";
+        overlay.style.border = "1px solid rgba(0,0,0,1)";
+        overlay.style.borderRadius = "0.5rem";
+
+        const close_button = document.createElement("button");
+        close_button.type = "button";
+        close_button.id = "close_button";
+        close_button.classList.add("btn", "btn-sm", "btn-outline-secondary");
+        close_button.style.position = "absolute";
+        close_button.style.top = "6px";
+        close_button.style.right = "6px";
+        close_button.style.padding = "5px 5px";
+        close_button.innerHTML = `<i class="fas fa-times fa-lg"></i>`;
+        close_button.addEventListener('click', () => {
+            overlay.remove();
+        });
+
+        const title = document.createElement("h4");
+        title.style.marginTop = "0px";
+        title.style.display = "inline-block";
+        title.style.padding= "1rem"
+        title.textContent = window_title;
+
+        const inner_panel = document.createElement('div');
+        inner_panel.style = "background-color: #0D1117; width: auto; height: auto; padding:0.5rem; border-radius: 5px; box-shadow: 0px 0px 15px 5px rgba(0,0,0,0.5);overflow-y: auto; overflow-x: hidden;"
+
+        inner_panel.appendChild(title);
+        inner_panel.appendChild(close_button);
+    
+        overlay.appendChild(inner_panel);
+        inner_panel.appendChild(element_to_append);
+        document.body.appendChild(overlay);
+    }
 
     function make_request(url, func) {
         GM_xmlhttpRequest({
@@ -1064,6 +1106,14 @@
         completions_by_tier(current_profile_id);
         insert_points_until_next_rank();
 
+        const compare_button = document.createElement('button');
+        compare_button.className = 'btn btn-success btn-xs';
+        compare_button.innerHTML = "Compare";
+        compare_button.onclick = function () {
+            player_comparison([get_id(), current_profile_id]);
+        };
+        let compare_target_div = document.querySelector('div.col-sm-12:nth-child(3) > div:nth-child(1) > div:nth-child(1)');
+        compare_target_div.insertBefore(compare_button, compare_target_div.children[1]);
         
         // total points from map completions
         let map_points = 0;
@@ -1128,6 +1178,82 @@
         }
         $('#DataTables_Table_2_filter').prepend(sort_completions_button_b);
 
+    }
+
+    function player_comparison(id_array){
+        let player_data = [];
+        for(let i = 0; i < id_array.length; i++){
+            make_request(`https://surfheaven.eu/api/records/${id_array[i]}/`, (data) => {
+                let only_maps = [];
+                for(let i = 0; i < data.length; i++){
+                    if(data[i].track == 0){
+                        only_maps.push(data[i]);
+                    }
+                }
+                player_data.push(only_maps);
+                if(player_data.length == id_array.length){
+                    create_comparison_table(player_data);
+                }
+            });
+        }
+
+        function create_comparison_table(player_data){
+            let common_maps = [];
+            let p1_name = player_data[0][0].name;
+            let p2_name = player_data[1][0].name;
+            for(let i = 0; i < player_data[0].length; i++){
+                for(let j = 0; j < player_data[1].length; j++){
+                    if(player_data[0][i].map == player_data[1][j].map){
+                        let map_data = [];
+                        map_data.push([player_data[0][i].map,player_data[0][i].tier, player_data[0][i].rank, player_data[0][i].points, player_data[1][j].rank, player_data[1][j].points])
+                        common_maps.push(map_data);
+                    }
+                }
+            }
+            let container = document.createElement('div');
+            container.className = "container";
+            let table = document.createElement('table');
+            table.className = "table";
+            let thead = document.createElement('thead');
+            thead.innerHTML = `<tr><th>Map</th><th>Tier</th><th>${p1_name}'s rank</th><th>Points</th><th>${p2_name}'s rank</th><th>Points</th></tr>`;
+            table.appendChild(thead);
+            let tbody = document.createElement('tbody');
+            for(let i = 0; i < common_maps.length; i++){
+                let tr = document.createElement('tr');
+                let td = document.createElement('td');
+                td.innerHTML = `<a href="https://surfheaven.eu/map/${common_maps[i][0][0]}">${common_maps[i][0][0]}</a>`;
+                tr.appendChild(td);
+                td = document.createElement('td');
+                td.innerHTML = common_maps[i][0][1];
+                tr.appendChild(td);
+                td = document.createElement('td');
+                td.innerHTML = common_maps[i][0][2];
+                tr.appendChild(td);
+                td = document.createElement('td');
+                td.innerHTML = common_maps[i][0][3];
+                tr.appendChild(td);
+                td = document.createElement('td');
+                td.innerHTML = common_maps[i][0][4];
+                tr.appendChild(td);
+                td = document.createElement('td');
+                td.innerHTML = common_maps[i][0][5];
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+            }
+            table.appendChild(tbody);
+            container.appendChild(table);
+            $(table).DataTable(
+                {
+                    "order": [[1, "desc"]],
+                    "autoWidth": true,
+                    "paging": true,
+                    "searching": true,
+                    "info": true,
+                    "lengthMenu": [10, 20]
+                }
+            );
+            show_overlay_window("Map comparison",container);
+        }
     }
 
     function map_page(current_map_name) {
@@ -1436,31 +1562,7 @@
 
     function open_settings_menu() {
         const settings_div = document.createElement("div");
-        settings_div.classList.add("card","settings-div", "text-white", "bg-dark");
         settings_div.style.padding = "1rem";
-        settings_div.style.borderRadius = "0.5rem";
-        settings_div.style.border = "1px solid rgba(0,0,0,0.125)";
-
-        //close button
-        const close_button = document.createElement("button");
-        close_button.type = "button";
-        close_button.classList.add("btn", "btn-sm", "btn-outline-secondary");
-        close_button.style.position = "absolute";
-        close_button.style.top = "5px";
-        close_button.style.right = "5px";
-
-        close_button.innerHTML = `<i class="fas fa-times fa-lg"></i>`;
-        close_button.addEventListener("click", () => {
-            settings_container.remove();
-        });
-        settings_div.appendChild(close_button);
-
-        //title
-        const settings_title = document.createElement("h4");
-        settings_title.classList.add("card-title", "mb-3", "text-white");
-        settings_title.style.marginTop = "0px";
-        settings_title.textContent = "Settings";
-        settings_div.appendChild(settings_title);
 
         //checkboxes for settings
         for (let key in settings) {
@@ -1474,7 +1576,6 @@
             
             label.appendChild(input);
             label.appendChild(document.createTextNode(" "+settings_labels[key]));
-            label.style.paddingLeft = "1rem";
             
             settings_div.appendChild(label);
             settings_div.appendChild(document.createElement('br'));
@@ -1505,10 +1606,9 @@
         purge_flags_button.onclick = purge_flags_cache
         settings_div.appendChild(document.createElement('br'));
         settings_div.appendChild(purge_flags_button);
-        
+
         //changelog title
         const changelog_title = document.createElement("h5");
-        changelog_title.classList.add("card-title", "mb-3", "text-white");
         changelog_title.textContent = "Changelog";
         settings_div.appendChild(changelog_title);
 
@@ -1528,28 +1628,17 @@
         footer_link.style.color = "white";
         footer_link.innerHTML = `<i class="fab fa-github fa-lg"></i><a href="https://github.com/Kalekki/SurfHeaven_Extended" target="_blank" style="color:white;"> Drop me a star, will ya?</a>`;
         settings_footer.appendChild(footer_link);
-        settings_footer.classList.add("card-footer");
         settings_footer.style.marginTop = "1rem";
         settings_div.appendChild(settings_footer);
 
-        //container
-        const settings_container = document.createElement("div");
-        settings_container.id = "settings-container";
-        settings_container.classList.add("card");
-        settings_container.classList.add("text-white", "bg-dark");
-        settings_container.style.position = "fixed";
-        settings_container.style.top = "50%";
-        settings_container.style.left = "50%";
-        settings_container.style.transform = "translate(-50%, -50%)";
-        settings_container.style.zIndex = "9999";
-        settings_container.style.border = "1px solid rgba(0,0,0,1)";
-        settings_container.style.borderRadius = "0.5rem";
-        settings_container.appendChild(settings_div);
-        document.body.appendChild(settings_container);
+        show_overlay_window("Settings",settings_div);
     }
 
     const changelog = 
-`___4.2.8.3___
+`___4.2.9___
+Added player comparison
+
+___4.2.8.3___
 Ctop layout finetuning
 
 ___4.2.8.2___

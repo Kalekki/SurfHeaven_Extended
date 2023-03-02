@@ -22,6 +22,7 @@ Follow list to quickly see who's online and in which server
  - Steam avatar :)
  - Points from map completions
  - Points to rank up
+ - Compare map completions (compare with yourself for pseudo !pt)
 
 [Map page](https://iloveur.mom/i/M7NRwfPCUE.jpg):
  - Show your map rank and time in map page  
