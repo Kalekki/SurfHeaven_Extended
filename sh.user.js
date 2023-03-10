@@ -1274,20 +1274,22 @@
                             }
                         });
                         let table = $('#DataTables_Table_1').DataTable({retrieve: true});
-                        for(let i = 0; i < table.rows().count(); i++){
-                            let map_name = table.row(i).data()[0].match(/(?<=<a href="\/map\/)[^"]+/)[0];
-                            let found = false;
-                            for(let j = 0; j < common_maps.length; j++){
-                                if(map_name == common_maps[j][0]){
-                                    found = true;
-                                    break;
+                        for(let x = 0; x < 2; x++){ // double pass
+                            for(let i = 0; i < table.rows().count(); i++){
+                                let map_name = table.row(i).data()[0].match(/(?<=<a href="\/map\/)[^"]+/)[0];
+                                let found = false;
+                                for(let j = 0; j < common_maps.length; j++){
+                                    if(map_name == common_maps[j][0]){
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if(!found){
+                                    table.row(i).remove();
                                 }
                             }
-                            if(!found){
-                                table.row(i).remove();
-                            }
+                            table.draw();
                         }
-                        table.draw();
                     }
                 });
             }
@@ -1587,7 +1589,7 @@
             let correct_div = target_div[target_div.length -1]
             let table_div = correct_div.querySelector('div.table-responsive.table-maps')
             let table = table_div.childNodes[1]
-            
+
             records_table = table.querySelectorAll('a')
             
             let first_page = true
@@ -1729,7 +1731,10 @@
     }
 
     const changelog = 
-`___4.2.10___
+`___4.2.10.1___
+Fixed filter not applying completely
+
+___4.2.10___
 Added filtering a profile to mutual uncompleted maps
 Added queueing to an empty server as soon as one is available
 
