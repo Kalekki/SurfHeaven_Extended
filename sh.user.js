@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.9
+// @version      4.2.10
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -1069,6 +1069,53 @@
         } else {
             auto_fetch_ranks();
         }
+
+        // Empty server queue
+        let queue_button = document.createElement('button');
+        queue_button.className = 'btn btn-success btn-lg';
+        queue_button.innerHTML = 'Queue for empty server';
+        let auto_join_checkbox = document.createElement('input');
+        auto_join_checkbox.type = 'checkbox';
+        auto_join_checkbox.id = 'auto_join_checkbox';
+        auto_join_checkbox.checked = true;
+        let auto_join_label = document.createElement('label');
+        auto_join_label.htmlFor = 'auto_join_checkbox';
+        auto_join_label.innerHTML = 'Auto-join';
+
+        document.querySelector('.panel-heading').appendChild(queue_button);
+        document.querySelector('.panel-heading').appendChild(document.createElement('br'));
+        document.querySelector('.panel-heading').appendChild(auto_join_checkbox);
+        document.querySelector('.panel-heading').appendChild(auto_join_label);
+        queue_button.onclick = function () {
+            queue_for_empty_server();
+            queue_button.innerHTML = 'Queueing...';
+            queue_button.classList = 'btn btn-danger btn-lg';
+            queue_button.onclick = function () {
+                window.location.reload();
+            }
+        }
+
+        function queue_for_empty_server(){
+            let found = false;
+            make_request('https://surfheaven.eu/api/servers', function (data) {
+                for (let i = 0; i < data.length; i++) {
+                    if (data[i].players.length == 0) {
+                        queue_button.disabled = false;
+                        queue_button.innerHTML = 'Queue for empty server';
+                        queue_button.classList = 'btn btn-success btn-lg';
+                        found = true;
+                        if(auto_join_checkbox.checked) window.location.href = 'steam://connect/' + data[i].ip;
+                        console.log('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')');
+                        alert('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')');
+                        break;
+                    }
+                }
+                if(!found){
+                    console.log('No empty servers found');
+                    setTimeout(queue_for_empty_server, 5000);
+                }
+            });
+        }
     }
 
     function profile_page() {
@@ -1130,6 +1177,19 @@
 
         });
 
+        // common uncompleted maps button
+        if(current_profile_id != get_id()){
+            let common_uncompleted_maps_button = document.createElement('button');
+            common_uncompleted_maps_button.className = 'btn btn-success btn-xs';
+            common_uncompleted_maps_button.id = "common_uncompleted_maps_button";
+            common_uncompleted_maps_button.innerHTML = "Filter to mutual";
+            common_uncompleted_maps_button.onclick = function () {
+                player_comparison([get_id(), current_profile_id], true);
+            };
+            let common_uncompleted_maps_target_div = document.querySelector('div.col-sm-12:nth-child(4) > div:nth-child(1) > div:nth-child(1)');
+            common_uncompleted_maps_target_div.insertBefore(common_uncompleted_maps_button, common_uncompleted_maps_target_div.children[1]);
+        }
+
         // uncompleted maps table
         $('#DataTables_Table_1').on('draw.dt', function () {
             update_map_completions();
@@ -1180,21 +1240,57 @@
 
     }
 
-    function player_comparison(id_array){
+    function player_comparison(id_array, find_common_uncompleted = false){
         let player_data = [];
         for(let i = 0; i < id_array.length; i++){
-            make_request(`https://surfheaven.eu/api/records/${id_array[i]}/`, (data) => {
-                let only_maps = [];
-                for(let i = 0; i < data.length; i++){
-                    if(data[i].track == 0){
-                        only_maps.push(data[i]);
+            if(!find_common_uncompleted){
+                make_request(`https://surfheaven.eu/api/records/${id_array[i]}/`, (data) => {
+                    let only_maps = [];
+                    for(let i = 0; i < data.length; i++){
+                        if(data[i].track == 0){
+                            only_maps.push(data[i]);
+                        }
                     }
-                }
-                player_data.push(only_maps);
-                if(player_data.length == id_array.length){
-                    create_comparison_table(player_data);
-                }
-            });
+                    player_data.push(only_maps);
+                    if(player_data.length == id_array.length){
+                        create_comparison_table(player_data);
+                    }
+                });
+            }else{
+                make_request(`https://surfheaven.eu/api/uncompleted/${id_array[i]}/`, (data) => {
+                    let only_maps = [];
+                    for(let i = 0; i < data.length; i++){
+                        if(data[i].track == 0){
+                            only_maps.push(data[i].map);
+                        }
+                    }
+                    player_data.push(only_maps);
+                    if(player_data.length == id_array.length){
+                        // find common uncompleted maps
+                        let common_maps = [];
+                        player_data[0].forEach((map) => {
+                            if(player_data[1].find((map2) => map2 === map)){
+                                common_maps.push([map]);
+                            }
+                        });
+                        let table = $('#DataTables_Table_1').DataTable({retrieve: true});
+                        for(let i = 0; i < table.rows().count(); i++){
+                            let map_name = table.row(i).data()[0].match(/(?<=<a href="\/map\/)[^"]+/)[0];
+                            let found = false;
+                            for(let j = 0; j < common_maps.length; j++){
+                                if(map_name == common_maps[j][0]){
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if(!found){
+                                table.row(i).remove();
+                            }
+                        }
+                        table.draw();
+                    }
+                });
+            }
         }
 
         function create_comparison_table(player_data){
@@ -1491,9 +1587,7 @@
             let correct_div = target_div[target_div.length -1]
             let table_div = correct_div.querySelector('div.table-responsive.table-maps')
             let table = table_div.childNodes[1]
-            //console.log(correct_div)
-            //console.log(table_div)
-            //console.log(table)
+            
             records_table = table.querySelectorAll('a')
             
             let first_page = true
@@ -1635,7 +1729,11 @@
     }
 
     const changelog = 
-`___4.2.9___
+`___4.2.10___
+Added filtering a profile to mutual uncompleted maps
+Added queueing to an empty server as soon as one is available
+
+___4.2.9___
 Added player comparison
 
 ___4.2.8.3___

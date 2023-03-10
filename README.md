@@ -23,12 +23,17 @@ Follow list to quickly see who's online and in which server
  - Points from map completions
  - Points to rank up
  - Compare map completions (compare with yourself for pseudo !pt)
+ - Find mutual uncompleted maps
 
 [Map page](https://iloveur.mom/i/M7NRwfPCUE.jpg):
  - Show your map rank and time in map page  
  - CP Chart
  - Map picture cover (pics from [Sayt123/SurfMapPics](https://github.com/Sayt123/SurfMapPics))
  - Points per rank
+
+Server page
+ - Ranks from the [original SH ranks](https://greasyfork.org/en/scripts/438271-surfheaven-ranks)
+ - Queue for an empty server as soon as one is available
 
 ### Issues
  - If your scores/ranks/stats seem wrong, set your ID manually in the servers page
