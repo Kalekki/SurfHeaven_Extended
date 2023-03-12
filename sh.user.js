@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.10.2
+// @version      4.2.10.1
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -1185,13 +1185,6 @@
             common_uncompleted_maps_button.innerHTML = "Filter to mutual";
             common_uncompleted_maps_button.onclick = function () {
                 player_comparison([get_id(), current_profile_id], true);
-                // dirty hack until proper fix
-                setTimeout(function () { 
-                    player_comparison([get_id(), current_profile_id], true);
-                }, 500);
-                setTimeout(function () {
-                    player_comparison([get_id(), current_profile_id], true);
-                }, 500);
             };
             let common_uncompleted_maps_target_div = document.querySelector('div.col-sm-12:nth-child(4) > div:nth-child(1) > div:nth-child(1)');
             common_uncompleted_maps_target_div.insertBefore(common_uncompleted_maps_button, common_uncompleted_maps_target_div.children[1]);
@@ -1264,8 +1257,6 @@
                     }
                 });
             }else{
-                let table = $('#DataTables_Table_1').DataTable({retrieve: true});
-                table.page.len(-1).draw();
                 make_request(`https://surfheaven.eu/api/uncompleted/${id_array[i]}/`, (data) => {
                     let only_maps = [];
                     for(let i = 0; i < data.length; i++){
@@ -1282,6 +1273,7 @@
                                 common_maps.push([map]);
                             }
                         });
+                        let table = $('#DataTables_Table_1').DataTable({retrieve: true});
                         for(let x = 0; x < 2; x++){ // double pass
                             for(let i = 0; i < table.rows().count(); i++){
                                 let map_name = table.row(i).data()[0].match(/(?<=<a href="\/map\/)[^"]+/)[0];
@@ -1296,7 +1288,7 @@
                                     table.row(i).remove();
                                 }
                             }
-                            table.page.len(10).draw();
+                            table.draw();
                         }
                     }
                 });
@@ -1718,21 +1710,11 @@
 
         //changelog textbox
         const changelog_textbox = document.createElement("textarea");
-        GM_xmlhttpRequest({
-            method: 'GET',
-            url: 'https://raw.githubusercontent.com/Kalekki/SurfHeaven_Extended/main/changelog.txt',
-            onload: function (response) {
-                if (response.status == 200) {
-                    changelog_textbox.textContent = response.responseText;
-                } else {
-                    console.log("Error getting changelog: " + response.status);
-                }
-            }
-        });
         changelog_textbox.classList.add("form-control");
         changelog_textbox.style.height = "150px";
         changelog_textbox.style.width = "300px";
         changelog_textbox.style.resize = "none";
+        changelog_textbox.textContent = changelog;
         changelog_textbox.setAttribute("readonly", "");
         settings_div.appendChild(changelog_textbox);
 
@@ -1748,6 +1730,51 @@
         show_overlay_window("Settings",settings_div);
     }
 
+    const changelog = 
+`___4.2.10.1___
+Fixed filter not applying completely
+
+___4.2.10___
+Added filtering a profile to mutual uncompleted maps
+Added queueing to an empty server as soon as one is available
+
+___4.2.9___
+Added player comparison
+
+___4.2.8.3___
+Ctop layout finetuning
+
+___4.2.8.2___
+Added points to rank up in profile
+
+___4.2.8.1___
+revert get_id
+
+___4.2.8___
+Added ability to add more players to charts
+Added points per rank to maps
+Added points from map completions to profile
+
+___4.2.7.2___
+Improved the map page, thanks for the feedback
+
+___4.2.7.1___
+Fixed cp chart text shadows
+
+___4.2.7___
+Added hover info to players and maps
+Added map cover images to map pages
+
+___4.2.6___
+Added settings menu
+Added ability to toggle individual features
+Added ability to purge flags cache
+Fixed doubled flags (hopefully)
+
+I made a github repo for this,
+if u have issues or want to clean up this mess, please post them there.
+https://github.com/Kalekki/SurfHeaven_Extended
+`
 
 })();
 
