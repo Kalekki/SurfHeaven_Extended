@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.10.1
+// @version      4.2.10.2
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -68,7 +68,7 @@
         hover_info: "Show player/map info on hover",
         map_cover_image: "Show map cover image",
         points_per_rank: "Show points per rank in map",
-        
+
     }
 
     function validate_settings(){
@@ -141,7 +141,7 @@
                 follow_list_item.innerHTML = "No friends online :(";
                 follow_list_panel_body_div.appendChild(follow_list_item);
             }
-    
+
             if (follow_list != null && follow_list[0] != "") {
                 sidebar_div.insertBefore(follow_list_root_div, sidebar_div.firstChild);
                 sidebar_div.insertBefore(follow_h5, sidebar_div.firstChild);
@@ -248,7 +248,7 @@
                 <div class="col-sm-4">
                     <h5>Type</h5>
                     <h5>Author</h5>
-                    <h5>Added</h5> 
+                    <h5>Added</h5>
                     <h5>Finishes</h5>
                 </div>
                 <div class="col-sm-8">
@@ -309,7 +309,7 @@
 
         inner_panel.appendChild(title);
         inner_panel.appendChild(close_button);
-    
+
         overlay.appendChild(inner_panel);
         inner_panel.appendChild(element_to_append);
         document.body.appendChild(overlay);
@@ -944,7 +944,7 @@
 
     function dashboard_page() {
         if(!settings.country_top_100) return;
-        // CTOP Panel 
+        // CTOP Panel
         // this shit is such a mess
         make_request("https://surfheaven.eu/api/playerinfo/" + get_id() + "/", (c) => {
             var country = ""
@@ -1141,7 +1141,7 @@
                     follow_button.innerHTML = "Follow";
                 }
             };
-    
+
             const username_h2 = document.querySelector('.m-t-xs')
             username_h2.appendChild(follow_button);
         }
@@ -1161,7 +1161,7 @@
         };
         let compare_target_div = document.querySelector('div.col-sm-12:nth-child(3) > div:nth-child(1) > div:nth-child(1)');
         compare_target_div.insertBefore(compare_button, compare_target_div.children[1]);
-        
+
         // total points from map completions
         let map_points = 0;
         make_request("https://surfheaven.eu/api/records/"+current_profile_id+"/track", function (data) {
@@ -1185,6 +1185,13 @@
             common_uncompleted_maps_button.innerHTML = "Filter to mutual";
             common_uncompleted_maps_button.onclick = function () {
                 player_comparison([get_id(), current_profile_id], true);
+                // dirty hack until proper fix
+                setTimeout(function () {
+                    player_comparison([get_id(), current_profile_id], true);
+                }, 500);
+                setTimeout(function () {
+                    player_comparison([get_id(), current_profile_id], true);
+                }, 500);
             };
             let common_uncompleted_maps_target_div = document.querySelector('div.col-sm-12:nth-child(4) > div:nth-child(1) > div:nth-child(1)');
             common_uncompleted_maps_target_div.insertBefore(common_uncompleted_maps_button, common_uncompleted_maps_target_div.children[1]);
@@ -1257,6 +1264,8 @@
                     }
                 });
             }else{
+                let table = $('#DataTables_Table_1').DataTable({retrieve: true});
+                table.page.len(-1).draw();
                 make_request(`https://surfheaven.eu/api/uncompleted/${id_array[i]}/`, (data) => {
                     let only_maps = [];
                     for(let i = 0; i < data.length; i++){
@@ -1273,7 +1282,6 @@
                                 common_maps.push([map]);
                             }
                         });
-                        let table = $('#DataTables_Table_1').DataTable({retrieve: true});
                         for(let x = 0; x < 2; x++){ // double pass
                             for(let i = 0; i < table.rows().count(); i++){
                                 let map_name = table.row(i).data()[0].match(/(?<=<a href="\/map\/)[^"]+/)[0];
@@ -1288,7 +1296,7 @@
                                     table.row(i).remove();
                                 }
                             }
-                            table.draw();
+                            table.page.len(10).draw();
                         }
                     }
                 });
@@ -1364,7 +1372,7 @@
         map_youtube_link(current_map_name);
         insert_map_picture(current_map_name);
         insert_points_per_rank(current_map_name);
-        
+
     }
 
     function insert_points_until_next_rank(){
@@ -1377,7 +1385,7 @@
         if (own_rank == 1){
             console.log("Already #1 :)");
             return;
-        } 
+        }
 
         function find_next_rank(rank){
             let count = 0;
@@ -1408,11 +1416,11 @@
     function insert_points_per_rank(map_name){
         // will error out if cp_chart is disabled, due to the queryselectors being wrong, perhaps i need to switch to finding the elements with regex instead
         if(!settings.points_per_rank) return;
-        let total_completions_element 
+        let total_completions_element
 
         if(settings.map_cover_image){total_completions_element = document.querySelector('table.table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(2) > td:nth-child(2) > strong:nth-child(2)')}
         else{total_completions_element = document.querySelector('table.table-responsive > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) > strong:nth-child(1)')}
-        
+
         let last_rank = Number(total_completions_element.textContent)
         let ranks = [1,2,3,10,15,25,50,100,250,500,1000,last_rank];
         let points = [];
@@ -1591,7 +1599,7 @@
             let table = table_div.childNodes[1]
 
             records_table = table.querySelectorAll('a')
-            
+
             let first_page = true
             add_chart_buttons();
 
@@ -1664,15 +1672,15 @@
         for (let key in settings) {
             const label = document.createElement('label');
             const input = document.createElement('input');
-            
+
             input.type = 'checkbox';
             input.id = key;
             input.name = 'settings';
             input.checked = settings[key];
-            
+
             label.appendChild(input);
             label.appendChild(document.createTextNode(" "+settings_labels[key]));
-            
+
             settings_div.appendChild(label);
             settings_div.appendChild(document.createElement('br'));
         }
@@ -1710,11 +1718,21 @@
 
         //changelog textbox
         const changelog_textbox = document.createElement("textarea");
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url: 'https://raw.githubusercontent.com/Kalekki/SurfHeaven_Extended/main/changelog.txt',
+            onload: function (response) {
+                if (response.status == 200) {
+                    changelog_textbox.textContent = response.responseText;
+                } else {
+                    console.log("Error getting changelog: " + response.status);
+                }
+            }
+        });
         changelog_textbox.classList.add("form-control");
         changelog_textbox.style.height = "150px";
         changelog_textbox.style.width = "300px";
         changelog_textbox.style.resize = "none";
-        changelog_textbox.textContent = changelog;
         changelog_textbox.setAttribute("readonly", "");
         settings_div.appendChild(changelog_textbox);
 
@@ -1730,51 +1748,6 @@
         show_overlay_window("Settings",settings_div);
     }
 
-    const changelog = 
-`___4.2.10.1___
-Fixed filter not applying completely
-
-___4.2.10___
-Added filtering a profile to mutual uncompleted maps
-Added queueing to an empty server as soon as one is available
-
-___4.2.9___
-Added player comparison
-
-___4.2.8.3___
-Ctop layout finetuning
-
-___4.2.8.2___
-Added points to rank up in profile
-
-___4.2.8.1___
-revert get_id
-
-___4.2.8___
-Added ability to add more players to charts
-Added points per rank to maps
-Added points from map completions to profile
-
-___4.2.7.2___
-Improved the map page, thanks for the feedback
-
-___4.2.7.1___
-Fixed cp chart text shadows
-
-___4.2.7___
-Added hover info to players and maps
-Added map cover images to map pages
-
-___4.2.6___
-Added settings menu
-Added ability to toggle individual features
-Added ability to purge flags cache
-Fixed doubled flags (hopefully)
-
-I made a github repo for this,
-if u have issues or want to clean up this mess, please post them there.
-https://github.com/Kalekki/SurfHeaven_Extended
-`
 
 })();
 
@@ -1786,14 +1759,14 @@ GM_addStyle(`
         margin: 0;
         margin-left: 10px;
     }
- 
+
     .switch {
         position: relative;
         display: inline-block;
         width: 90px;
         height: 34px;
     }
- 
+
     .switch input {
         opacity: 0;
         width: 0;
@@ -1810,7 +1783,7 @@ GM_addStyle(`
         -webkit-transition: .4s;
         transition: .4s;
     }
- 
+
     .slider:before {
         position: absolute;
         content: "";
@@ -1822,21 +1795,21 @@ GM_addStyle(`
         -webkit-transition: .4s;
         transition: .4s;
     }
- 
+
     input:checked + .slider {
         background-color: #f6a821;
     }
- 
+
     input:focus + .slider {
         box-shadow: 0 0 1px #2196F3;
     }
- 
+
     input:checked + .slider:before {
         -webkit-transform: translateX(56px);
         -ms-transform: translateX(56px);
         transform: translateX(56px);
     }
- 
+
     .switch .labels {
         position: absolute;
         top: 8px;
@@ -1847,7 +1820,7 @@ GM_addStyle(`
         font-family: sans-serif;
         transition: all 0.4s ease-in-out;
     }
- 
+
     .switch .labels::after {
         content: attr(data-off);
         position: absolute;
@@ -1857,7 +1830,7 @@ GM_addStyle(`
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
         transition: all 0.4s ease-in-out;
     }
- 
+
     .switch .labels::before {
         content: attr(data-on);
         position: absolute;
@@ -1867,11 +1840,11 @@ GM_addStyle(`
         text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.4);
         transition: all 0.4s ease-in-out;
     }
- 
+
     .switch input:checked~.labels::after {
         opacity: 0;
     }
- 
+
     .switch input:checked~.labels::before {
         opacity: 1;
     }
@@ -1891,7 +1864,7 @@ GM_addStyle(`
         padding-bottom: 0px;
         padding-left: 10px;
         padding-right: 10px;
-        //display: none; 
+        //display: none;
         opacity: 0;
         //transition: opacity 0.5s;
         animation: fadeOut 0.5s;
@@ -1938,5 +1911,5 @@ GM_addStyle(`
         stroke: cyan;
     }
 
-      
+
 `);
