@@ -1,3 +1,8 @@
+___4.2.11___
+Added map tagging (Experimental, expect bugs / visual glitches)
+(back up your tags from settings menu periodically just in case)
+Improved queue behavior
+
 ___4.2.10.2___
 Fixed the filter for real this time
 Changelog separated from script

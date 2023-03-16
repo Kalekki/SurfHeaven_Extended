@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.10.2
+// @version      4.2.11
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -267,16 +267,22 @@
     const navbar = document.querySelector('.nav');
     const li_wrapper = document.createElement('li');
     const settings_link = document.createElement('a');
+    const map_tag_link = document.createElement('a');
+    const map_tag_li = document.createElement('li');
+    map_tag_link.href = "#";
     settings_link.href = "#";
     li_wrapper.appendChild(settings_link);
+    map_tag_li.appendChild(map_tag_link);
+    map_tag_link.innerHTML = `MAP TAGS <i class="fa fa-tags"></i>`;
     settings_link.innerHTML = `SETTINGS <i class="fa fa-cog fa-lg"></i>`;
     settings_link.addEventListener('click', open_settings_menu);
-    navbar.insertBefore(li_wrapper, navbar.children[4]);
-
-
+    map_tag_link.addEventListener('click', open_map_tag_menu);
+    navbar.insertBefore(map_tag_li, navbar.children[4]);
+    navbar.insertBefore(li_wrapper, navbar.children[5]);
 
     function show_overlay_window(window_title,element_to_append){
         const overlay = document.createElement('div');
+        overlay.id = "overlay";
         overlay.style.position = "fixed";
         overlay.style.top = "50%";
         overlay.style.left = "50%";
@@ -331,11 +337,13 @@
             }
         });
         api_call_count++;
-        //console.log("API calls: " + api_call_count + " called: " + url);
     }
 
     function map_youtube_link(map_name) {
-        var has_youtube_link = document.querySelector('.media > h5:nth-child(5)') == null ? false : true;
+        var links = Array.from(document.querySelectorAll('a'));
+        var has_youtube_link = links.some(function(e) {
+            return e.href.includes('youtube.com/watch');
+        });
         if (!has_youtube_link) {
             var media_div = document.querySelector('.media');
             var youtube_link = document.createElement('h5');
@@ -513,11 +521,16 @@
         var titlediv = document.querySelector('.media');
         var rank_elem = document.createElement('h4');
         rank_elem.innerHTML = "You have not completed this map :(";
+        rank_elem.style.marginBottom = "5px";
+        rank_elem.style.marginTop = "5px";
         titlediv.appendChild(rank_elem);
         make_request("https://surfheaven.eu/api/maprecord/" + map_name + "/" + _id, (data) => {
             var time = data[0].time;
             var formatted_time = new Date(time * 1000).toISOString().substr(11, 12);
-            rank_elem.innerHTML = "Your rank: " + data[0].rank + " (" + formatted_time + ") <br> Points earned: " + data[0].points;
+            if (formatted_time[0] == "0") {
+                formatted_time = formatted_time.substr(3);
+            }
+            rank_elem.innerHTML = "Your rank: #" + data[0].rank + " (" + formatted_time + ") +" + data[0].points + " points";
             add_shadow_to_text_recursively(rank_elem);
         });
     }
@@ -1097,6 +1110,7 @@
 
         function queue_for_empty_server(){
             let found = false;
+            let check_delay = 5000;
             make_request('https://surfheaven.eu/api/servers', function (data) {
                 for (let i = 0; i < data.length; i++) {
                     if (data[i].players.length == 0) {
@@ -1104,15 +1118,22 @@
                         queue_button.innerHTML = 'Queue for empty server';
                         queue_button.classList = 'btn btn-success btn-lg';
                         found = true;
-                        if(auto_join_checkbox.checked) window.location.href = 'steam://connect/' + data[i].ip;
                         console.log('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')');
-                        alert('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')');
+                        if(auto_join_checkbox.checked){
+                            window.location.href = 'steam://connect/' + data[i].ip;
+                            alert('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')');
+                        }else{
+                            if(window.confirm('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')\nPress OK to join')){
+                                window.location.href = 'steam://connect/' + data[i].ip;
+                            }
+                        }
+                        window.location.reload();
                         break;
                     }
                 }
                 if(!found){
                     console.log('No empty servers found');
-                    setTimeout(queue_for_empty_server, 5000);
+                    setTimeout(queue_for_empty_server, check_delay);
                 }
             });
         }
@@ -1168,7 +1189,6 @@
             for(let i = 0; i < data.length; i++){
                 map_points += data[i].points;
             }
-            console.log("total points from map completions: " + map_points);
             var stats_table = document.querySelector('.medium > tbody:nth-child(1)');
             var stats_table_rows = stats_table.children;
             var points_td = document.createElement('td');
@@ -1365,13 +1385,522 @@
     function map_page(current_map_name) {
         // padding fix to not cut off the shadows
         let padding_fix = document.querySelector('.media');
-        padding_fix.style = "padding-left: 10px;";
+        padding_fix.style = "padding-left: 10px; margin-top: 0px;";
+        document.querySelector('.pe').remove(); // removing the map icon to free some vertical space
 
+        map_youtube_link(current_map_name);
         fetch_map_rank(current_map_name);
         cp_chart();
-        map_youtube_link(current_map_name);
         insert_map_picture(current_map_name);
         insert_points_per_rank(current_map_name);
+        insert_map_page_tag_list(current_map_name);
+
+    }
+
+    function insert_map_page_tag_list(current_map_name){
+        let tag_container = document.createElement('div');
+        tag_container.className = "container-fluid";
+        tag_container.style = "padding-left: 0px; padding-right: 0px;";
+        document.querySelector('.media').appendChild(tag_container);
+        let curr_row = 0;
+        let max_tags_per_row = 5;
+
+        let tag_row = document.createElement('div');
+        tag_row.className = "row";
+
+        let control_row = document.createElement('div');
+        control_row.className = "row";
+
+        let tag_col = document.createElement('div');
+        tag_col.class = "tags";
+
+        let tag_add_link = document.createElement('a');
+        tag_add_link.className = "outlined";
+        tag_add_link.innerHTML = "Manage tags";
+        tag_add_link.style.cursor = "pointer";
+        tag_add_link.onclick = () => {
+            open_tag_selection_window(current_map_name, true);
+        }
+
+        let tags = get_tags(current_map_name);
+        for(let i = 0; i < tags.length; i++){
+            let tag = document.createElement('span');
+            tag.style.whiteSpace = "pre-wrap";
+            tag.style.cursor = "default";
+            tag.className = "tag";
+            tag.innerHTML = tags[i];
+            append_to_last_row(tag);
+        }
+
+        tag_row.appendChild(tag_col);
+        tag_container.appendChild(tag_row);
+        control_row.appendChild(tag_add_link);
+        tag_container.appendChild(control_row);
+
+        function append_to_last_row(tag){
+            let target_div = document.querySelectorAll('.container-fluid')[2];
+            curr_row = Math.floor(target_div.getElementsByClassName("tag").length / max_tags_per_row);
+            if(target_div.getElementsByClassName("tags")[curr_row] == undefined){
+                let row = document.createElement('div');
+                row.className = "tags";
+                target_div.appendChild(row);
+            }
+            target_div.getElementsByClassName("tags")[curr_row].appendChild(tag);
+        }
+    }
+
+    function add_tag(map_name, tag){
+        let tags = get_tags(map_name);
+        if(!tags.includes(tag)){
+            tags.push(tag);
+            set_map_tags(map_name, tags);
+            console.log(`added tag ${tag} to map ${map_name}`)
+        }
+        else{
+            console.log(`tag ${tag} already exists on map ${map_name}`)
+        } 
+
+    }
+
+    function remove_tag(map_name, tag){
+        let tags = get_tags(map_name);
+        let index = tags.indexOf(tag);
+        if(index > -1){
+            tags.splice(index, 1);
+        }
+        if(tags.length == 0){
+            let db = get_tag_db();
+            delete db[map_name];
+            save_tag_db(db);
+        }else{
+            set_map_tags(map_name, tags);
+            console.log(`removed tag ${tag} from map ${map_name}`)
+        }
+    }
+
+    function get_tag_db(){
+        let db = unsafeWindow.localStorage.getItem("map_tags");
+        if(db == null){
+            db = {};
+        }else{
+            db = JSON.parse(db);
+        }
+        return db;
+    }
+
+    function save_tag_db(db){
+        for(let map_name in db){
+            db[map_name].sort();
+        }
+        unsafeWindow.localStorage.setItem("map_tags", JSON.stringify(db));
+        console.log("saved db")
+    }
+
+    function set_map_tags(map_name, tags){
+        let db = get_tag_db();
+        if(tags.length == 0){
+            delete db[map_name];
+            console.log(`no tags remaining for ${map_name}, deleting entry`)
+        }else{
+            tags.sort();
+            db[map_name] = tags;
+            console.log(`saved tags ${tags} for ${map_name}`)
+        }
+        save_tag_db(db);
+
+    }
+
+    function get_tags(map_name){
+        let db = get_tag_db();
+        let tags = db[map_name];
+        if(tags == null){
+            tags = [];
+        }
+        console.log(`got tags ${tags} for ${map_name}`)
+        return tags.sort();
+    }
+
+    function get_maps_with_tag(tag){
+        let db = get_tag_db();
+        let maps = [];
+        for(let key in db){
+            if(db[key].includes(tag)){
+                maps.push(key);
+            }
+        }
+        console.log(`got maps ${maps} with tag ${tag}`)
+        return maps;
+    }
+
+    function get_all_tags_from_db(){
+        let db = get_tag_db();
+        let tags = [];
+        for(let key in db){
+            for(let i = 0; i < db[key].length; i++){
+                if(!tags.includes(db[key][i])){
+                    tags.push(db[key][i]);
+                }
+            }
+        }
+        console.log(`got all tags ${tags} from db`)
+        tags.sort();
+        return tags;
+    }
+
+    function purge_all_tags(){
+        if(window.confirm("Are you sure you want to purge all tags?")){
+            let db = {};
+            save_tag_db(db);
+            console.log("purged all tags")
+            window.location.reload();
+        }
+    }
+
+    /**
+     * Backs up all tags as a JSON file
+     */
+    function export_all_tags(){
+        let db = get_tag_db();
+        console.log("saving all tags as json file")
+        download(JSON.stringify(db), "surfheaven_map_tags_backup.json", "text/plain");
+    }
+
+    /**
+     * Exports maps with a specific tag as a JSON file
+     * @param {Array} tags array of tags
+     */
+    function export_specific_tags(tags){
+        for(let i = 0; i < tags.length; i++){
+            let tag = tags[i];
+            let maps = get_maps_with_tag(tag);
+            let json = {};
+            json[tag] = maps;
+            console.log(`saving maps ${maps} with tag ${tag} as json file`)
+            download(JSON.stringify(json), `${tag}_maps.json`, "text/plain");
+        }
+    }
+
+    /**
+     * Imports tags from a JSON file and updates the tag database
+     */
+    function import_tags(){
+        let file_input = document.createElement('input');
+        file_input.type = "file";
+        file_input.accept = ".json";
+        file_input.onchange = (e) => {
+            console.log("importing tags")
+            let file = e.target.files[0];
+            console.log(file)
+            let reader = new FileReader();
+            reader.onload = (e) => {
+                let db = JSON.parse(e.target.result);
+                console.log(db)
+                let old_db = get_tag_db();
+                // key is the tag, value is the maps
+                for(let key in db){
+                    console.log(`importing tag ${key}`)
+                    let maps = db[key];
+                    for(let i = 0; i < maps.length; i++){
+                        if(old_db[maps[i]] != undefined){
+                            console.log(`adding tag ${key} to map ${maps[i]}`)
+                            let map = maps[i];
+                            let tags = get_tags(map);
+                            if(!tags.includes(key)){
+                                tags.push(key);
+                                set_map_tags(map, tags);
+                            }
+                        }else{
+                            console.log(`adding map ${maps[i]} with tag ${key}`)
+                            set_map_tags(maps[i], [key]);
+                        }
+                    }        
+                    console.log("imported tags")
+                    document.getElementById('overlay').remove();
+                    open_map_tag_menu();
+                }
+            }; 
+            reader.readAsText(file);
+
+        }
+        file_input.dispatchEvent(new MouseEvent('click'));
+    }
+
+    function download(content, fileName, contentType) {
+        var a = document.createElement("a");
+        var file = new Blob([content], {type: contentType});
+        a.href = URL.createObjectURL(file);
+        a.download = fileName;
+        a.click();
+    }
+
+    function open_map_tag_menu(){
+        let root_div = document.createElement('div');
+        root_div.classList = "container-fluid";
+
+        let table_wrapper = document.createElement('div');
+        table_wrapper.style = "overflow-y: auto; overflow-x: hidden;";
+
+        table_wrapper.style.maxHeight = "600px";
+        table_wrapper.style.minHeight = "600px";
+        let map_tag_table = document.createElement('table');
+        map_tag_table.classList.add('table', 'table-striped', 'table-hover');
+
+        let map_tag_table_head = document.createElement('thead');
+        let map_tag_table_body = document.createElement('tbody');
+
+        map_tag_table_head.innerHTML = `<tr><th>Map</th><th>Tags</th></tr>`;
+
+        let db = get_tag_db();
+        for(let map in db){
+            let row = document.createElement('tr');
+            let map_name = document.createElement('td');
+            map_name.innerHTML = `<a href="https://surfheaven.eu/map/${map}">${map}</a>`;
+            let tags = document.createElement('td');
+            tags.innerHTML = db[map].join(', ');
+            row.appendChild(map_name);
+            row.appendChild(tags);
+            map_tag_table_body.appendChild(row);
+            
+        }
+        map_tag_table.appendChild(map_tag_table_head);
+        map_tag_table.appendChild(map_tag_table_body);
+        map_tag_table.style.minWidth = "600px";
+
+
+        let table = $(map_tag_table).DataTable({
+            "columns": [
+                { "width": "35%" },
+                { "width": "65%" }
+            ],
+            "autoWidth": false,
+            "paging": false,
+            "searching": true,
+        });
+
+        let tag_links = document.createElement('div');
+        tag_links.className = "row";
+        tag_links.style.paddingBottom = "10px";
+        tag_links.style.paddingLeft = "10px";
+        tag_links.style.paddingRight = "10px";
+        tag_links.style.flexWrap = "wrap";
+
+        let all_tags = get_all_tags_from_db();
+        for(let i = 0; i < all_tags.length; i++){
+            let tag_link = document.createElement('a');
+            tag_link.className = "tag";
+            tag_link.innerHTML = all_tags[i];
+            tag_link.onclick = () => {
+                if(tag_link.classList.contains("tag-selected")){
+                    tag_link.classList.remove("tag-selected");
+                }else{
+                    tag_link.classList.add("tag-selected");
+                }
+                let selected_tags = tag_links.getElementsByClassName("tag-selected");
+
+                if(selected_tags.length == 0){
+                    export_button.style.display = "none";
+                }else{
+                    export_button.style.display = "inline-block";
+                }
+                    
+                let tag_array = [];
+                let regex = "";
+                for(let i = 0; i < selected_tags.length; i++){
+                    tag_array.push(selected_tags[i].innerHTML);
+
+                }
+                let tag_regex_pattern = tag_array.map((tag) => {
+                    return `(?=.*${tag}\\b)`;
+                }).join("");
+                regex = `^${tag_regex_pattern}.*$`;
+                table.column(1).search(regex,true).draw();
+
+            }
+            function append_to_last_row(tag){
+                let max_tags_per_row = 12;
+                let last_row = tag_links.lastElementChild;
+                if(last_row == null || last_row.childElementCount == max_tags_per_row){
+                    let new_row = document.createElement('div');
+                    new_row.className = "row";
+                    new_row.style.marginBottom = "10px";
+                    tag_links.appendChild(new_row);
+                    last_row = new_row;
+                }
+                last_row.appendChild(tag);
+            }
+            append_to_last_row(tag_link);
+        }
+        let filter_text = document.createElement('p');
+        filter_text.innerHTML = "Filter by tags: ";
+
+        let import_button = document.createElement('button');
+        import_button.className = "btn btn-primary";
+        import_button.style.marginTop = "10px";
+        import_button.style.marginRight = "10px";
+        import_button.innerHTML = "Import tag";
+        import_button.onclick = () => {
+            import_tags();
+        }
+
+        let export_button = document.createElement('button');
+        export_button.className = "btn btn-primary";
+        export_button.innerHTML = "Export tag(s)";
+        export_button.style.display = "none";
+        export_button.style.marginTop = "10px";
+        export_button.onclick = () => {
+            let selected_tags = tag_links.getElementsByClassName("tag-selected");
+            let tag_array = [];
+            for(let i = 0; i < selected_tags.length; i++){
+                tag_array.push(selected_tags[i].innerHTML);
+            }
+            export_specific_tags(tag_array);
+        }
+
+        let button_wrapper = document.createElement('div');
+        button_wrapper.className = "row";
+        button_wrapper.style.paddingBottom = "10px";
+        button_wrapper.style.paddingLeft = "10px";
+        button_wrapper.style.paddingRight = "10px";
+        button_wrapper.appendChild(import_button);
+        button_wrapper.appendChild(export_button);
+
+        root_div.appendChild(filter_text);
+        root_div.appendChild(tag_links);
+        table_wrapper.appendChild(map_tag_table);
+        root_div.appendChild(table_wrapper);
+        root_div.appendChild(button_wrapper);
+        
+        show_overlay_window("Map tags",root_div);
+    }
+
+    function open_tag_selection_window(map_name, from_map_page = false){
+        if(document.getElementById("tag_selection_modal") != null){
+            $('#tag_selection_modal').modal('show');
+        }else{
+            let modal = document.createElement('div');
+            modal.innerHTML = `<div class="modal fade" id="tag_selection_modal" tabindex="-1" role="dialog" style="display: flex;">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-body" style="padding: 1rem;">
+                    <div class="container-fluid">
+                        <h4>Select tags</h4>
+                        <div class="row"></div>
+                    </div>
+                    </div>
+                    <div class="modal-footer" style="padding:7px;">
+                        <button type="button" class="btn btn-secondary btn-danger" data-dismiss="modal">Cancel</button>
+                        <button type="button" id="set_tags" class="btn btn-primary btn-success">Set tags</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+            document.body.appendChild(modal);
+
+            let db = get_tag_db();
+            let all_tags = get_all_tags_from_db();
+            let curr_row = 0; // current row in modal
+            let max_tags_per_row = 12;
+            for(let i = 0; i < all_tags.length; i++){
+                let tag = document.createElement('a');
+                tag.className = "tag";
+                tag.innerHTML = all_tags[i];
+                if(from_map_page){
+                    if((map_name in db)){
+                        if(db[map_name].includes(all_tags[i])){
+                            tag.classList.add("tag-selected");
+                        }
+                    }
+                }
+                tag.onclick = () => {
+                    if(tag.classList.contains("tag-selected")){
+                        tag.classList.remove("tag-selected");
+                    }else{
+                        tag.classList.add("tag-selected");
+                    }
+                }
+                append_to_last_row(tag)
+            }
+
+            // custom tag input
+            let input_wrapper = document.createElement('div');
+            input_wrapper.style.display = "flex";
+            input_wrapper.style.alignItems = "center";
+            input_wrapper.style.marginTop = "20px";
+
+            let tag_input = document.createElement('input');
+            tag_input.type = "text";
+            tag_input.placeholder = "Enter tag";
+            tag_input.className = "form-control";
+            tag_input.style.marginBottom = "10px";
+            tag_input.style.width = "120px";
+
+            let create_tag_button = document.createElement('button');
+
+            create_tag_button.className = "btn btn-primary";
+            create_tag_button.style.marginLeft = "5px";
+            create_tag_button.style.marginBottom = "10px";
+            create_tag_button.innerHTML = "Create tag";
+            create_tag_button.onclick = () => {
+                // add tag to selection grid
+                if(tag_input.value != "" && tag_input.value != " "){
+                    let tag = document.createElement('a');
+                    tag.className = "tag tag-selected";
+                    tag.style.whiteSpace = "nowrap";
+                    tag.innerHTML = tag_input.value;
+                    tag.onclick = () => {
+                        if(tag.classList.contains("tag-selected")){
+                            tag.classList.remove("tag-selected");
+                        }else{
+                            tag.classList.add("tag-selected");
+                        }
+                    }
+                    append_to_last_row(tag)
+                    tag_input.value = "";
+                }
+            }
+            input_wrapper.appendChild(tag_input);
+            input_wrapper.appendChild(create_tag_button);
+            modal.getElementsByClassName("modal-body")[0].appendChild(input_wrapper);
+
+            modal.getElementsByClassName("modal-footer")[0].getElementsByClassName("btn-primary")[0].onclick = () => {
+                let selected_tags = modal.getElementsByClassName("tag-selected");
+                let _tags = [];
+                for(let i = 0; i < selected_tags.length; i++){
+                    let tag = selected_tags[i].innerHTML;
+                    _tags.push(tag)
+                }
+                set_map_tags(map_name,_tags)
+                // add the tags to the map
+                if(from_map_page){
+                    let map_tags_div = document.getElementsByClassName("tags")[0];
+                    if(map_tags_div == undefined){
+                        map_tags_div = document.createElement('div');
+                        map_tags_div.className = "tags";
+                        document.getElementsByClassName("container-fluid")[2].appendChild(map_tags_div);
+                    }
+                    map_tags_div.innerHTML = "";
+                    for(let i = 0; i < _tags.length; i++){
+                        let tag = document.createElement('a');
+                        tag.className = "tag";
+                        tag.innerHTML = _tags[i];
+                        map_tags_div.appendChild(tag);
+                    }
+                }
+                $('#tag_selection_modal').modal('hide');
+            }
+
+            $('#tag_selection_modal').modal('show');
+            function append_to_last_row(tag){
+                curr_row = Math.floor(modal.getElementsByClassName("tag").length / max_tags_per_row);
+                if(modal.getElementsByClassName("row")[curr_row] == undefined){
+                    let row = document.createElement('div');
+                    row.className = "row";
+                    row.style.marginTop = "10px";
+                    modal.getElementsByClassName("container-fluid")[0].appendChild(row);
+                }
+                modal.getElementsByClassName("row")[curr_row].appendChild(tag);
+            }
+        }
 
     }
 
@@ -1432,22 +1961,22 @@
             count++;
           }
 
-        console.log(`${count} ranks needed before we hit last rank, ${last_rank}`);
+        //console.log(`${count} ranks needed before we hit last rank, ${last_rank}`);
         ranks = ranks.slice(0, count);
         ranks.push(last_rank);
-        console.log("new ranks array: ",ranks)
+        //console.log("new ranks array: ",ranks)
 
         for(let i = 0; i < ranks.length; i++){
             make_request("https://surfheaven.eu/api/maprank/"+map_name+"/"+ranks[i]+"/0", function(data){
-                console.log("getting points for rank: ",ranks[i])
+                //console.log("getting points for rank: ",ranks[i])
                 points.push(data[0].points);
-                console.log(data[0].name,data[0].rank,data[0].points);
+                //console.log(data[0].name,data[0].rank,data[0].points);
             });
         }
         // make_request isnt async so we need to wait for /some time/ before we can start using the data
         setTimeout(function(){
             points.sort(function(a, b){return b-a});
-            console.log(points,ranks)
+            //console.log(points,ranks)
 
             let table = document.createElement('table');
             table.className = "text-white";
@@ -1700,7 +2229,7 @@
                 settings[checkbox.id] = checkbox.checked;
             });
             unsafeWindow.localStorage.setItem("settings", JSON.stringify(settings));
-            location.reload();
+            window.location.reload();
         }
 
         // purge flags
@@ -1710,6 +2239,69 @@
         purge_flags_button.onclick = purge_flags_cache
         settings_div.appendChild(document.createElement('br'));
         settings_div.appendChild(purge_flags_button);
+
+        // purge maps
+        const purge_maps_button = document.createElement("button");
+        purge_maps_button.classList.add("btn", "btn-sm", "btn-primary");
+        purge_maps_button.textContent = "Purge map tags";
+        purge_maps_button.style.marginLeft = "1rem";
+        purge_maps_button.onclick = purge_all_tags
+        settings_div.appendChild(purge_maps_button);
+        settings_div.appendChild(document.createElement('br'));
+
+        // backup and import tags buttons
+        const backup_tags_button = document.createElement("button");
+        backup_tags_button.classList.add("btn", "btn-sm", "btn-primary");
+        backup_tags_button.textContent = "Backup tags";
+        backup_tags_button.onclick = export_all_tags
+        const backup_tags_text = document.createElement("h5");
+        backup_tags_text.textContent = "Backup tags to file";
+        settings_div.appendChild(backup_tags_text);
+        settings_div.appendChild(backup_tags_button);
+
+        //h4 for import tags
+        const import_tags_h5 = document.createElement("h5");
+        import_tags_h5.textContent = "Load tags from backup";
+        settings_div.appendChild(import_tags_h5);
+
+        let import_button = document.createElement('input');
+        import_button.type = "file";
+        import_button.accept = ".json";
+        import_button.id 
+        import_button.className = "btn btn-primary";
+        import_button.innerHTML = "Import tags";
+        import_button.onchange = () => {
+            let file = import_button.files[0];
+            let reader = new FileReader();
+            reader.onload = (e) => {
+                let db = JSON.parse(e.target.result);
+                save_tag_db(db);
+                console.log("Imported tags");
+                window.location.reload();
+            }
+            reader.readAsText(file);
+        }
+        settings_div.appendChild(import_button);
+
+        // Localstorage size out of ~5MB
+        let localstorage_size_p = document.createElement("p");
+        localstorage_size_p.style.marginTop = "0.5rem";
+        let localstorage_size_text = () => {
+            let total = 0;
+            for (let key in localStorage) {
+              if (localStorage.hasOwnProperty(key)) {
+                total += (localStorage[key].length + key.length) * 2; // each character is 2 bytes
+              }
+            }
+            return (total / 1024).toFixed(2) + " KB";; 
+        }
+        localstorage_size_p.textContent = "Localstorage size: " + localstorage_size_text() + "  / ~5MB";
+        settings_div.appendChild(localstorage_size_p);
+
+        // api call count
+        let api_call_count_p = document.createElement("p");
+        api_call_count_p.textContent = "API calls: " + api_call_count;
+        settings_div.appendChild(api_call_count_p);
 
         //changelog title
         const changelog_title = document.createElement("h5");
@@ -1910,6 +2502,40 @@ GM_addStyle(`
     .ct-series-e .ct-point {
         stroke: cyan;
     }
-
-
+    .tag{
+        background-color: darkgray;
+        border-radius: 1rem;
+        padding: 0.2rem 0.5rem;
+        margin: 0.2rem 0.5rem 0.3rem 0.5rem;
+        margin-bottom: 0.3rem;
+        color: black;
+        
+    }
+    .tag:hover{
+        color: black;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .tag-selected{
+        background-color: #47cf52;
+    }
+    .outlined {
+        //color: white;
+        text-shadow:
+          -1px -1px 0 #000,
+           0   -1px 0 #000,
+           1px -1px 0 #000,
+           1px  0   0 #000,
+           1px  1px 0 #000,
+           0    1px 0 #000,
+          -1px  1px 0 #000,
+          -1px  0   0 #000;
+      }
+    body .modal-dialog {
+      width: auto !important;
+      display: inline-block;
+    }
+    .tags{
+        margin-bottom: 0.5rem;
+    }
 `);

@@ -9,7 +9,8 @@ Make sure you have [Tampermonkey](https://www.tampermonkey.net/) installed, then
 
 Player flags everywhere  
 Follow list to quickly see who's online and in which server  
-[Hover over players or maps to see some quick stats](https://iloveur.mom/i/cVjDAG3sWS.gif)
+[Hover over players or maps to see some quick stats](https://iloveur.mom/i/cVjDAG3sWS.gif)  
+Tag maps with custom tags  
 
 [Dashboard](https://user-images.githubusercontent.com/1765167/220739743-3b09984d-fc90-498c-a8f7-bba4e943341d.png):
  - Country Top 100 list
@@ -27,6 +28,7 @@ Follow list to quickly see who's online and in which server
 
 [Map page](https://iloveur.mom/i/M7NRwfPCUE.jpg):
  - Show your map rank and time in map page  
+ - Custom tags for maps
  - CP Chart
  - Map picture cover (pics from [Sayt123/SurfMapPics](https://github.com/Sayt123/SurfMapPics))
  - Points per rank
@@ -42,7 +44,6 @@ Server page
  - for other shit, let me know
 
 #### Stuff i'll probably add in the future:
- - Map favorites
  - Map notes
  - Other stuff that comes to my mind, or that people request
 
