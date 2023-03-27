@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.11
+// @version      4.2.11.1
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -9,6 +9,8 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/chartist/0.11.4/chartist.min.js
 // @match        https://surfheaven.eu/*
 // @icon         https://www.google.com/s2/favicons?domain=surfheaven.eu
+// @connect      raw.githubusercontent.com
+// @connect      surfheaven.eu
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
 // @grant        GM.getValue
@@ -121,7 +123,7 @@
         follow_list_row_div.appendChild(follow_list_panel_div);
         follow_list_panel_div.appendChild(follow_list_panel_body_div);
 
-        make_request("https://surfheaven.eu/api/online/", (data) => {
+        make_request("https://api.surfheaven.eu/api/online/", (data) => {
             let follow_list = get_follow_list();
             let online_players = [];
             let friends_online = false;
@@ -180,13 +182,13 @@
                 hover_timeout = setTimeout(() => {
                     if(e.target.href.includes("player")){
                         let steamid = e.target.href.split('/')[4];
-                        make_request(`https://surfheaven.eu/api/playerinfo/${steamid}`, (data) => {
+                        make_request(`https://api.surfheaven.eu/api/playerinfo/${steamid}`, (data) => {
                             display_hover_info(data, 0, e)
                         });
 
                     }else if(e.target.href.includes('map')){
                         let map_name = e.target.href.split('/')[4];
-                        make_request(`https://surfheaven.eu/api/mapinfo/${map_name}`, (data) => {
+                        make_request(`https://api.surfheaven.eu/api/mapinfo/${map_name}`, (data) => {
                             display_hover_info(data, 1, e)
                         });
                     }
@@ -418,7 +420,7 @@
         var id_input = document.querySelector('.custom-id-input');
 
         if (id_input.value) {
-            make_request("https://surfheaven.eu/api/playerinfo/" + id_input.value, async (data) => {
+            make_request("https://api.surfheaven.eu/api/playerinfo/" + id_input.value, async (data) => {
                 if (data) {
                     custom_id = id_input.value;
                     await GM.setValue('sh_ranks_custom_id', custom_id);
@@ -496,7 +498,7 @@
                         link.innerHTML = create_flag(country) + " " + link.innerHTML;
                     } else {
                         //console.log("Fetching country for " + id)
-                        make_request("https://surfheaven.eu/api/playerinfo/" + id, (data) => {
+                        make_request("https://api.surfheaven.eu/api/playerinfo/" + id, (data) => {
                             if (data) {
                                 country = data[0].country_code;
                                 unsafeWindow.localStorage.setItem(id, country);
@@ -524,7 +526,7 @@
         rank_elem.style.marginBottom = "5px";
         rank_elem.style.marginTop = "5px";
         titlediv.appendChild(rank_elem);
-        make_request("https://surfheaven.eu/api/maprecord/" + map_name + "/" + _id, (data) => {
+        make_request("https://api.surfheaven.eu/api/maprecord/" + map_name + "/" + _id, (data) => {
             var time = data[0].time;
             var formatted_time = new Date(time * 1000).toISOString().substr(11, 12);
             if (formatted_time[0] == "0") {
@@ -541,7 +543,7 @@
         var total = new Array(7).fill(0);
         var bonus_completions = new Array(7).fill(0);
         var bonus_total = new Array(7).fill(0);
-        make_request("https://surfheaven.eu/api/records/" + id, (data) => {
+        make_request("https://api.surfheaven.eu/api/records/" + id, (data) => {
             if (data) {
                 for (var i = 0; i < data.length; i++) {
                     var track = data[i].track;
@@ -552,7 +554,7 @@
                         bonus_completions[tier - 1]++;
                     }
                 }
-                make_request("https://surfheaven.eu/api/maps", (data2) => {
+                make_request("https://api.surfheaven.eu/api/maps", (data2) => {
                     for (var i = 0; i < data2.length; i++) {
                         var tier = data2[i].tier;
                         total[tier - 1]++;
@@ -590,7 +592,7 @@
         if (use_custom) {
             id = custom_id;
         } else {
-            make_request("https://surfheaven.eu/api/id", (data) => {
+            make_request("https://api.surfheaven.eu/api/id", (data) => {
                 id = data[0].steamid;
                 GM.setValue('sh_ranks_default_id', id);
             });
@@ -599,7 +601,7 @@
     }
 
     function fetch_country_rank(id) {
-        make_request("https://surfheaven.eu/api/playerinfo/" + id, (data) => {
+        make_request("https://api.surfheaven.eu/api/playerinfo/" + id, (data) => {
             if (data) {
                 var country_rank = data[0].country_rank;
                 var country_rank_total = data[0].country_ranktotal;
@@ -612,7 +614,7 @@
     }
 
     function fetch_time_spent(id) {
-        make_request("https://surfheaven.eu/api/playerinfo/" + id, (data) => {
+        make_request("https://api.surfheaven.eu/api/playerinfo/" + id, (data) => {
             if (data) {
                 var time_spent_spec = data[0].totalspec;
                 var time_spent_loc = data[0].totalloc;
@@ -632,7 +634,7 @@
     }
 
     function fetch_completions_of_uncompleted_maps() {
-        make_request("https://surfheaven.eu/api/completions", (data) => {
+        make_request("https://api.surfheaven.eu/api/completions", (data) => {
             if (data) {
                 data.forEach((map) => {
                     if (map.track == 0) {
@@ -651,7 +653,7 @@
                         map_types[map.map] = map.type == 0 ? "Linear" : "Staged";
                     }
                 });
-                make_request("https://surfheaven.eu/api/maps", (data2) => {
+                make_request("https://api.surfheaven.eu/api/maps", (data2) => {
                     if (data2) {
                         data2.forEach((map) => {
                             map_tiers[map.map] = map.tier;
@@ -816,8 +818,8 @@
     }
 
     function fetch_ranks(id) {
-        make_request("https://surfheaven.eu/api/records/" + id + "/", (records) => {
-            make_request("https://surfheaven.eu/api/servers", (servers) => {
+        make_request("https://api.surfheaven.eu/api/records/" + id + "/", (records) => {
+            make_request("https://api.surfheaven.eu/api/servers", (servers) => {
                 const table = document.querySelector('.table');
                 table.rows[0].insertCell(3).outerHTML = "<th>Rank</th>";
                 table.rows[0].insertCell(4).outerHTML = "<th>Bonus</th>";
@@ -869,7 +871,7 @@
     function fetch_bonus_ranks(id, servers, server_records) {
         const table = document.querySelector('.table');
 
-        make_request("https://surfheaven.eu/api/completions", (completions) => {
+        make_request("https://api.surfheaven.eu/api/completions", (completions) => {
             servers.forEach((server, server_index) => {
                 // eslint-disable-next-line no-unused-vars
                 const server_completions = completions.filter(completion => completion.map === server.map && completion.track > 0);
@@ -923,7 +925,7 @@
     }
 
     function auto_fetch_ranks() {
-        make_request("https://surfheaven.eu/api/id", (data) => {
+        make_request("https://api.surfheaven.eu/api/id", (data) => {
             const id = data[0].steamid;
             fetch_ranks(id);
         });
@@ -959,7 +961,7 @@
         if(!settings.country_top_100) return;
         // CTOP Panel
         // this shit is such a mess
-        make_request("https://surfheaven.eu/api/playerinfo/" + get_id() + "/", (c) => {
+        make_request("https://api.surfheaven.eu/api/playerinfo/" + get_id() + "/", (c) => {
             var country = ""
             if (unsafeWindow.localStorage.getItem("country") == null) {
                 country = c[0].country_code;
@@ -967,7 +969,7 @@
             } else {
                 country = unsafeWindow.localStorage.getItem("country");
             }
-            make_request("https://surfheaven.eu/api/ctop/" + country + "/100", (data) => {
+            make_request("https://api.surfheaven.eu/api/ctop/" + country + "/100", (data) => {
                 var ctop_100 = []
                 for (var i = 0; i < data.length; i++) {
                     ctop_100[i] = [data[i].name, data[i].points, data[i].rank, data[i].steamid];
@@ -1111,7 +1113,7 @@
         function queue_for_empty_server(){
             let found = false;
             let check_delay = 5000;
-            make_request('https://surfheaven.eu/api/servers', function (data) {
+            make_request('https://api.surfheaven.eu/api/servers', function (data) {
                 for (let i = 0; i < data.length; i++) {
                     if (data[i].players.length == 0) {
                         queue_button.disabled = false;
@@ -1185,7 +1187,7 @@
 
         // total points from map completions
         let map_points = 0;
-        make_request("https://surfheaven.eu/api/records/"+current_profile_id+"/track", function (data) {
+        make_request("https://api.surfheaven.eu/api/records/"+current_profile_id+"/track", function (data) {
             for(let i = 0; i < data.length; i++){
                 map_points += data[i].points;
             }
@@ -1271,7 +1273,7 @@
         let player_data = [];
         for(let i = 0; i < id_array.length; i++){
             if(!find_common_uncompleted){
-                make_request(`https://surfheaven.eu/api/records/${id_array[i]}/`, (data) => {
+                make_request(`https://api.surfheaven.eu/api/records/${id_array[i]}/`, (data) => {
                     let only_maps = [];
                     for(let i = 0; i < data.length; i++){
                         if(data[i].track == 0){
@@ -1286,7 +1288,7 @@
             }else{
                 let table = $('#DataTables_Table_1').DataTable({retrieve: true});
                 table.page.len(-1).draw();
-                make_request(`https://surfheaven.eu/api/uncompleted/${id_array[i]}/`, (data) => {
+                make_request(`https://api.surfheaven.eu/api/uncompleted/${id_array[i]}/`, (data) => {
                     let only_maps = [];
                     for(let i = 0; i < data.length; i++){
                         if(data[i].track == 0){
@@ -1486,6 +1488,19 @@
             db = JSON.parse(db);
         }
         return db;
+    }
+
+    function rename_tag(old_tag, new_tag){
+        let db = get_tag_db();
+        for(let map_name in db){
+            let tags = db[map_name];
+            let index = tags.indexOf(old_tag);
+            if(index > -1){
+                tags[index] = new_tag;
+                db[map_name] = tags;
+            }
+        }
+        save_tag_db(db);
     }
 
     function save_tag_db(db){
@@ -1699,8 +1714,14 @@
 
                 if(selected_tags.length == 0){
                     export_button.style.display = "none";
+                    rename_button.style.display = "none";
+                }
+                else if(selected_tags.length == 1){
+                    export_button.style.display = "inline-block";
+                    rename_button.style.display = "inline-block";
                 }else{
                     export_button.style.display = "inline-block";
+                    rename_button.style.display = "none";
                 }
                     
                 let tag_array = [];
@@ -1756,6 +1777,32 @@
             export_specific_tags(tag_array);
         }
 
+        let rename_button = document.createElement('button');
+        rename_button.className = "btn btn-primary";
+        rename_button.innerHTML = "Rename tag";
+        rename_button.style.marginTop = "10px";
+        rename_button.style.marginLeft = "10px";
+        rename_button.style.display = "none";
+        rename_button.onclick = () => {
+            let selected_tags = tag_links.getElementsByClassName("tag-selected");
+            if(selected_tags.length == 1){
+                let tag = selected_tags[0].innerHTML;
+                let new_tag = prompt("Enter new tag name",tag);
+                if(new_tag != null && new_tag != ""){
+                    rename_tag(tag,new_tag);
+                    selected_tags[0].innerHTML = new_tag;
+
+                    let rows = map_tag_table_body.getElementsByTagName('tr');
+                    for(let i = 0; i < rows.length; i++){
+                        let tags = rows[i].getElementsByTagName('td')[1].innerHTML;
+                        tags = tags.replace(tag,new_tag);
+                        rows[i].getElementsByTagName('td')[1].innerHTML = tags;
+                    }
+                }
+            }
+        }
+
+
         let button_wrapper = document.createElement('div');
         button_wrapper.className = "row";
         button_wrapper.style.paddingBottom = "10px";
@@ -1763,6 +1810,7 @@
         button_wrapper.style.paddingRight = "10px";
         button_wrapper.appendChild(import_button);
         button_wrapper.appendChild(export_button);
+        button_wrapper.appendChild(rename_button);
 
         root_div.appendChild(filter_text);
         root_div.appendChild(tag_links);
@@ -1928,7 +1976,7 @@
         let points_until_next_rank = 0;
         //console.log(`${own_points} points and rank ${own_rank}, next rank is ${next_rank}, which is ${[group_names[group_thresholds.indexOf(next_rank)]]}`);
 
-        make_request("https://surfheaven.eu/api/rank/"+next_rank, function(data){
+        make_request("https://api.surfheaven.eu/api/rank/"+next_rank, function(data){
             let next_rank_points = data[0].points;
             points_until_next_rank = next_rank_points - own_points;
             console.log(`Points until next rank: ${points_until_next_rank}`);
@@ -1967,7 +2015,7 @@
         //console.log("new ranks array: ",ranks)
 
         for(let i = 0; i < ranks.length; i++){
-            make_request("https://surfheaven.eu/api/maprank/"+map_name+"/"+ranks[i]+"/0", function(data){
+            make_request("https://api.surfheaven.eu/api/maprank/"+map_name+"/"+ranks[i]+"/0", function(data){
                 //console.log("getting points for rank: ",ranks[i])
                 points.push(data[0].points);
                 //console.log(data[0].name,data[0].rank,data[0].points);
@@ -2064,7 +2112,7 @@
         map_stats_col.className = "col-md-3";
         top_panel_row.appendChild(cp_chart_col);
 
-        make_request('https://surfheaven.eu/api/checkpoints/' + current_map_name, function (data) {
+        make_request('https://api.surfheaven.eu/api/checkpoints/' + current_map_name, function (data) {
             var cp_labels = ["Start"];
             var cp_series = [0];
             var own_series = [];
@@ -2094,7 +2142,7 @@
             });
             // if we are WR (🥳), we can skip checking our own time again
             if (data[0].steamid != get_id()) {
-                make_request('https://surfheaven.eu/api/checkpoints/' + current_map_name + '/' + get_id(), function (data2) {
+                make_request('https://api.surfheaven.eu/api/checkpoints/' + current_map_name + '/' + get_id(), function (data2) {
                     if (data2.length != 0) {
                         own_series = [0];
                         for (var i = 0; i < data2.length; i++) {
@@ -2146,7 +2194,7 @@
                     if (a_element.nextElementSibling) return;
                     if(!a_element.href.includes('#')) a_element.insertAdjacentElement('afterend', button_element);
                     button_element.onclick = function () {
-                        make_request('https://surfheaven.eu/api/checkpoints/' + current_map_name + '/' + id, function (data3) {
+                        make_request('https://api.surfheaven.eu/api/checkpoints/' + current_map_name + '/' + id, function (data3) {
                             var new_series = [0];
                             for (var i = 0; i < data3.length; i++) {
                                 if (data3[i].time != 0) {
@@ -2456,6 +2504,7 @@ GM_addStyle(`
         padding-bottom: 0px;
         padding-left: 10px;
         padding-right: 10px;
+        pointer-events:none;
         //display: none;
         opacity: 0;
         //transition: opacity 0.5s;
@@ -2466,6 +2515,7 @@ GM_addStyle(`
         opacity: 1;
         animation: fadeIn 0.5s;
         z-index: 100;
+        pointer-events:none;
     }
 
     @keyframes fadeIn {

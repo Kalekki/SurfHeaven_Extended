@@ -1,3 +1,7 @@
+__4.2.11.1___
+Ability to rename tags
+Updated api urls
+
 ___4.2.11___
 Added map tagging (Experimental, expect bugs / visual glitches)
 (back up your tags from settings menu periodically just in case)
