@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.11.1
+// @version      4.2.11.2
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -888,10 +888,10 @@
                 const row = table.rows[server_index + 1];
                 const div = document.createElement('div');
                 div.className = "hidden-row";
-                div.style.display = row.cells[0].children[0].style.display;
+                div.style.display = row.cells[0].children[1].style.display;
                 const div_2 = document.createElement('div');
                 div_2.className = "hidden-row";
-                div_2.style.display = row.cells[0].children[0].style.display;
+                div_2.style.display = row.cells[0].children[1].style.display;
 
                 row.cells[2].appendChild(div_2);
                 row.cells[3].appendChild(div);

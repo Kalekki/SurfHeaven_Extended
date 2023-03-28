@@ -1,4 +1,7 @@
-__4.2.11.1___
+___4.2.11.2___
+Hotfix bonus rank display in servers page after todays website changes
+
+___4.2.11.1___
 Ability to rename tags
 Updated api urls
 
