@@ -127,8 +127,7 @@
                                 <h5 class="modal-title" style="margin-bottom:1rem;">SH Extended update available!</h5>
                                 <p>Version <span style="color:salmon;">${VERSION}</span> -> <span style="color: lightgreen">${latest_version}</span</p>
                                 <p>Whats new:</p>
-                                <p style="color:white;">${response.responseText.split("___")[2]}</p>
-                                
+                                <textarea style="width:100%;height:80px; background-color:#21242a; color:white;">${response.responseText.split("___")[2]}</textarea>
                             </div>
                             <div class="modal-footer" style="padding:7px;">
                                 <small style="text-align: left;">You can disable this message in the settings.</small>
