@@ -1,3 +1,7 @@
+___4.2.12___
+Added auto-refreshing to follow list
+Extra update check separate from tampermonkey, for quicker access to latest version
+
 ___4.2.11.2___
 Hotfix bonus rank display in servers page after todays website changes
 

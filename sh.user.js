@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.11.2
+// @version      4.2.12
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://iloveur.mom/i/sh.user.js
@@ -15,6 +15,7 @@
 // @grant        GM_addStyle
 // @grant        GM.getValue
 // @grant        GM.setValue
+// @grant        GM_info
 // @license      MIT
 // ==/UserScript==
 
@@ -22,6 +23,7 @@
 (async function () {
     'use strict';
 
+    const VERSION = GM_info.script.version;
     var use_custom = await GM.getValue('sh_ranks_use_custom_id', false);
     var defaut_id = await GM.getValue('sh_ranks_default_id', get_id());
     var custom_id = await GM.getValue('sh_ranks_custom_id', defaut_id);
@@ -46,6 +48,7 @@
         settings = {
             flags: true,
             follow_list: true,
+            update_check: true,
             cp_chart: true,
             steam_avatar: true,
             completions_by_tier: true,
@@ -63,6 +66,7 @@
     const settings_labels = {
         flags: "Show flags",
         follow_list: "Show follow list",
+        update_check: "Check for updates",
         cp_chart: "Show CP chart",
         steam_avatar: "Show steam avatar",
         completions_by_tier: "Show completions by tier",
@@ -76,6 +80,7 @@
     function validate_settings(){
         if (settings.flags == null) settings.flags = true;
         if (settings.follow_list == null) settings.follow_list = true;
+        if (settings.update_check == null) settings.update_check = true;
         if (settings.cp_chart == null) settings.cp_chart = true;
         if (settings.steam_avatar == null) settings.steam_avatar = true;
         if (settings.completions_by_tier == null) settings.completions_by_tier = true;
@@ -102,6 +107,45 @@
     else if (window.location.pathname == "/") {
         dashboard_page();
     }
+    // Update check
+    if(settings.update_check){
+        GM_xmlhttpRequest({
+            method: "GET",
+            url: "https://raw.githubusercontent.com/Kalekki/SurfHeaven_Extended/main/changelog.txt",
+            onload: function (response) {
+                if(response.status != 200) return;
+                var latest_version = response.responseText.split("___")[1];
+                console.log("Latest version: " + latest_version + " | Current version: " + VERSION)
+                if (latest_version != VERSION) {
+                    let update_url = "https://iloveur.mom/i/sh.user.js"
+                    let modal = document.createElement('div');
+                    modal.innerHTML = `
+                    <div class="modal fade" id="update_modal" tabindex="-1" role="dialog" style="display: flex; z-index:99999">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-body" style="padding: 1rem;">
+                                <h5 class="modal-title" style="margin-bottom:1rem;">SH Extended update available!</h5>
+                                <p>Version <span style="color:salmon;">${VERSION}</span> -> <span style="color: lightgreen">${latest_version}</span</p>
+                                <p>Whats new:</p>
+                                <p style="color:white;">${response.responseText.split("___")[2]}</p>
+                                
+                            </div>
+                            <div class="modal-footer" style="padding:7px;">
+                                <small style="text-align: left;">You can disable this message in the settings.</small>
+                                <button type="button" class="btn btn-secondary btn-danger" data-dismiss="modal">Close</button>
+                                <a href="${update_url}" target="_blank" class="btn btn-primary btn-success">Update</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    `;
+                    document.body.appendChild(modal);
+                    $('#update_modal').modal('show');
+                }
+            }
+        });
+    
+    }
 
     // Follow list
     if (settings.follow_list) {
@@ -118,6 +162,7 @@
         follow_list_row_div.className = "col-sm-12";
         follow_list_panel_div.className = "panel panel-filled";
         follow_list_panel_body_div.className = "panel-body";
+        follow_list_panel_body_div.style = "padding: 5px;";
 
         follow_list_root_div.appendChild(follow_list_row_div);
         follow_list_row_div.appendChild(follow_list_panel_div);
@@ -150,10 +195,49 @@
             }
             insert_flags_to_profiles(); // needed to be called again to get the flags on the follow list
         });
+
+        // refresh follow list
+        const follow_list_refresh_interval = 60*1000;
+        setInterval(() => {
+            refresh_follow_list();
+        }, follow_list_refresh_interval);
     }else{
         insert_flags_to_profiles();
     }
 
+    function refresh_follow_list(){
+        console.log("Refreshing follow list")
+        let follow_list = get_follow_list();
+        let follow_list_panel_body_div = document.querySelector('div.row-recentactivity:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)');
+        if (follow_list != null && follow_list[0] != "") {
+            make_request("https://api.surfheaven.eu/api/online/", (data) => {
+                let online_players = [];
+                let friends_online = false;
+                data.forEach((player) => {
+                    online_players.push([player.steamid, player.name, player.server, player.map]);
+                });
+                online_players.forEach((player) => {
+                    if (follow_list.includes(player[0])) {
+                        friends_online = true;
+                    }
+                });
+                if (friends_online) {
+                    follow_list_panel_body_div.innerHTML = "";
+                    online_players.forEach((player) => {
+                        if (follow_list.includes(player[0])) {
+                            let follow_list_item = document.createElement('h5');
+                            follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/surf${player[2]}.surfheaven.eu" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
+                            follow_list_panel_body_div.appendChild(follow_list_item);
+                        }
+                    });
+                    insert_flags_to_profiles();
+                }
+            });
+            
+        }
+    }
+
+    
     // listening for clicks to add flags when tabulating through multi-page tables (top 100, reports etc.)
     document.addEventListener('click', (e) => {
         if (e.target.tagName == "A") {
@@ -945,6 +1029,7 @@
             }
             unsafeWindow.localStorage.setItem("follow_list", follow_list);
         }
+        refresh_follow_list();
     }
 
     function get_follow_list() {
