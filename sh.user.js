@@ -652,11 +652,13 @@
         titlediv.appendChild(rank_elem);
         make_request("https://api.surfheaven.eu/api/maprecord/" + map_name + "/" + _id, (data) => {
             var time = data[0].time;
+            let date_completed = new Date(data[0].date);
             var formatted_time = new Date(time * 1000).toISOString().substr(11, 12);
             if (formatted_time[0] == "0") {
                 formatted_time = formatted_time.substr(3);
             }
             rank_elem.innerHTML = "Your rank: #" + data[0].rank + " (" + formatted_time + ") +" + data[0].points + " points";
+            rank_elem.title = "Completed on " + date_completed.toLocaleDateString() + " at " + date_completed.toLocaleTimeString();
             add_shadow_to_text_recursively(rank_elem);
         });
     }
