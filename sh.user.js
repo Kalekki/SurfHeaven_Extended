@@ -139,7 +139,7 @@
                                 <div class="modal-footer" style="padding:7px;">
                                     <small style="text-align: left;">You can disable this message in the settings.</small>
                                     <button type="button" class="btn btn-secondary btn-danger" data-dismiss="modal">Close</button>
-                                    <a href="${update_url}" class="btn btn-primary btn-success">Update</a>
+                                    <a href="${update_url}" target="_blank" onclick="$('#update_modal').modal('hide');" class="btn btn-primary btn-success">Update</a>
                                 </div>
                             </div>
                         </div>
