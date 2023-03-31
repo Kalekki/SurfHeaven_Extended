@@ -3,7 +3,7 @@ SurfHeaven.eu userscript that adds extra features to the page.
 Server page ranks from the [original SH ranks](https://greasyfork.org/en/scripts/438271-surfheaven-ranks) userscript by Link is included.
 
 ### Installation
-Make sure you have [Tampermonkey](https://www.tampermonkey.net/) installed, then press [Here](https://iloveur.mom/i/sh.user.js)
+Make sure you have [Tampermonkey](https://www.tampermonkey.net/) installed, then press [Here](https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js)
 
 ### Extra features
 
