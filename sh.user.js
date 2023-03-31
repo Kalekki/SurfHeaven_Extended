@@ -610,10 +610,8 @@
                     return;
                 }
                 // robert added flags on his ctop in a different way compared to the global top
-                // so we need to check if the 4th parent has the id top_players, otherwise we get duplicate flags
-                if (link.parentElement.parentElement.parentElement.parentElement.id == "top_players") {
-                    return;
-                }
+                if (link.previousElementSibling && link.previousElementSibling.className.includes("flag")) return;
+
                 if (!link.querySelector('img')) {
                     var country = ""
                     var id = link.href.split("https://surfheaven.eu/player/")[1];
