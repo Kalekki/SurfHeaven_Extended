@@ -1,3 +1,7 @@
+___4.2.12.2___
+Fix duplicate flags on native ctop panel
+Compact navbar if needed
+
 ___4.2.12.1___
 Migrate update urls to Github
 

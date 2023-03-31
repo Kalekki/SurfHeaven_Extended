@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.12.1
+// @version      4.2.12.2
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -74,7 +74,6 @@
         hover_info: "Show player/map info on hover",
         map_cover_image: "Show map cover image",
         points_per_rank: "Show points per rank in map",
-
     }
 
     function validate_settings(){
@@ -107,6 +106,17 @@
     else if (window.location.pathname == "/") {
         dashboard_page();
     }
+
+    // Navbar crowded fix
+    if (document.getElementById("navbar").clientHeight > 60) {
+        make_navbar_compact();
+    }
+    window.addEventListener('resize', function () {
+        if (document.getElementById("navbar").clientHeight > 60) {
+            make_navbar_compact();
+        }
+    });
+
     // Update check
     if(settings.update_check){
         if (unsafeWindow.localStorage.getItem('update_last_checked') == null) {
@@ -420,16 +430,37 @@
             url: url,
             onload: (response) => {
                 if (response.status != 502) {
-                    const data = JSON.parse(response.responseText)
-                    if (data.length > 0) {
-                        func(data);
+                    try {
+                        const data = JSON.parse(response.responseText)
+                        if (data.length > 0) {
+                            func(data);
+                        }
+                    } catch(error) {
+                        console.log(`An error occurred while parsing the response: ${error}`);
+                        func(false);
                     }
                 } else {
-                    func(false);
+                func(false);
                 }
             }
         });
         api_call_count++;
+      }
+
+    function make_navbar_compact(){
+        let navbar = document.querySelector('form.navbar-form');
+        let items = navbar.querySelectorAll('li');
+        for(let i = 0; i < items.length; i++){
+            let a = items[i].querySelector('a');
+            if(a.href.includes('discord') || a.href.includes('youtube')){
+                items[i].remove();
+            }
+        }
+        // more compact search bar
+        let search_bar = document.querySelector('input.form-control:nth-child(4)')
+        search_bar.style.width = '150px'
+        search_bar.placeholder = 'Search'
+        
     }
 
     function map_youtube_link(map_name) {
@@ -455,7 +486,6 @@
 
     function add_country_dropdown() {
         $(document).ready(function () {
-            // i painstakingly got api-restricted 3 times fetching every country to get only countries with players
             var countries = [
                 "ALA", "ALB", "DZA", "AND", "AGO", "AIA", "ATG", "ARG", "ARM", "ABW", "AUS", "AUT", "AZE", "BHR", "BGD", "BLR", "BEL",
                 "BLZ", "BMU", "BOL", "BIH", "BRA", "BRN", "BGR", "KHM", "CAN", "CPV", "CYM", "CHL", "CHN", "HKG", "MAC", "COL", "CRI",
@@ -540,7 +570,7 @@
 
             var id_input = document.createElement('input');
             id_input.className = 'form-control custom-id-input';
-            id_input.style = "display: inline-block; margin-left: 10px; border: 1px solid rgb(247, 175, 62); width: 250px;"
+            id_input.style = "display: inline-block; margin-left: 10px; border: 1px solid rgb(247, 175, 62); width: 100px;"
             id_input.type = "text";
             id_input.oninput = handle_input_change;
 
@@ -577,6 +607,11 @@
         Array.from(a).forEach(function (link) {
             if (link.href.includes("https://surfheaven.eu/player/")) {
                 if (link.href.includes("#")) {
+                    return;
+                }
+                // robert added flags on his ctop in a different way compared to the global top
+                // so we need to check if the 4th parent has the id top_players, otherwise we get duplicate flags
+                if (link.parentElement.parentElement.parentElement.parentElement.id == "top_players") {
                     return;
                 }
                 if (!link.querySelector('img')) {
@@ -1156,6 +1191,7 @@
     }
 
     function servers_page() {
+        make_navbar_compact();
         var my_div = document.createElement('div');
         my_div.className = 'navbar-form custom-id-div';
         var my_list = document.createElement('ul');
