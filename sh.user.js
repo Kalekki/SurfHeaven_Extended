@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.12
+// @version      4.2.12.1
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
-// @updateURL    https://iloveur.mom/i/sh.user.js
-// @downloadURL  https://iloveur.mom/i/sh.user.js
+// @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
+// @downloadURL  https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/chartist/0.11.4/chartist.min.js
 // @match        https://surfheaven.eu/*
 // @icon         https://www.google.com/s2/favicons?domain=surfheaven.eu
@@ -109,40 +109,48 @@
     }
     // Update check
     if(settings.update_check){
-        GM_xmlhttpRequest({
-            method: "GET",
-            url: "https://raw.githubusercontent.com/Kalekki/SurfHeaven_Extended/main/changelog.txt",
-            onload: function (response) {
-                if(response.status != 200) return;
-                var latest_version = response.responseText.split("___")[1];
-                console.log("Latest version: " + latest_version + " | Current version: " + VERSION)
-                if (latest_version != VERSION) {
-                    let update_url = "https://iloveur.mom/i/sh.user.js"
-                    let modal = document.createElement('div');
-                    modal.innerHTML = `
-                    <div class="modal fade" id="update_modal" tabindex="-1" role="dialog" style="display: flex; z-index:99999">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-body" style="padding: 1rem;">
-                                <h5 class="modal-title" style="margin-bottom:1rem;">SH Extended update available!</h5>
-                                <p>Version <span style="color:salmon;">${VERSION}</span> -> <span style="color: lightgreen">${latest_version}</span</p>
-                                <p>Whats new:</p>
-                                <textarea style="width:100%;height:80px; background-color:#21242a; color:white;">${response.responseText.split("___")[2]}</textarea>
-                            </div>
-                            <div class="modal-footer" style="padding:7px;">
-                                <small style="text-align: left;">You can disable this message in the settings.</small>
-                                <button type="button" class="btn btn-secondary btn-danger" data-dismiss="modal">Close</button>
-                                <a href="${update_url}" target="_blank" class="btn btn-primary btn-success">Update</a>
+        if (unsafeWindow.localStorage.getItem('update_last_checked') == null) {
+            unsafeWindow.localStorage.setItem('update_last_checked', Date.now());
+        }
+        // 5 minutes since last check
+        if (Date.now() - unsafeWindow.localStorage.getItem('update_last_checked') > 1000*60*5) {
+            unsafeWindow.localStorage.setItem('update_last_checked', Date.now());
+
+            GM_xmlhttpRequest({
+                method: "GET",
+                url: "https://raw.githubusercontent.com/Kalekki/SurfHeaven_Extended/main/changelog.txt",
+                onload: function (response) {
+                    if(response.status != 200) return;
+                    var latest_version = response.responseText.split("___")[1];
+                    console.log("Latest version: " + latest_version + " | Current version: " + VERSION)
+                    if (latest_version != VERSION) {
+                        let update_url = "https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js"
+                        let modal = document.createElement('div');
+                        modal.innerHTML = `
+                        <div class="modal fade" id="update_modal" tabindex="-1" role="dialog" style="display: flex; z-index:99999">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-body" style="padding: 1rem;">
+                                    <h5 class="modal-title" style="margin-bottom:1rem;">SH Extended update available!</h5>
+                                    <p>Version <span style="color:salmon;">${VERSION}</span> -> <span style="color: lightgreen">${latest_version}</span</p>
+                                    <p style="color:white;">What's new:</p>
+                                    <textarea readonly style="width:100%;height:80px; background-color:#21242a; color:white;">${response.responseText.split("___")[2]}</textarea>
+                                </div>
+                                <div class="modal-footer" style="padding:7px;">
+                                    <small style="text-align: left;">You can disable this message in the settings.</small>
+                                    <button type="button" class="btn btn-secondary btn-danger" data-dismiss="modal">Close</button>
+                                    <a href="${update_url}" class="btn btn-primary btn-success">Update</a>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                    `;
-                    document.body.appendChild(modal);
-                    $('#update_modal').modal('show');
+                        `;
+                        document.body.appendChild(modal);
+                        $('#update_modal').modal('show');
+                    }
                 }
-            }
-        });
+            });
+        }
     
     }
 
