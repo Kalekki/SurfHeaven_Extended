@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.12.3
+// @version      4.2.12.4
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -315,8 +315,18 @@
             fade_in(hover_div);
 
             function format_date(time){
-                return time.split('T')[0];
-            }
+                let today = new Date();
+                let date = new Date(time);
+                let diff = today - date;
+                let days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                if(days == 0){
+                    return "Today";
+                }else if(days == 1){
+                    return "Yesterday";
+                }else{
+                    return days + " days ago";
+                }
+            }   
             function format_time(time){
                 return Math.floor(time/3600) + "." + Math.floor((time%3600)/60);
             }
@@ -331,6 +341,8 @@
             // type = 0 -> player
             // type = 1 -> map
             if(type == 0){
+                hover_div.style.backgroundColor = "rgba(13,17,23,0.6)";
+                hover_div.style.backgroundImage = "none";
                 hover_div.innerHTML = `<div class="row">
                 <div class="col-sm-5">
                     <h5>Rank</h5>
@@ -348,21 +360,47 @@
             `;
             }
             if(type == 1){
+                const img = new Image();
+                img.src = `https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/${data[0].map}.jpg`;
+
+                img.onload = function() {
+                    hover_div.style.backgroundImage = `url(${img.src})`;
+                    hover_div.style.backgroundSize = "cover";
+                    hover_div.style.backgroundPosition = "center";
+
+                    hover_div.innerHTML = `
+                    <div class="row outlined text-center" style="min-width: 18vw; min-height: 18vh;">
+                        <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")} by ${data[0].author}</h5>
+                        <!--<h5>Added ${format_date(data[0].date_added)} / ${data[0].completions} completions</h5>-->
+                    </div>
+                `;
+                };
+
+                img.onerror = function() {
+                    hover_div.style.backgroundColor = "rgba(13,17,23,0.6)";
+                    hover_div.style.backgroundImage = "none";
+                    hover_div.innerHTML = `<div class="row">
+                    <div class="col-sm-4">
+                        <h5>Type</h5>
+                        <h5>Author</h5>
+                        <h5>Added</h5>
+                        <h5>Finishes</h5>
+                    </div>
+                    <div class="col-sm-8">
+                        <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")}</h5>
+                        <h5>${data[0].author}</h5>
+                        <h5>${format_date(data[0].date_added)}</h5>
+                        <h5>${data[0].completions}</h5>
+                    </div>
+                </div>`;
+                };
+
+                hover_div.style.backgroundImage = "none";
                 hover_div.innerHTML = `<div class="row">
-                <div class="col-sm-4">
-                    <h5>Type</h5>
-                    <h5>Author</h5>
-                    <h5>Added</h5>
-                    <h5>Finishes</h5>
-                </div>
-                <div class="col-sm-8">
-                    <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")}</h5>
-                    <h5>${data[0].author}</h5>
-                    <h5>${format_date(data[0].date_added)}</h5>
-                    <h5>${data[0].completions}</h5>
-                </div>
-            </div>
-            `;
+                <h5>Loading...</h5>
+                </div>`;    
+
+
             }
             hover_div.style.top = (e.target.getBoundingClientRect().top + Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height/2) + (e.target.getBoundingClientRect().height/2)) + "px";
         }
@@ -2770,4 +2808,10 @@ GM_addStyle(`
     .following{
         color: #47cf52;
     }
+    .rainbow-text {
+        background: linear-gradient(to right, #FF6663, #FEB144, #FDFD97, #9EE09E, #9EC1CF, #BAC5E8, #CC99C9);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 600;
+      }
 `);

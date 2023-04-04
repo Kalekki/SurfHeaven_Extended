@@ -1,3 +1,8 @@
+___4.2.12.4___
+Added image previews to map hovers
+(falls back to old behavior if image is not found)
+preview: https://iloveur.mom/i/Hmad3Kmefs.gif
+
 ___4.2.12.3___
 Added friend highlighting
 Made server queueing to work based on selected region
