@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.12.2
+// @version      4.2.12.3
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -179,6 +179,7 @@
         follow_list_row_div.className = "col-sm-12";
         follow_list_panel_div.className = "panel panel-filled";
         follow_list_panel_body_div.className = "panel-body";
+        follow_list_panel_body_div.id = "follow_list";
         follow_list_panel_body_div.style = "padding: 5px;";
 
         follow_list_root_div.appendChild(follow_list_row_div);
@@ -602,7 +603,7 @@
     }
 
     function insert_flags_to_profiles() {
-        if(!settings.flags) return;
+        let follow_list = get_follow_list();
         var a = document.getElementsByTagName('a');
         Array.from(a).forEach(function (link) {
             if (link.href.includes("https://surfheaven.eu/player/")) {
@@ -615,13 +616,17 @@
                 if (!link.querySelector('img')) {
                     var country = ""
                     var id = link.href.split("https://surfheaven.eu/player/")[1];
+
+                    if (follow_list.includes(id) && link.parentElement.parentElement.id != "follow_list")  {
+                        link.classList.add("following");
+                    }
+
+                    if(!settings.flags) return;
                     var cached_country = unsafeWindow.localStorage.getItem(id);
                     if (cached_country) {
-                        //console.log("Using cached country for " + id)
                         country = cached_country;
                         link.innerHTML = create_flag(country) + " " + link.innerHTML;
                     } else {
-                        //console.log("Fetching country for " + id)
                         make_request("https://api.surfheaven.eu/api/playerinfo/" + id, (data) => {
                             if (data) {
                                 country = data[0].country_code;
@@ -945,106 +950,141 @@
 
     function fetch_ranks(id) {
         make_request("https://api.surfheaven.eu/api/records/" + id + "/", (records) => {
-            make_request("https://api.surfheaven.eu/api/servers", (servers) => {
+          make_request("https://api.surfheaven.eu/api/servers", (servers) => {
+            if(Array.isArray(servers)) {
+                servers = servers.filter(server => server.id !== 14); // Remove mayhem server
                 const table = document.querySelector('.table');
+                table.removeAttribute('title');
+
                 table.rows[0].insertCell(3).outerHTML = "<th>Rank</th>";
                 table.rows[0].insertCell(4).outerHTML = "<th>Bonus</th>";
-                const rank_cells = Array(servers.length).fill().map((_, i) => table.rows[i + 1].insertCell(3));
-                const bonus_cells = Array(servers.length).fill().map((_, i) => table.rows[i + 1].insertCell(4));
 
+                const rowsCount = Math.max(servers.length, table.rows.length - 1); 
+
+                const rank_cells = Array(rowsCount).fill().map((_, i) => {
+                if (table.rows[i + 1]) {
+                    return table.rows[i + 1].insertCell(3);
+                }
+                });
+        
+                const bonus_cells = Array(rowsCount).fill().map((_, i) => {
+                if (table.rows[i + 1]) {
+                    return table.rows[i + 1].insertCell(4);
+                }
+                });
+        
                 const server_records = {};
                 records.forEach((record) => {
-                    const record_found = servers.findIndex(server => server.map === record.map) >= 0;
-                    if (record_found) {
-                        if (server_records[record.map] === undefined) {
-                            server_records[record.map] = new Array(13);
-                        }
-                        server_records[record.map][record.track] = record;
+                const record_found = servers.findIndex(server => server.map === record.map) >= 0;
+                if (record_found) {
+                    if (server_records[record.map] === undefined) {
+                        server_records[record.map] = new Array(13);
                     }
+                    server_records[record.map][record.track] = record;
+                }
                 });
-
+        
                 servers.forEach((server, i) => {
-                    var rec = server_records[server.map];
-                    if (rec) {
-                        const map_record = rec[0];
-                        if (map_record) {
-                            const txt = document.createTextNode(map_record.rank + " / " + server.mapinfo.completions);
-                            rank_cells[i].appendChild(txt);
+                    if(server.mapinfo){
+                        var rec = server_records[server.map];
+                        if (rec) { 
+                            const map_record = rec[0];
+                            if (map_record) { 
+                                const txt = document.createTextNode(map_record.rank + " / " + server.mapinfo.completions);
+                            if (rank_cells[i]) {
+                                rank_cells[i].appendChild(txt);
+                            }
+                            } else { 
+                                const txt = document.createTextNode("0 / " + server.mapinfo.completions);
+                                if (rank_cells[i]) {
+                                    rank_cells[i].appendChild(txt);
+                                }
+                            }
+                
+                            const bonus_completes = rec.reduce((value, record) => record && record.track > 0 ? value + 1 : value, 0);
+                            const txt2 = document.createTextNode(bonus_completes + " / " + server.mapinfo.bonus);
+                            if (bonus_cells[i]) {
+                                bonus_cells[i].appendChild(txt2);
+                            }
                         } else {
                             const txt = document.createTextNode("0 / " + server.mapinfo.completions);
-                            rank_cells[i].appendChild(txt);
+                                if (rank_cells[i]) {
+                                    rank_cells[i].appendChild(txt);
+                                }
+                
+                            const txt_2 = document.createTextNode("0 / " + server.mapinfo.bonus);
+                                if (bonus_cells[i]) {
+                                    bonus_cells[i].appendChild(txt_2);
+                                }
                         }
-                        const bonus_completes = rec.reduce((value, record) => record && record.track > 0 ? value + 1 : value, 0);
-
-                        const txt = document.createTextNode(bonus_completes + " / " + server.mapinfo.bonus);
-                        bonus_cells[i].appendChild(txt);
-                    } else {
-                        const txt = document.createTextNode("0 / " + server.mapinfo.completions);
-                        rank_cells[i].appendChild(txt);
-
-                        const txt_2 = document.createTextNode("0 / " + server.mapinfo.bonus);
-                        bonus_cells[i].appendChild(txt_2);
                     }
                 });
-
+        
                 document.querySelector('.my-checkbox').disabled = false;
-
+        
                 fetch_bonus_ranks(id, servers, server_records);
-            });
+            }
+          });
         });
-    }
+      }
 
     function fetch_bonus_ranks(id, servers, server_records) {
         const table = document.querySelector('.table');
 
         make_request("https://api.surfheaven.eu/api/completions", (completions) => {
             servers.forEach((server, server_index) => {
-                // eslint-disable-next-line no-unused-vars
-                const server_completions = completions.filter(completion => completion.map === server.map && completion.track > 0);
-                const server_completions_2 = Array(15).fill(null);
-                completions.forEach(completion => {
-                    if (completion.map === server.map && completion.track > 0) {
-                        server_completions_2[completion.track] = completion;
+                try{
+                    // eslint-disable-next-line no-unused-vars
+                    // const server_completions = completions.filter(completion => completion.map === server.map && completion.track > 0);
+                    const server_completions_2 = Array(15).fill(null);
+                    completions.forEach(completion => {
+                        if (completion.map === server.map && completion.track > 0) {
+                            server_completions_2[completion.track] = completion;
 
-                    }
-                });
+                        }
+                    });
 
-                const records = server_records[server.map];
+                    const records = server_records[server.map];
 
-                const row = table.rows[server_index + 1];
-                const div = document.createElement('div');
-                div.className = "hidden-row";
-                div.style.display = row.cells[0].children[1].style.display;
-                const div_2 = document.createElement('div');
-                div_2.className = "hidden-row";
-                div_2.style.display = row.cells[0].children[1].style.display;
+                    const row = table.rows[server_index + 1];
+                    const div = document.createElement('div');
+                    div.className = "hidden-row";
+                    div.style.display = row.cells[0].children[1].style.display;
+                    const div_2 = document.createElement('div');
+                    div_2.className = "hidden-row";
+                    div_2.style.display = row.cells[0].children[1].style.display;
 
-                row.cells[2].appendChild(div_2);
-                row.cells[3].appendChild(div);
+                    row.cells[2].appendChild(div_2);
+                    row.cells[3].appendChild(div);
 
-                server_completions_2.forEach((completion) => {
-                    if (completion === null) {
-                        return;
-                    }
+                    server_completions_2.forEach((completion) => {
+                        if (completion === null) {
+                            return;
+                        }
 
-                    var rank_text;
-                    const h5_elem = document.createElement('p');
-                    h5_elem.style = "margin-top: 10px;margin-bottom: 10px;font-size: 14px;font-family: inherit;display: block;   margin-inline-start: 0px;margin-inline-end: 0px;line-height: 1.1; text-align: end;";
-                    h5_elem.textContent = `Bonus ${completion.track}`;
-
-                    if (!records || !records[completion.track]) {
-                        rank_text = `0 / ${completion.completions}`
-                    } else {
-                        rank_text = `${records[completion.track].rank} / ${completion.completions}`
+                        var rank_text;
+                        const h5_elem = document.createElement('p');
+                        h5_elem.style = "margin-top: 10px;margin-bottom: 10px;font-size: 14px;font-family: inherit;display: block;   margin-inline-start: 0px;margin-inline-end: 0px;line-height: 1.1; text-align: end;";
                         h5_elem.textContent = `Bonus ${completion.track}`;
-                    }
 
-                    const rank_elem = document.createElement('p');
-                    rank_elem.style = "margin-top: 10px;margin-bottom: 10px;font-size: 14px;font-family: inherit;display: block;   margin-inline-start: 0px;margin-inline-end: 0px;line-height: 1.1;";
-                    rank_elem.textContent = rank_text;
-                    div_2.appendChild(h5_elem);
-                    div.appendChild(rank_elem);
-                });
+                        if (!records || !records[completion.track]) {
+                            rank_text = `0 / ${completion.completions}`
+                        } else {
+                            rank_text = `${records[completion.track].rank} / ${completion.completions}`
+                            h5_elem.textContent = `Bonus ${completion.track}`;
+                        }
+
+                        const rank_elem = document.createElement('p');
+                        rank_elem.style = "margin-top: 10px;margin-bottom: 10px;font-size: 14px;font-family: inherit;display: block;   margin-inline-start: 0px;margin-inline-end: 0px;line-height: 1.1;";
+                        rank_elem.textContent = rank_text;
+                        div_2.appendChild(h5_elem);
+                        div.appendChild(rank_elem);
+                    });
+                }
+                catch(e){
+                    //we dont give a fuck about errors (for now :D)
+                    //console.log(e);
+                }
             });
 
         });
@@ -1217,6 +1257,7 @@
         let queue_button = document.createElement('button');
         queue_button.className = 'btn btn-success btn-lg';
         queue_button.innerHTML = 'Queue for empty server';
+        queue_button.style = 'margin-top: 10px;';
         let auto_join_checkbox = document.createElement('input');
         auto_join_checkbox.type = 'checkbox';
         auto_join_checkbox.id = 'auto_join_checkbox';
@@ -1224,41 +1265,51 @@
         let auto_join_label = document.createElement('label');
         auto_join_label.htmlFor = 'auto_join_checkbox';
         auto_join_label.innerHTML = 'Auto-join';
-
+        document.querySelector('.panel-heading').appendChild(document.createElement('br'));
         document.querySelector('.panel-heading').appendChild(queue_button);
         document.querySelector('.panel-heading').appendChild(document.createElement('br'));
         document.querySelector('.panel-heading').appendChild(auto_join_checkbox);
         document.querySelector('.panel-heading').appendChild(auto_join_label);
         queue_button.onclick = function () {
-            queue_for_empty_server();
-            queue_button.innerHTML = 'Queueing...';
+            let region = document.getElementById("region_select").value;
+            queue_for_empty_server(region);
+            queue_button.innerHTML = 'Queueing... (click to cancel)';
             queue_button.classList = 'btn btn-danger btn-lg';
             queue_button.onclick = function () {
                 window.location.reload();
             }
         }
 
-        function queue_for_empty_server(){
+        function queue_for_empty_server(region){
             let found = false;
             let check_delay = 5000;
+            const region_map = {
+                "Global": "ALL",
+                "Germany": "EU",
+                "Australia": "AU"
+            }
+            let region_code = region_map[region];
+
             make_request('https://api.surfheaven.eu/api/servers', function (data) {
                 for (let i = 0; i < data.length; i++) {
-                    if (data[i].players.length == 0) {
-                        queue_button.disabled = false;
-                        queue_button.innerHTML = 'Queue for empty server';
-                        queue_button.classList = 'btn btn-success btn-lg';
-                        found = true;
-                        console.log('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')');
-                        if(auto_join_checkbox.checked){
-                            window.location.href = 'steam://connect/' + data[i].ip;
-                            alert('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')');
-                        }else{
-                            if(window.confirm('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')\nPress OK to join')){
+                    if (data[i].players.length == 0 && !data[i].ip.includes('mayhem')) {
+                        if (region_code == "ALL" || data[i].region == region_code) {
+                            queue_button.disabled = false;
+                            queue_button.innerHTML = 'Queue for empty server';
+                            queue_button.classList = 'btn btn-success btn-lg';
+                            found = true;
+                            console.log('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')');
+                            if(auto_join_checkbox.checked){
                                 window.location.href = 'steam://connect/' + data[i].ip;
+                                alert('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')');
+                            }else{
+                                if(window.confirm('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')\nPress OK to join')){
+                                    window.location.href = 'steam://connect/' + data[i].ip;
+                                }
                             }
+                            window.location.reload();
+                            break;
                         }
-                        window.location.reload();
-                        break;
                     }
                 }
                 if(!found){
@@ -2715,5 +2766,8 @@ GM_addStyle(`
     }
     .tags{
         margin-bottom: 0.5rem;
+    }
+    .following{
+        color: #47cf52;
     }
 `);

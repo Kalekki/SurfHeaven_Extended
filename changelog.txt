@@ -1,3 +1,8 @@
+___4.2.12.3___
+Added friend highlighting
+Made server queueing to work based on selected region
+Servers api got updated, so the server list is now working again
+
 ___4.2.12.2___
 Fix duplicate flags on native ctop panel
 Compact navbar if needed
