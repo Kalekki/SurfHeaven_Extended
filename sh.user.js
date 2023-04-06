@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.12.4
+// @version      4.2.12.5
 // @description  SH ranks + More stats in profile and map pages
 // @author       Original by Link, Extended by kalle
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -37,9 +37,20 @@
     var bonus_completions = {};
 
     // colors are approximate and might be wrong, let me know
-    const group_thresholds =   [1,      2,      3,      10,        25,      50,        75,       100,       150,       250,       500,       750,            1000,     1500,      2000,      3000,     6000,       15000,     25000]
-    const group_names =        ["#1",   "#2",   "#3",   "Master",  "Elite", "Veteran", "Expert", "Pro",     "TheSteve","Hotshot", "Skilled", "Intermediate", "Casual", "Amateur", "Regular", "Potato", "Beginner", "Burrito", "Calzone", "New"]
-    const group_colors =       ["gold", "gold", "gold", "#b57fe5", "red",   "#d731eb", "#6297d1","#6297d1", "#E94A4B", "#55ff4b", "#aef25d", "#ad8adc",      "#ebe58d","#b4c5d9", "#6297d1", "#dfa746","#ccccd4",  "#649ad8", "#ccccd4", "#FFFFFF"]
+    const GROUP_THRESHOLDS =   [1,      2,      3,      10,        25,      50,        75,       100,       150,       250,       500,       750,            1000,     1500,      2000,      3000,     6000,       15000,     25000]
+    const GROUP_NAMES =        ["#1",   "#2",   "#3",   "Master",  "Elite", "Veteran", "Expert", "Pro",     "TheSteve","Hotshot", "Skilled", "Intermediate", "Casual", "Amateur", "Regular", "Potato", "Beginner", "Burrito", "Calzone", "New"]
+    const GROUP_COLORS =       ["gold", "gold", "gold", "#b57fe5", "red",   "#d731eb", "#6297d1","#6297d1", "#E94A4B", "#55ff4b", "#aef25d", "#ad8adc",      "#ebe58d","#b4c5d9", "#6297d1", "#dfa746","#ccccd4",  "#649ad8", "#ccccd4", "#FFFFFF"]
+
+    const AU_SERVERS = {
+        14 : "51.161.199.33:27015",
+        15 : "51.161.199.33:27016",
+        16 : "51.161.199.33:27017",
+        17 : "51.161.199.33:27018",
+        18 : "51.161.199.33:27019",
+        19 : "51.161.199.33:27020",
+        20 : "51.161.199.33:27021",
+        21 : "51.161.199.33:27022",
+    }
 
     // SETTINGS
     let settings
@@ -132,7 +143,7 @@
                 onload: function (response) {
                     if(response.status != 200) return;
                     var latest_version = response.responseText.split("___")[1];
-                    console.log("Latest version: " + latest_version + " | Current version: " + VERSION)
+                    console.log("Current version: " + VERSION + " | Latest version: " + latest_version)
                     if (latest_version != VERSION) {
                         let update_url = "https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js"
                         let modal = document.createElement('div');
@@ -191,13 +202,17 @@
             let online_players = [];
             let friends_online = false;
             data.forEach((player) => {
-                online_players.push([player.steamid, player.name, player.server, player.map]);
+                online_players.push([player.steamid, player.name, player.server, player.map, player.region]);
             });
             online_players.forEach((player) => {
                 if (follow_list.includes(player[0])) {
                     friends_online = true;
                     let follow_list_item = document.createElement('h5');
-                    follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/surf${player[2]}.surfheaven.eu" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
+                    if(player[4] == "AU"){
+                        follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/${AU_SERVERS[player[2]]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]-13} (AU)</a>`
+                    } else {
+                        follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/surf${player[2]}.surfheaven.eu" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
+                    }
                     follow_list_panel_body_div.appendChild(follow_list_item);
                 }
             });
@@ -232,7 +247,7 @@
                 let online_players = [];
                 let friends_online = false;
                 data.forEach((player) => {
-                    online_players.push([player.steamid, player.name, player.server, player.map]);
+                    online_players.push([player.steamid, player.name, player.server, player.map, player.region]);
                 });
                 online_players.forEach((player) => {
                     if (follow_list.includes(player[0])) {
@@ -244,11 +259,21 @@
                     online_players.forEach((player) => {
                         if (follow_list.includes(player[0])) {
                             let follow_list_item = document.createElement('h5');
-                            follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/surf${player[2]}.surfheaven.eu" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
+                            if(player[4] == "AU"){
+                                follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/${AU_SERVERS[player[2]]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]-13} (AU)</a>`
+                            } else {
+                                follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/surf${player[2]}.surfheaven.eu" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
+                            }
                             follow_list_panel_body_div.appendChild(follow_list_item);
                         }
                     });
                     insert_flags_to_profiles();
+                }
+                else{
+                    follow_list_panel_body_div.innerHTML = "";
+                    let follow_list_item = document.createElement('h5');
+                    follow_list_item.innerHTML = "No friends online :(";
+                    follow_list_panel_body_div.appendChild(follow_list_item);
                 }
             });
             
@@ -352,7 +377,7 @@
                 </div>
                 <div class="col-sm-7">
                     <h5>#${data[0].rank} (${create_flag(data[0].country_code)} #${data[0].country_rank})</h5>
-                    <h5>${format_points(data[0].points)} [${(data[0].rankname == "Custom" ? "#"+ data[0].rank : '<span style="color:'+group_colors[group_names.indexOf(data[0].rankname)]+';">'+data[0].rankname)+"</span>"}]</h5>
+                    <h5>${format_points(data[0].points)} [${(data[0].rankname == "Custom" ? "#"+ data[0].rank : '<span style="color:'+GROUP_COLORS[GROUP_NAMES.indexOf(data[0].rankname)]+';">'+data[0].rankname)+"</span>"}]</h5>
                     <h5>${format_time(data[0].playtime)}h</h5>
                     <h5>${format_date(data[0].lastplay)}</h5>
                 </div>
@@ -2170,7 +2195,6 @@
     }
 
     function insert_points_until_next_rank(){
-
         const points_regex = /Points (\d+)/;
         const rank_regex = /Rank (\d+)/;
         const own_points = Number(document.body.innerText.match(points_regex)[1])
@@ -2183,15 +2207,14 @@
 
         function find_next_rank(rank){
             let count = 0;
-            for(let i = 0; i < group_thresholds.length; i++){
-                if(group_thresholds[i] < rank) count++;
+            for(let i = 0; i < GROUP_THRESHOLDS.length; i++){
+                if(GROUP_THRESHOLDS[i] < rank) count++;
             }
-            return group_thresholds[count-1];
+            return GROUP_THRESHOLDS[count-1];
         };
 
         let next_rank = find_next_rank(own_rank);
         let points_until_next_rank = 0;
-        //console.log(`${own_points} points and rank ${own_rank}, next rank is ${next_rank}, which is ${[group_names[group_thresholds.indexOf(next_rank)]]}`);
 
         make_request("https://api.surfheaven.eu/api/rank/"+next_rank, function(data){
             let next_rank_points = data[0].points;
@@ -2200,7 +2223,7 @@
             let points_until_next_rank_element = document.createElement('h5');
 
             points_until_next_rank_element.innerHTML = `
-            Points needed for [<span style="color: ${group_colors[group_thresholds.indexOf(next_rank)]}">${[group_names[group_thresholds.indexOf(next_rank)]]}</span>] : ${points_until_next_rank}`;
+            Points needed for [<span style="color: ${GROUP_COLORS[GROUP_THRESHOLDS.indexOf(next_rank)]}">${[GROUP_NAMES[GROUP_THRESHOLDS.indexOf(next_rank)]]}</span>] : ${points_until_next_rank}`;
             let insert_after = document.querySelector('.media > h5:nth-child(4)');
             insert_after.parentNode.insertBefore(points_until_next_rank_element, insert_after.nextSibling);
 
@@ -2226,16 +2249,12 @@
             count++;
           }
 
-        //console.log(`${count} ranks needed before we hit last rank, ${last_rank}`);
         ranks = ranks.slice(0, count);
         ranks.push(last_rank);
-        //console.log("new ranks array: ",ranks)
 
         for(let i = 0; i < ranks.length; i++){
             make_request("https://api.surfheaven.eu/api/maprank/"+map_name+"/"+ranks[i]+"/0", function(data){
-                //console.log("getting points for rank: ",ranks[i])
                 points.push(data[0].points);
-                //console.log(data[0].name,data[0].rank,data[0].points);
             });
         }
         // make_request isnt async so we need to wait for /some time/ before we can start using the data

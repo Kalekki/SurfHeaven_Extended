@@ -1,3 +1,6 @@
+___4.2.12.5___
+Fixed AU servers in the follow list
+
 ___4.2.12.4___
 Added image previews to map hovers
 (falls back to old behavior if image is not found)
