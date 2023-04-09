@@ -1,3 +1,11 @@
+___4.2.13___
+Added follow list manager, activate by clicking the follow list title
+Switched completions by tier to a bar chart
+Added vip gifting from profile (👉👈🥺)
+Added manual update checking in settings menu
+Ability to backup all settings, follows, tags etc, and restore them from a file
+Loading should be faster
+
 ___4.2.12.5___
 Fixed AU servers in the follow list
 

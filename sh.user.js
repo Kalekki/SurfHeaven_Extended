@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.12.5
-// @description  SH ranks + More stats in profile and map pages
-// @author       Original by Link, Extended by kalle
+// @version      4.2.13
+// @description  More stats and features for SurfHeaven.eu
+// @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
 // @downloadURL  https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/chartist/0.11.4/chartist.min.js
@@ -27,6 +27,7 @@
     var use_custom = await GM.getValue('sh_ranks_use_custom_id', false);
     var defaut_id = await GM.getValue('sh_ranks_default_id', get_id());
     var custom_id = await GM.getValue('sh_ranks_custom_id', defaut_id);
+    var current_page = "";
 
     var url_path = window.location.pathname.split('/');
     var api_call_count = 0;
@@ -75,16 +76,23 @@
     }
 
     const settings_labels = {
-        flags: "Show flags",
-        follow_list: "Show follow list",
-        update_check: "Check for updates",
-        cp_chart: "Show CP chart",
-        steam_avatar: "Show steam avatar",
-        completions_by_tier: "Show completions by tier",
-        country_top_100: "Show country top 100",
-        hover_info: "Show player/map info on hover",
-        map_cover_image: "Show map cover image",
-        points_per_rank: "Show points per rank in map",
+        flags: "Country flags",
+        follow_list: "Follow list",
+        update_check: "Automatic update check",
+        cp_chart: "Checkpoint chart",
+        steam_avatar: "Show Steam avatar",
+        completions_by_tier: "Completions by tier",
+        country_top_100: "Country top 100 table",
+        hover_info: "Player/map info on hover",
+        map_cover_image: "Map cover image",
+        points_per_rank: "Show points per rank",
+    }
+
+    const settings_categories = {
+        "Global" : ["flags","follow_list", "hover_info", "update_check"],
+        "Dashboard" : ["country_top_100"],
+        "Map page" : ["cp_chart","points_per_rank","map_cover_image"],
+        "Profile" : ["steam_avatar", "completions_by_tier"]
     }
 
     function validate_settings(){
@@ -102,21 +110,37 @@
 
     // SERVERS PAGE
     if (window.location.pathname.endsWith("/servers/")) {
+        current_page = "servers";
         servers_page();
     }
     // PROFILE PAGE
     else if (url_path[url_path.length - 2] == "player") {
+        current_page = "profile";
         profile_page();
     }
     // MAP PAGE
     else if (url_path[url_path.length - 2] == "map") {
+        current_page = "map";
         var current_map_name = url_path[url_path.length - 1];
         map_page(current_map_name);
     }
     // DASHBOARD
     else if (window.location.pathname == "/") {
+        current_page = "dashboard";
         dashboard_page();
     }
+    else{
+        current_page = url_path[url_path.length - 2];
+        if(current_page == "donate"){
+            // Gift vip
+            if (unsafeWindow.localStorage.getItem('gift_vip_steamid') != null) {
+                document.getElementById("authid").value = "http://steamcommunity.com/profiles/"+unsafeWindow.localStorage.getItem('gift_vip_steamid');
+                unsafeWindow.localStorage.removeItem('gift_vip_steamid');
+                unsafeWindow.checker();
+            }
+        }
+    }
+    console.log("Current page: " + current_page);
 
     // Navbar crowded fix
     if (document.getElementById("navbar").clientHeight > 60) {
@@ -133,46 +157,48 @@
         if (unsafeWindow.localStorage.getItem('update_last_checked') == null) {
             unsafeWindow.localStorage.setItem('update_last_checked', Date.now());
         }
-        // 5 minutes since last check
-        if (Date.now() - unsafeWindow.localStorage.getItem('update_last_checked') > 1000*60*5) {
+        else if (Date.now() - unsafeWindow.localStorage.getItem('update_last_checked') > 1000*60*5) {
             unsafeWindow.localStorage.setItem('update_last_checked', Date.now());
+            check_for_updates();
+        }
+    
+    }
 
-            GM_xmlhttpRequest({
-                method: "GET",
-                url: "https://raw.githubusercontent.com/Kalekki/SurfHeaven_Extended/main/changelog.txt",
-                onload: function (response) {
-                    if(response.status != 200) return;
-                    var latest_version = response.responseText.split("___")[1];
-                    console.log("Current version: " + VERSION + " | Latest version: " + latest_version)
-                    if (latest_version != VERSION) {
-                        let update_url = "https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js"
-                        let modal = document.createElement('div');
-                        modal.innerHTML = `
-                        <div class="modal fade" id="update_modal" tabindex="-1" role="dialog" style="display: flex; z-index:99999">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-body" style="padding: 1rem;">
-                                    <h5 class="modal-title" style="margin-bottom:1rem;">SH Extended update available!</h5>
-                                    <p>Version <span style="color:salmon;">${VERSION}</span> -> <span style="color: lightgreen">${latest_version}</span</p>
-                                    <p style="color:white;">What's new:</p>
-                                    <textarea readonly style="width:100%;height:80px; background-color:#21242a; color:white;">${response.responseText.split("___")[2]}</textarea>
-                                </div>
-                                <div class="modal-footer" style="padding:7px;">
-                                    <small style="text-align: left;">You can disable this message in the settings.</small>
-                                    <button type="button" class="btn btn-secondary btn-danger" data-dismiss="modal">Close</button>
-                                    <a href="${update_url}" target="_blank" onclick="$('#update_modal').modal('hide');" class="btn btn-primary btn-success">Update</a>
-                                </div>
+    function check_for_updates(){
+        GM_xmlhttpRequest({
+            method: "GET",
+            url: "https://raw.githubusercontent.com/Kalekki/SurfHeaven_Extended/main/changelog.txt",
+            onload: function (response) {
+                if(response.status != 200) return;
+                var latest_version = response.responseText.split("___")[1];
+                console.log("Current version: " + VERSION + " | Latest version: " + latest_version)
+                if (latest_version != VERSION) {
+                    let update_url = "https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js"
+                    let modal = document.createElement('div');
+                    modal.innerHTML = `
+                    <div class="modal fade" id="update_modal" tabindex="-1" role="dialog" style="display: flex; z-index:99999">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-body" style="padding: 1rem;">
+                                <h5 class="modal-title" style="margin-bottom:1rem;">SH Extended update available!</h5>
+                                <p>Version <span style="color:salmon;">${VERSION}</span> -> <span style="color: lightgreen">${latest_version}</span</p>
+                                <p style="color:white;">What's new:</p>
+                                <textarea readonly style="width:100%;height:80px; background-color:#21242a; color:white;">${response.responseText.split("___")[2]}</textarea>
+                            </div>
+                            <div class="modal-footer" style="padding:7px;">
+                                <small style="text-align: left;">You can disable this message in the settings.</small>
+                                <button type="button" class="btn btn-secondary btn-danger" data-dismiss="modal">Close</button>
+                                <a href="${update_url}" target="_blank" onclick="$('#update_modal').modal('hide');" class="btn btn-primary btn-success">Update</a>
                             </div>
                         </div>
                     </div>
-                        `;
-                        document.body.appendChild(modal);
-                        $('#update_modal').modal('show');
-                    }
+                </div>
+                    `;
+                    document.body.appendChild(modal);
+                    $('#update_modal').modal('show');
                 }
-            });
-        }
-    
+            }
+        });
     }
 
     // Follow list
@@ -185,7 +211,9 @@
         const follow_h5 = document.createElement('h5');
 
         follow_h5.className = "text-center";
-        follow_h5.innerHTML = "FOLLOWED PLAYERS";
+        follow_h5.innerHTML = "<a href='#' style='color:white;'>FOLLOWED PLAYERS</a>";
+        follow_h5.addEventListener("click", follow_list_manager);
+        follow_h5.classList.add("text-white");
         follow_list_root_div.className = "row-recentactivity";
         follow_list_row_div.className = "col-sm-12";
         follow_list_panel_div.className = "panel panel-filled";
@@ -238,6 +266,78 @@
         insert_flags_to_profiles();
     }
 
+    function follow_list_manager(){
+        let follow_list = get_follow_list();
+        const follow_list_root = document.createElement('div');
+        follow_list_root.style.overflowY = "scroll";
+        follow_list_root.style.maxHeight = "600px";
+
+        for(let i = 0; i < follow_list.length; i++){
+            make_request(`https://api.surfheaven.eu/api/playerinfo/${follow_list[i]}`, (data) => {
+                let follow_list_item = document.createElement('div');
+                follow_list_item.style = "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
+
+                let name = data[0].name;
+                let last_online = data[0].lastplay;
+
+                const profile_link = document.createElement('a');
+                profile_link.href = `https://surfheaven.eu/player/${follow_list[i]}`;
+                profile_link.innerHTML = name != "" ? name : follow_list[i];
+                profile_link.style = "width:220px; float: left;";
+                const last_online_span = document.createElement('span');
+                last_online_span.style = "float: right;";
+                last_online_span.innerHTML = `Last play ${format_date(last_online)} `;
+                last_online_span.setAttribute("data-last-online", last_online); // for sorting
+
+                const unfollow_button = document.createElement('button');
+                unfollow_button.className = "btn btn-danger btn-xs float-right";
+                unfollow_button.style.marginTop = "1px";
+                unfollow_button.style.marginLeft = "1rem";
+                unfollow_button.style.marginRight = "0.5rem";
+                unfollow_button.style.marginBottom = "1px";
+                unfollow_button.innerHTML = "Unfollow";
+                unfollow_button.onclick = () => {
+                    follow_list_root.removeChild(follow_list_item);
+                    follow_user(follow_list[i]);
+                };
+
+                follow_list_item.appendChild(profile_link)
+                last_online_span.appendChild(unfollow_button);
+                follow_list_item.appendChild(last_online_span);
+                follow_list_root.appendChild(follow_list_item);
+
+                insert_flags_to_profiles();
+                if(follow_list_root.querySelectorAll('div').length == follow_list.length){
+                    let follow_list_items = follow_list_root.children;
+                    let follow_list_items_array = [];
+                    for(let j = 0; j < follow_list_items.length; j++){
+                        follow_list_items_array.push(follow_list_items[j]);
+                    }
+                    follow_list_items_array.sort((a, b) => {
+                        let a_last_online = a.querySelector('span').getAttribute("data-last-online");
+                        let b_last_online = b.querySelector('span').getAttribute("data-last-online");
+                        return new Date(b_last_online) - new Date(a_last_online);
+                    });
+                    while (follow_list_root.firstChild) {
+                        follow_list_root.removeChild(follow_list_root.firstChild);
+                    }
+                    follow_list_items_array.forEach((item, index) => {
+                        follow_list_root.appendChild(item);
+                        if (index % 2 == 0) {
+                            item.style.backgroundColor = "#19202B";
+                        }
+                    });
+                    insert_flags_to_profiles();
+                    
+                }
+            });
+            
+        }
+        show_overlay_window("Followed players", follow_list_root);
+    }
+
+
+
     function refresh_follow_list(){
         console.log("Refreshing follow list")
         let follow_list = get_follow_list();
@@ -283,10 +383,32 @@
     
     // listening for clicks to add flags when tabulating through multi-page tables (top 100, reports etc.)
     document.addEventListener('click', (e) => {
-        if (e.target.tagName == "A") {
+        if (e.target.tagName == "A" && current_page != "servers") {
             insert_flags_to_profiles();
         }
     });
+
+    function format_date(time){
+        let today = new Date();
+        let date = new Date(time);
+        let diff = today - date;
+        let days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        let minutes = Math.floor(diff / (1000 * 60));
+        if(days == 0 && minutes < 60){
+          return minutes + " minutes ago";
+        } else if(days == 0 && minutes >= 60){
+          let hours = Math.floor(minutes/60);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+          minutes -= hours * 60;
+          return hours + "h " + minutes + "m ago";
+        }else if(days == 1){
+          return "Yesterday";
+        }else if(days < 7){
+          return days + "d ago";
+        }else{
+          let month = date.toLocaleString('default', { month: 'short' });
+          return month + " " + date.getDate() + ", " + date.getFullYear();
+        }
+    }   
 
     //Hover info
     if (settings.hover_info) {
@@ -305,7 +427,7 @@
         }
 
         document.addEventListener('mouseover', (e) => {
-            if(e.target.tagName == "A" && !e.target.href.includes("#")){
+            if(e.target.tagName == "A" && !e.target.href.includes("#") && e.target.parentElement.tagName != "LI"){
                 hover_timeout = setTimeout(() => {
                     if(e.target.href.includes("player")){
                         let steamid = e.target.href.split('/')[4];
@@ -339,19 +461,6 @@
             hover_div.style.zIndex = "99999";
             fade_in(hover_div);
 
-            function format_date(time){
-                let today = new Date();
-                let date = new Date(time);
-                let diff = today - date;
-                let days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                if(days == 0){
-                    return "Today";
-                }else if(days == 1){
-                    return "Yesterday";
-                }else{
-                    return days + " days ago";
-                }
-            }   
             function format_time(time){
                 return Math.floor(time/3600) + "." + Math.floor((time%3600)/60);
             }
@@ -399,6 +508,7 @@
                         <!--<h5>Added ${format_date(data[0].date_added)} / ${data[0].completions} completions</h5>-->
                     </div>
                 `;
+                    hover_div.style.top = (e.target.getBoundingClientRect().top+ Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height/2))  + "px";
                 };
 
                 img.onerror = function() {
@@ -488,29 +598,38 @@
         document.body.appendChild(overlay);
     }
 
+    async function make_request_async(url) {
+        const response = await fetch(url);
+        if (response.status === 502) {
+            console.log(`API call failed, status code: ${response.status}`);
+            return false;
+        }
+        try {
+            const data = await response.json();
+            if (data.length > 0) {
+                return data;
+            } else {
+                console.log(`API call returned no data for: ${url}`);
+                return false;
+            }
+        } catch (error) {
+            console.log(`An error occurred while parsing the response: ${error}`);
+            return false;
+        }
+    }
+    
     function make_request(url, func) {
-        GM_xmlhttpRequest({
-            method: "GET",
-            url: url,
-            onload: (response) => {
-                if (response.status != 502) {
-                    try {
-                        const data = JSON.parse(response.responseText)
-                        if (data.length > 0) {
-                            func(data);
-                        }
-                    } catch(error) {
-                        console.log(`An error occurred while parsing the response: ${error}`);
-                        func(false);
-                    }
-                } else {
-                func(false);
-                }
+      make_request_async(url)
+        .then((data) => {
+            if(data){
+                func(data);
+            }else{
+                func(false)
             }
         });
-        api_call_count++;
-      }
-
+      api_call_count++;
+    }
+    
     function make_navbar_compact(){
         let navbar = document.querySelector('form.navbar-form');
         let items = navbar.querySelectorAll('li');
@@ -665,6 +784,13 @@
         }
     }
 
+    async function do_after(func, timeout) {
+        return new Promise(resolve => {
+            setTimeout(func, timeout);
+            resolve();
+        });
+    }
+
     function insert_flags_to_profiles() {
         let follow_list = get_follow_list();
         var a = document.getElementsByTagName('a');
@@ -719,6 +845,7 @@
         rank_elem.style.marginTop = "5px";
         titlediv.appendChild(rank_elem);
         make_request("https://api.surfheaven.eu/api/maprecord/" + map_name + "/" + _id, (data) => {
+            if(!data) return;
             var time = data[0].time;
             let date_completed = new Date(data[0].date);
             var formatted_time = new Date(time * 1000).toISOString().substr(11, 12);
@@ -739,9 +866,9 @@
         var bonus_total = new Array(7).fill(0);
         make_request("https://api.surfheaven.eu/api/records/" + id, (data) => {
             if (data) {
-                for (var i = 0; i < data.length; i++) {
-                    var track = data[i].track;
-                    var tier = data[i].tier;
+                for (let i = 0; i < data.length; i++) {
+                    let track = data[i].track;
+                    let tier = data[i].tier;
                     if (track == 0) {
                         completions[tier - 1]++;
                     } else {
@@ -749,33 +876,52 @@
                     }
                 }
                 make_request("https://api.surfheaven.eu/api/maps", (data2) => {
-                    for (var i = 0; i < data2.length; i++) {
-                        var tier = data2[i].tier;
+                    for (let i = 0; i < data2.length; i++) {
+                        let tier = data2[i].tier;
                         total[tier - 1]++;
                         bonus_total[tier - 1] += data2[i].bonus;
                     }
-                    var table = document.createElement('table');
-                    table.className = "table medium m-t-sm"
-                    table.style = "margin-bottom: 0px;"
-                    var completions_tbody = document.createElement('tbody');
-                    completions_tbody.innerHTML = "<tr><th>Tier</th><th>Maps</th><th>Map %</th><th>Bonuses</th><th>Bonus %</th></tr>";
-                    for (var j = 0; j < 7; j++) {
-                        var _tier = j + 1;
-                        var map_percent = Math.floor(completions[j] / total[j] * 100);
-                        var bonus_percent = Math.floor(bonus_completions[j] / bonus_total[j] * 100);
-                        completions_tbody.innerHTML += "<tr><td>T" + _tier + "</td><td>" + completions[j] + "/" + total[j] + "</td><td>" + map_percent + "%</td><td>" + bonus_completions[j] + "/" + bonus_total[j] + "</td><td>" + bonus_percent + "%</td></tr>";
-                    }
-                    table.appendChild(completions_tbody);
-                    var target_row = ".panel-c-warning > div:nth-child(1) > div:nth-child(1)"
-                    var target_div = document.querySelector(target_row);
-                    var user_div = document.querySelector(target_row + " > div:nth-child(1)");
-                    var stats_div = document.querySelector(target_row + " > div:nth-child(2)");
-                    var completionsbytier_div = document.createElement('div');
+                    let labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+                    let completions_data = completions.map(function(value, index) {
+                        return Math.floor(value / (value + total[index] - value) * 100);
+                    });
+                    let bonus_completions_data = bonus_completions.map(function(value, index) {
+                        return Math.floor(value / (value + bonus_total[index] - value) * 100);
+                    });
+
+                    let target_row = ".panel-c-warning > div:nth-child(1) > div:nth-child(1)"
+                    let target_div = document.querySelector(target_row);
+                    let user_div = document.querySelector(target_row + " > div:nth-child(1)");
+                    let stats_div = document.querySelector(target_row + " > div:nth-child(2)");
+                    let completionsbytier_div = document.createElement('div');
+                    let completionsbytier_title = document.createElement('h4');
+
                     user_div.className = "col-sm-4";
                     stats_div.className = "col-md-4";
-                    completionsbytier_div.className = "col-md-4";
-                    completionsbytier_div.appendChild(table);
+                    completionsbytier_div.className = "col-md-4 ct-chart";
+                    completionsbytier_div.style.height = target_div.clientHeight + "px";
+                    completionsbytier_title.style = "margin-top: 0px;margin-bottom: 5px;"
+                    completionsbytier_title.innerHTML = "<span style='float:left;'>Completions by Tier</span><div style='display: inline-block; width: 10px; height: 10px; background-color:CornflowerBlue;'></div> Map <div style='display: inline-block; width: 10px; height: 10px; background-color: DarkSeaGreen;'></div> Bonus</span>";
+                    completionsbytier_title.classList.add("text-right");
+
+                    completionsbytier_div.appendChild(completionsbytier_title);
                     target_div.appendChild(completionsbytier_div);
+
+                    new Chartist.Bar('.ct-chart', {
+                        labels: labels,
+                        series: [
+                            completions_data,
+                            bonus_completions_data
+                        ]
+                    }, {
+                        stackBars: false,
+                        axisY: {
+                        onlyInteger: true,
+                        labelInterpolationFnc: function(value) {
+                            return value + '%';
+                          }
+                        }
+                    });
                 });
             }
         });
@@ -1336,7 +1482,7 @@
         queue_button.onclick = function () {
             let region = document.getElementById("region_select").value;
             queue_for_empty_server(region);
-            queue_button.innerHTML = 'Queueing... (click to cancel)';
+            queue_button.innerHTML = '<i class="fa fa-spinner fa-pulse fa-lg fa-fw"></i> Queueing...  (click to cancel)';
             queue_button.classList = 'btn btn-danger btn-lg';
             queue_button.onclick = function () {
                 window.location.reload();
@@ -1386,30 +1532,49 @@
     function profile_page() {
         var steam_profile_url = document.querySelector('.m-t-xs > a:nth-child(2)') == null ? document.querySelector('.m-t-xs > a:nth-child(1)').href : document.querySelector('.m-t-xs > a:nth-child(2)').href;
         var current_profile_id = url_path[url_path.length - 1];
+        const username_h2 = document.querySelector('.m-t-xs');
+        username_h2.appendChild(document.createElement('br'));
 
         if(settings.follow_list){
             var follow_button = document.createElement('button');
             if (get_follow_list().includes(current_profile_id)) {
                 follow_button.className = 'btn btn-danger btn-xs';
-                follow_button.innerHTML = "Unfollow";
+                follow_button.innerHTML = '<i class="fas fa-user-times"></i> Unfollow';
+                follow_button.title = 'Unfollow';
             } else {
                 follow_button.className = 'btn btn-success btn-xs';
-                follow_button.innerHTML = "Follow";
+                follow_button.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
+                follow_button.title = 'Follow';
             }
             follow_button.onclick = function () {
                 follow_user(current_profile_id);
-                if (follow_button.innerHTML == "Follow") {
+                if (get_follow_list().includes(current_profile_id)) {
                     follow_button.className = 'btn btn-danger btn-xs';
-                    follow_button.innerHTML = "Unfollow";
+                    follow_button.innerHTML = '<i class="fas fa-user-times"></i> Unfollow';
+                    follow_button.title = 'Unfollow';
                 } else {
                     follow_button.className = 'btn btn-success btn-xs';
-                    follow_button.innerHTML = "Follow";
+                    follow_button.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
+                    follow_button.title = 'Follow';
                 }
             };
-
-            const username_h2 = document.querySelector('.m-t-xs')
+            follow_button.style = 'margin-right: 5px;';
             username_h2.appendChild(follow_button);
         }
+
+        // Gift Vip button, only if user is not vip, since some ppl have lifetime
+        make_request('https://api.surfheaven.eu/api/playerinfo/' + current_profile_id, function (data) {
+            if(data[0].vip != true){
+                const gift_vip_button = document.createElement('button');
+                gift_vip_button.className = 'btn btn-success btn-xs';
+                get_id() == current_profile_id ? gift_vip_button.innerHTML = "<i class='fab fa-paypal'></i> Buy vip" : gift_vip_button.innerHTML = "<i class='fa fa-gift'></i> Gift VIP";
+                gift_vip_button.onclick = function () {
+                    gift_vip(steam_profile_url.split('/')[steam_profile_url.split('/').length - 1])
+                };
+                let gift_vip_target_div = document.querySelector('.m-t-xs');
+                gift_vip_target_div.appendChild(gift_vip_button);
+            }
+        });
 
         insert_steam_avatar(steam_profile_url);
         fetch_country_rank(current_profile_id);
@@ -2221,7 +2386,6 @@
             points_until_next_rank = next_rank_points - own_points;
             console.log(`Points until next rank: ${points_until_next_rank}`);
             let points_until_next_rank_element = document.createElement('h5');
-
             points_until_next_rank_element.innerHTML = `
             Points needed for [<span style="color: ${GROUP_COLORS[GROUP_THRESHOLDS.indexOf(next_rank)]}">${[GROUP_NAMES[GROUP_THRESHOLDS.indexOf(next_rank)]]}</span>] : ${points_until_next_rank}`;
             let insert_after = document.querySelector('.media > h5:nth-child(4)');
@@ -2481,23 +2645,44 @@
         const settings_div = document.createElement("div");
         settings_div.style.padding = "1rem";
 
-        //checkboxes for settings
-        for (let key in settings) {
-            const label = document.createElement('label');
-            const input = document.createElement('input');
+        let settings_row = document.createElement("div");
+        settings_row.classList.add("row");
+        settings_row.style.minWidth = "400px";
+        let category_count = 0;
+        for(let category in settings_categories) {
+            const settings_column = document.createElement("div");
+            settings_column.classList.add("col-md-6");
 
-            input.type = 'checkbox';
-            input.id = key;
-            input.name = 'settings';
-            input.checked = settings[key];
+            const category_div = document.createElement("div");
+            const category_h4 = document.createElement("h4");
+            category_h4.style.textDecoration = "underline";
+            category_h4.textContent = category;
+            category_div.appendChild(category_h4);
 
-            label.appendChild(input);
-            label.appendChild(document.createTextNode(" "+settings_labels[key]));
-
-            settings_div.appendChild(label);
-            settings_div.appendChild(document.createElement('br'));
+            for(let setting of settings_categories[category]) {
+                const label = document.createElement('label');
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.id = setting;
+                input.name = 'settings';
+                input.checked = settings[setting];
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(" "+settings_labels[setting]));
+                category_div.appendChild(label);
+                category_div.appendChild(document.createElement('br'));
+            }
+            settings_column.appendChild(category_div);
+            settings_row.appendChild(settings_column);
+            category_count++;
+            if(category_count % 2 == 0) {
+                settings_div.appendChild(settings_row);
+                settings_row = document.createElement("div");
+                settings_row.classList.add("row");
+                settings_row.style.minWidth = "400px";
+            }
         }
-
+        settings_div.appendChild(settings_row);
+        
         //save settings
         const save_settings_button = document.createElement("button");
         save_settings_button.classList.add("btn", "btn-sm", "btn-success");
@@ -2505,6 +2690,47 @@
         save_settings_button.style.marginTop = "1rem";
         save_settings_button.style.marginBottom = "1rem";
         settings_div.appendChild(save_settings_button);
+
+        const backup_everything_button = document.createElement("button");
+        backup_everything_button.classList.add("btn", "btn-sm", "btn-success");
+        backup_everything_button.textContent = "Backup everything";
+        backup_everything_button.style.marginTop = "1rem";
+        backup_everything_button.style.marginBottom = "1rem";
+        backup_everything_button.style.marginLeft = "1rem";
+        settings_div.appendChild(backup_everything_button);
+
+        const restore_backup_button = document.createElement("button");
+        restore_backup_button.classList.add("btn", "btn-sm", "btn-success");
+        restore_backup_button.textContent = "Restore backup";
+        restore_backup_button.style.marginTop = "1rem";
+        restore_backup_button.style.marginBottom = "1rem";
+        restore_backup_button.style.marginLeft = "1rem";
+        settings_div.appendChild(restore_backup_button);
+
+        restore_backup_button.onclick = () => {
+            const file_input = document.createElement("input");
+            file_input.type = "file";
+            file_input.accept = ".json";
+            file_input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    unsafeWindow.localStorage.clear();
+                    const data = JSON.parse(e.target.result);
+                    for(let key in data) {
+                        unsafeWindow.localStorage.setItem(key, data[key]);
+
+                    }
+                    window.location.reload();
+                }
+                reader.readAsText(file);
+            }
+            file_input.click();
+        }
+        
+        backup_everything_button.onclick = () => {
+            download(JSON.stringify(localStorage), "surfheaven_extended_settings.json", "text/plain");
+        }
 
         save_settings_button.onclick = () => {
             const checkboxes = document.querySelectorAll('input[name=settings]');
@@ -2515,6 +2741,8 @@
             unsafeWindow.localStorage.setItem("settings", JSON.stringify(settings));
             window.location.reload();
         }
+
+        settings_div.appendChild(document.createElement('hr'));
 
         // purge flags
         const purge_flags_button = document.createElement("button");
@@ -2577,7 +2805,9 @@
                 total += (localStorage[key].length + key.length) * 2; // each character is 2 bytes
               }
             }
-            return (total / 1024).toFixed(2) + " KB";; 
+            return (total / 1024).toFixed(2) + " KB";
+            //return ((new Blob(Object.values(localStorage)).size + new Blob(Object.keys(localStorage)).size) / 1024).toFixed(2) + " KB"; 
+            //neither of the sizes are correct, probably due to encoding differences, but the first way overshoots a bit so it's better
         }
         localstorage_size_p.textContent = "Localstorage size: " + localstorage_size_text() + "  / ~5MB";
         settings_div.appendChild(localstorage_size_p);
@@ -2586,12 +2816,11 @@
         let api_call_count_p = document.createElement("p");
         api_call_count_p.textContent = "API calls: " + api_call_count;
         settings_div.appendChild(api_call_count_p);
-
+        
         //changelog title
         const changelog_title = document.createElement("h5");
         changelog_title.textContent = "Changelog";
         settings_div.appendChild(changelog_title);
-
         //changelog textbox
         const changelog_textbox = document.createElement("textarea");
         GM_xmlhttpRequest({
@@ -2607,13 +2836,25 @@
         });
         changelog_textbox.classList.add("form-control");
         changelog_textbox.style.height = "150px";
-        changelog_textbox.style.width = "300px";
+        changelog_textbox.style.width = "100%";
         changelog_textbox.style.resize = "none";
         changelog_textbox.setAttribute("readonly", "");
         settings_div.appendChild(changelog_textbox);
 
         //footer
         const settings_footer = document.createElement("div");
+
+        const version_button = document.createElement("button");
+        version_button.title = "Check for updates";
+        version_button.classList.add("btn", "btn-xs", "btn-primary");
+        version_button.textContent = VERSION;
+        version_button.onclick = () => {
+            check_for_updates();
+            document.getElementById("overlay_window").remove();
+        }
+        version_button.style.float = "right";
+        settings_footer.appendChild(version_button);
+
         const footer_link = document.createElement("span");
         footer_link.style.color = "white";
         footer_link.innerHTML = `<i class="fab fa-github fa-lg"></i><a href="https://github.com/Kalekki/SurfHeaven_Extended" target="_blank" style="color:white;"> Drop me a star, will ya?</a>`;
@@ -2624,6 +2865,10 @@
         show_overlay_window("Settings",settings_div);
     }
 
+    function gift_vip(steamid){
+        unsafeWindow.localStorage.setItem('gift_vip_steamid', steamid);
+        window.location.href = '/donate/';
+    }
 
 })();
 
@@ -2763,8 +3008,10 @@ GM_addStyle(`
         100% {opacity: 0;}
     }
     .ct-grid{
-        stroke: white;
+        stroke: #606577;
+        stroke-dasharray: 0, 0;
     }
+
     .ct-series-a .ct-line,
     .ct-series-a .ct-point {
         stroke: lightgreen;
@@ -2787,6 +3034,14 @@ GM_addStyle(`
     .ct-series-e .ct-line,
     .ct-series-e .ct-point {
         stroke: cyan;
+    }
+    .ct-series-a .ct-bar {
+        stroke: CornflowerBlue;
+        stroke-width: 20px;
+    }
+    .ct-series-b .ct-bar {
+        stroke: DarkSeaGreen;
+        stroke-width: 14px;
     }
     .tag{
         background-color: darkgray;
@@ -2816,7 +3071,31 @@ GM_addStyle(`
            0    1px 0 #000,
           -1px  1px 0 #000,
           -1px  0   0 #000;
-      }
+    }
+    .outlined-medium {
+        //color: white;
+        text-shadow:
+          -2px -2px 0 #000,
+           0   -2px 0 #000,
+           2px -2px 0 #000,
+           2px  0   0 #000,
+           2px  2px 0 #000,
+           0    2px 0 #000,
+          -2px  2px 0 #000,
+          -2px  0   0 #000;
+    }
+    .outlined-thick {
+        //color: white;
+        text-shadow:
+          -3px -3px 0 #000,
+           0   -3px 0 #000,
+           3px -3px 0 #000,
+           3px  0   0 #000,
+           3px  3px 0 #000,
+           0    3px 0 #000,
+          -3px  3px 0 #000,
+          -3px  0   0 #000;
+    }
     body .modal-dialog {
       width: auto !important;
       display: inline-block;
@@ -2825,7 +3104,8 @@ GM_addStyle(`
         margin-bottom: 0.5rem;
     }
     .following{
-        color: #47cf52;
+        color: MediumSeaGreen;
+        font-weight: bold;
     }
     .rainbow-text {
         background: linear-gradient(to right, #FF6663, #FEB144, #FDFD97, #9EE09E, #9EC1CF, #BAC5E8, #CC99C9);
