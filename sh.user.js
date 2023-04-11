@@ -68,6 +68,7 @@
             hover_info: true,
             map_cover_image: true,
             points_per_rank: true,
+            completions_bar_chart: true,
         }
         unsafeWindow.localStorage.setItem('settings', JSON.stringify(settings));
     }else{
@@ -86,13 +87,14 @@
         hover_info: "Player/map info on hover",
         map_cover_image: "Map cover image",
         points_per_rank: "Show points per rank",
+        completions_bar_chart: "Show completions as bar chart",
     }
 
     const settings_categories = {
         "Global" : ["flags","follow_list", "hover_info", "update_check"],
         "Dashboard" : ["country_top_100"],
         "Map page" : ["cp_chart","points_per_rank","map_cover_image"],
-        "Profile" : ["steam_avatar", "completions_by_tier"]
+        "Profile" : ["steam_avatar", "completions_by_tier", "completions_bar_chart"],
     }
 
     function validate_settings(){
@@ -106,6 +108,7 @@
         if (settings.hover_info == null) settings.hover_info = true;
         if (settings.map_cover_image == null) settings.map_cover_image = true;
         if (settings.points_per_rank == null) settings.points_per_rank = true;
+        if (settings.completions_bar_chart == null) settings.completions_bar_chart = true;
     }
 
     // SERVERS PAGE
@@ -860,10 +863,19 @@
 
     function completions_by_tier(id) {
         if(!settings.completions_by_tier) return;
-        var completions = new Array(7).fill(0);
-        var total = new Array(7).fill(0);
-        var bonus_completions = new Array(7).fill(0);
-        var bonus_total = new Array(7).fill(0);
+        let completions = new Array(7).fill(0);
+        let total = new Array(7).fill(0);
+        let bonus_completions = new Array(7).fill(0);
+        let bonus_total = new Array(7).fill(0);
+        let target_row = ".panel-c-warning > div:nth-child(1) > div:nth-child(1)"
+        let target_div = document.querySelector(target_row);
+        let user_div = document.querySelector(target_row + " > div:nth-child(1)");
+        let stats_div = document.querySelector(target_row + " > div:nth-child(2)");
+        let completionsbytier_div = document.createElement('div');
+
+        user_div.className = "col-sm-4";
+        stats_div.className = "col-md-4";
+
         make_request("https://api.surfheaven.eu/api/records/" + id, (data) => {
             if (data) {
                 for (let i = 0; i < data.length; i++) {
@@ -881,47 +893,59 @@
                         total[tier - 1]++;
                         bonus_total[tier - 1] += data2[i].bonus;
                     }
-                    let labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-                    let completions_data = completions.map(function(value, index) {
-                        return Math.floor(value / (value + total[index] - value) * 100);
-                    });
-                    let bonus_completions_data = bonus_completions.map(function(value, index) {
-                        return Math.floor(value / (value + bonus_total[index] - value) * 100);
-                    });
+                    if(settings.completions_bar_chart){
+                        let labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+                        let completions_data = completions.map(function(value, index) {
+                            return Math.floor(value / (value + total[index] - value) * 100);
+                        });
+                        let bonus_completions_data = bonus_completions.map(function(value, index) {
+                            return Math.floor(value / (value + bonus_total[index] - value) * 100);
+                        });
 
-                    let target_row = ".panel-c-warning > div:nth-child(1) > div:nth-child(1)"
-                    let target_div = document.querySelector(target_row);
-                    let user_div = document.querySelector(target_row + " > div:nth-child(1)");
-                    let stats_div = document.querySelector(target_row + " > div:nth-child(2)");
-                    let completionsbytier_div = document.createElement('div');
-                    let completionsbytier_title = document.createElement('h4');
+                        let completionsbytier_title = document.createElement('h4');
 
-                    user_div.className = "col-sm-4";
-                    stats_div.className = "col-md-4";
-                    completionsbytier_div.className = "col-md-4 ct-chart";
-                    completionsbytier_div.style.height = target_div.clientHeight + "px";
-                    completionsbytier_title.style = "margin-top: 0px;margin-bottom: 5px;"
-                    completionsbytier_title.innerHTML = "<span style='float:left;'>Completions by Tier</span><div style='display: inline-block; width: 10px; height: 10px; background-color:CornflowerBlue;'></div> Map <div style='display: inline-block; width: 10px; height: 10px; background-color: DarkSeaGreen;'></div> Bonus</span>";
-                    completionsbytier_title.classList.add("text-right");
+                        completionsbytier_div.className = "col-md-4 ct-chart";
+                        completionsbytier_div.style.height = target_div.clientHeight + "px";
+                        completionsbytier_title.style = "margin-top: 0px;margin-bottom: 5px;"
+                        completionsbytier_title.innerHTML = "<span style='float:left; margin-left:20px;'>Completions by Tier</span><div style='display: inline-block; width: 10px; height: 10px; background-color:CornflowerBlue;'></div> Map <div style='display: inline-block; width: 10px; height: 10px; background-color: DarkSeaGreen;'></div> Bonus</span>";
+                        completionsbytier_title.classList.add("text-right");
 
-                    completionsbytier_div.appendChild(completionsbytier_title);
-                    target_div.appendChild(completionsbytier_div);
+                        completionsbytier_div.appendChild(completionsbytier_title);
+                        target_div.appendChild(completionsbytier_div);
 
-                    new Chartist.Bar('.ct-chart', {
-                        labels: labels,
-                        series: [
-                            completions_data,
-                            bonus_completions_data
-                        ]
-                    }, {
-                        stackBars: false,
-                        axisY: {
-                        onlyInteger: true,
-                        labelInterpolationFnc: function(value) {
-                            return value + '%';
-                          }
+                        new Chartist.Bar('.ct-chart', {
+                            labels: labels,
+                            series: [
+                                completions_data,
+                                bonus_completions_data
+                            ]
+                        }, {
+                            stackBars: false,
+                            axisY: {
+                            onlyInteger: true,
+                            labelInterpolationFnc: function(value) {
+                                return value + '%';
+                            }
+                            }
+                        });
+                    } else {
+                        let table = document.createElement('table');
+                        table.className = "table medium m-t-sm"
+                        table.style = "margin-bottom: 0px;"
+                        let completions_tbody = document.createElement('tbody');
+                        completions_tbody.innerHTML = "<tr><th>Tier</th><th>Maps</th><th>Map %</th><th>Bonuses</th><th>Bonus %</th></tr>";
+                        for (let j = 0; j < 7; j++) {
+                            let _tier = j + 1;
+                            let map_percent = Math.floor(completions[j] / total[j] * 100);
+                            let bonus_percent = Math.floor(bonus_completions[j] / bonus_total[j] * 100);
+                            completions_tbody.innerHTML += "<tr><td>T" + _tier + "</td><td>" + completions[j] + "/" + total[j] + "</td><td>" + map_percent + "%</td><td>" + bonus_completions[j] + "/" + bonus_total[j] + "</td><td>" + bonus_percent + "%</td></tr>";
                         }
-                    });
+                        table.appendChild(completions_tbody);
+
+                        completionsbytier_div.className = "col-md-4";
+                        completionsbytier_div.appendChild(table);
+                        target_div.appendChild(completionsbytier_div);
+                    };
                 });
             }
         });
