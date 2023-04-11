@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.13
+// @version      4.2.13.1
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -1546,8 +1546,8 @@
                     }
                 }
                 if(!found){
-                    console.log('No empty servers found');
-                    setTimeout(queue_for_empty_server, check_delay);
+                    console.log('No empty servers found for region ' + region_map[region] + ', checking again in ' + check_delay/1000 + ' seconds...');
+                    setTimeout(function() { queue_for_empty_server(region)}, check_delay);
                 }
             });
         }
@@ -2768,57 +2768,6 @@
 
         settings_div.appendChild(document.createElement('hr'));
 
-        // purge flags
-        const purge_flags_button = document.createElement("button");
-        purge_flags_button.classList.add("btn", "btn-sm", "btn-primary");
-        purge_flags_button.textContent = "Purge flags cache";
-        purge_flags_button.onclick = purge_flags_cache
-        settings_div.appendChild(document.createElement('br'));
-        settings_div.appendChild(purge_flags_button);
-
-        // purge maps
-        const purge_maps_button = document.createElement("button");
-        purge_maps_button.classList.add("btn", "btn-sm", "btn-primary");
-        purge_maps_button.textContent = "Purge map tags";
-        purge_maps_button.style.marginLeft = "1rem";
-        purge_maps_button.onclick = purge_all_tags
-        settings_div.appendChild(purge_maps_button);
-        settings_div.appendChild(document.createElement('br'));
-
-        // backup and import tags buttons
-        const backup_tags_button = document.createElement("button");
-        backup_tags_button.classList.add("btn", "btn-sm", "btn-primary");
-        backup_tags_button.textContent = "Backup tags";
-        backup_tags_button.onclick = export_all_tags
-        const backup_tags_text = document.createElement("h5");
-        backup_tags_text.textContent = "Backup tags to file";
-        settings_div.appendChild(backup_tags_text);
-        settings_div.appendChild(backup_tags_button);
-
-        //h4 for import tags
-        const import_tags_h5 = document.createElement("h5");
-        import_tags_h5.textContent = "Load tags from backup";
-        settings_div.appendChild(import_tags_h5);
-
-        let import_button = document.createElement('input');
-        import_button.type = "file";
-        import_button.accept = ".json";
-        import_button.id 
-        import_button.className = "btn btn-primary";
-        import_button.innerHTML = "Import tags";
-        import_button.onchange = () => {
-            let file = import_button.files[0];
-            let reader = new FileReader();
-            reader.onload = (e) => {
-                let db = JSON.parse(e.target.result);
-                save_tag_db(db);
-                console.log("Imported tags");
-                window.location.reload();
-            }
-            reader.readAsText(file);
-        }
-        settings_div.appendChild(import_button);
-
         // Localstorage size out of ~5MB
         let localstorage_size_p = document.createElement("p");
         localstorage_size_p.style.marginTop = "0.5rem";
@@ -2836,9 +2785,60 @@
         localstorage_size_p.textContent = "Localstorage size: " + localstorage_size_text() + "  / ~5MB";
         settings_div.appendChild(localstorage_size_p);
 
+        // purge flags
+        const purge_flags_button = document.createElement("button");
+        purge_flags_button.classList.add("btn", "btn-sm", "btn-primary");
+        purge_flags_button.textContent = "Purge flags cache";
+        purge_flags_button.onclick = purge_flags_cache
+        settings_div.appendChild(purge_flags_button);
+
+        // purge maps
+        const purge_maps_button = document.createElement("button");
+        purge_maps_button.classList.add("btn", "btn-sm", "btn-primary");
+        purge_maps_button.textContent = "Purge map tags";
+        purge_maps_button.style.marginLeft = "1rem";
+        purge_maps_button.onclick = purge_all_tags
+        settings_div.appendChild(purge_maps_button);
+        settings_div.appendChild(document.createElement('br'));
+
+        // backup and import tags buttons
+        const backup_tags_button = document.createElement("button");
+        backup_tags_button.classList.add("btn", "btn-sm", "btn-primary");
+        backup_tags_button.style.marginRight = "1rem";
+        backup_tags_button.textContent = "Save tags";
+        backup_tags_button.onclick = export_all_tags
+        const backup_tags_text = document.createElement("h5");
+        backup_tags_text.textContent = "Backup & Load tags";
+        settings_div.appendChild(backup_tags_text);
+        settings_div.appendChild(backup_tags_button);
+
+        const import_button = document.createElement('button');
+        import_button.className = "btn btn-primary btn-sm";
+        import_button.textContent = "Load tags";
+        import_button.onclick = () => {
+          const file_input = document.createElement("input");
+          file_input.type = "file";
+          file_input.accept = ".json";
+        
+          file_input.onchange = () => {
+            let file = file_input.files[0];
+            let reader = new FileReader();
+            reader.onload = (e) => {
+              let db = JSON.parse(e.target.result);
+              save_tag_db(db);
+              console.log("Imported tags");
+              window.location.reload();
+            }
+            reader.readAsText(file);
+          }
+          file_input.click();
+        }
+        settings_div.appendChild(import_button);
+
         // api call count
-        let api_call_count_p = document.createElement("p");
+        const api_call_count_p = document.createElement("p");
         api_call_count_p.textContent = "API calls: " + api_call_count;
+        api_call_count_p.style.marginTop = "0.5rem";
         settings_div.appendChild(api_call_count_p);
         
         //changelog title
@@ -2881,7 +2881,7 @@
 
         const footer_link = document.createElement("span");
         footer_link.style.color = "white";
-        footer_link.innerHTML = `<i class="fab fa-github fa-lg"></i><a href="https://github.com/Kalekki/SurfHeaven_Extended" target="_blank" style="color:white;"> Drop me a star, will ya?</a>`;
+        footer_link.innerHTML = `<i class="fab fa-github fa-lg"></i><a href="https://github.com/Kalekki/SurfHeaven_Extended" target="_blank" style="color:white;"> Github</a>`;
         settings_footer.appendChild(footer_link);
         settings_footer.style.marginTop = "1rem";
         settings_div.appendChild(settings_footer);

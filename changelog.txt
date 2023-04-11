@@ -1,3 +1,7 @@
+___4.2.13.1___
+Added option for old completions by tier table
+Fixed queue 
+
 ___4.2.13___
 Added follow list manager, activate by clicking the follow list title
 Switched completions by tier to a bar chart
