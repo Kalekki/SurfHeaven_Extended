@@ -1,3 +1,7 @@
+___4.2.13.2___
+Added ability to set nicknames for players (aka polyana nerf)
+Added info toasts (off by default)
+
 ___4.2.13.1___
 Added option for old completions by tier table
 Fixed queue 
