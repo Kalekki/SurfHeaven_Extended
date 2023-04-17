@@ -1,3 +1,7 @@
+___4.2.14___
+Servers: Added automatic and manual refreshing
+         Added highlighting servers with friends
+
 ___4.2.13.2___
 Added ability to set nicknames for players (aka polyana nerf)
 Added info toasts (off by default)

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.13.2
+// @version      4.2.14
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -88,7 +88,7 @@
         map_cover_image: "Map cover image",
         points_per_rank: "Show points per rank",
         completions_bar_chart: "Show completions as bar chart",
-        toasts: "Show info toasts",
+        toasts: "Show debug toasts",
     }
 
     const settings_categories = {
@@ -933,10 +933,11 @@
                         }, {
                             stackBars: false,
                             axisY: {
-                            onlyInteger: true,
-                            labelInterpolationFnc: function(value) {
-                                return value + '%';
-                            }
+                                onlyInteger: true,
+                                high: 100,
+                                labelInterpolationFnc: function(value) {
+                                    return value + '%';
+                                }
                             }
                         });
                     } else {
@@ -1196,6 +1197,17 @@
         make_request("https://api.surfheaven.eu/api/records/" + id + "/", (records) => {
           make_request("https://api.surfheaven.eu/api/servers", (servers) => {
             if(Array.isArray(servers)) {
+                // filter irrelevant servers
+                const region = document.getElementById("region_select").value;
+                const region_map = {
+                    "Global": "ALL",
+                    "Germany": "EU",
+                    "Australia": "AU"
+                }
+                if (region_map[region] !== "ALL") {
+                    servers = servers.filter(server => server.region === region_map[region]);
+                }
+
                 servers = servers.filter(server => server.id !== 14); // Remove mayhem server
                 const table = document.querySelector('.table');
                 table.removeAttribute('title');
@@ -1216,6 +1228,9 @@
                     return table.rows[i + 1].insertCell(4);
                 }
                 });
+
+                let table_rows = table.querySelectorAll('tbody > tr');
+                let follow_list = get_follow_list();
         
                 const server_records = {};
                 records.forEach((record) => {
@@ -1229,38 +1244,76 @@
                 });
         
                 servers.forEach((server, i) => {
+                try{
+                    let server_row = table_rows[i].querySelectorAll('td');
+                    let has_friends = false;
+
+                    let child_nodes = server_row[0].childNodes[2].childNodes;
+                    for (let i = child_nodes.length - 1; i > 0; i--) {
+                        child_nodes[i].remove();
+                    }
+                    // update player count
+                    server_row[5].textContent = server.playercount+ ' / ' + server.maxplayers;
+                    // add updated players list
+                    server.players.forEach((player) => {
+                        let player_element = document.createElement('div');
+                        player_element.className = 'row';
+                        let col_elem = document.createElement('div');
+                        col_elem.className = 'col-sm-12';
+                        let player_link = document.createElement('a');
+                        player_link.href = `https://surfheaven.eu/player/${player.steamid}`;
+                        player_link.textContent = player.name;
+                        col_elem.appendChild(player_link);
+                        player_element.appendChild(col_elem);
+                        server_row[0].childNodes[2].appendChild(player_element);
+                        let no_margin_hr = document.createElement('hr');
+                        no_margin_hr.className = 'nomargin';
+                        server_row[0].childNodes[2].appendChild(no_margin_hr);
+
+                        if (follow_list.includes(player.steamid)) {
+                            has_friends = true;
+                        }
+                    });
+                    if (has_friends) {
+                        server_row[0].classList.add('following');
+                        server_row[0].setAttribute('title', 'Friend(s) here');
+                    }else{
+                        server_row[0].classList.remove('following');
+                    }
+
+                    server_row[0].onclick = function(e) {
+                        if (e.target.tagName !== 'DIV' && e.target.tagName !== 'A') {
+                            $(this).closest("tr").find(".hidden-row").slideToggle();
+                        }
+                    }
+                    server_row[0].style.cursor = 'pointer';
+
                     if(server.mapinfo){
+                        server_row[2].innerHTML = `<a href="https://surfheaven.eu/map/${server.map}">${server.map}</a> <small>(T${server.mapinfo.tier}) ${server.mapinfo.type == 0 ? "Linear" : "Staged"} </small>`;
                         var rec = server_records[server.map];
                         if (rec) { 
                             const map_record = rec[0];
                             if (map_record) { 
+                                server_row[2].innerHTML += `<i title="You have completed this map!" class="fas fa-check text-success"></i>`;
                                 const txt = document.createTextNode(map_record.rank + " / " + server.mapinfo.completions);
-                            if (rank_cells[i]) {
                                 rank_cells[i].appendChild(txt);
-                            }
                             } else { 
                                 const txt = document.createTextNode("0 / " + server.mapinfo.completions);
-                                if (rank_cells[i]) {
-                                    rank_cells[i].appendChild(txt);
-                                }
+                                rank_cells[i].appendChild(txt);
                             }
-                
                             const bonus_completes = rec.reduce((value, record) => record && record.track > 0 ? value + 1 : value, 0);
                             const txt2 = document.createTextNode(bonus_completes + " / " + server.mapinfo.bonus);
-                            if (bonus_cells[i]) {
-                                bonus_cells[i].appendChild(txt2);
-                            }
+                            bonus_cells[i].appendChild(txt2);          
                         } else {
                             const txt = document.createTextNode("0 / " + server.mapinfo.completions);
-                                if (rank_cells[i]) {
-                                    rank_cells[i].appendChild(txt);
-                                }
+                            rank_cells[i].appendChild(txt);
                 
                             const txt_2 = document.createTextNode("0 / " + server.mapinfo.bonus);
-                                if (bonus_cells[i]) {
-                                    bonus_cells[i].appendChild(txt_2);
-                                }
+                            bonus_cells[i].appendChild(txt_2);   
                         }
+                    }
+                }catch(e){
+                    console.log(e);
                     }
                 });
         
@@ -1268,9 +1321,15 @@
         
                 fetch_bonus_ranks(id, servers, server_records);
             }
+            insert_flags_to_profiles();
           });
         });
       }
+
+    function refresh_servers(){
+        reset_ranks();
+        fetch_ranks(get_id());
+    }
 
     function fetch_bonus_ranks(id, servers, server_records) {
         const table = document.querySelector('.table');
@@ -1326,7 +1385,6 @@
                     });
                 }
                 catch(e){
-                    //we dont give a fuck about errors (for now :D)
                     //console.log(e);
                 }
             });
@@ -1497,7 +1555,6 @@
             auto_fetch_ranks();
         }
 
-        // Empty server queue
         let queue_button = document.createElement('button');
         queue_button.className = 'btn btn-success btn-lg';
         queue_button.innerHTML = 'Queue for empty server';
@@ -1509,11 +1566,16 @@
         let auto_join_label = document.createElement('label');
         auto_join_label.htmlFor = 'auto_join_checkbox';
         auto_join_label.innerHTML = 'Auto-join';
-        document.querySelector('.panel-heading').appendChild(document.createElement('br'));
-        document.querySelector('.panel-heading').appendChild(queue_button);
-        document.querySelector('.panel-heading').appendChild(document.createElement('br'));
-        document.querySelector('.panel-heading').appendChild(auto_join_checkbox);
-        document.querySelector('.panel-heading').appendChild(auto_join_label);
+
+        let refresh_servers_button = document.createElement('button');
+        refresh_servers_button.className = 'btn btn-primary btn-xs';
+        refresh_servers_button.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+        refresh_servers_button.style = 'margin-left: 26px;';
+
+        refresh_servers_button.onclick = function () {
+            refresh_servers();
+        }
+
         queue_button.onclick = function () {
             let region = document.getElementById("region_select").value;
             queue_for_empty_server(region);
@@ -1523,6 +1585,15 @@
                 window.location.reload();
             }
         }
+
+        let header = document.querySelector('#logsTable > thead:nth-child(1) > tr:nth-child(1)')
+        header.lastElementChild.appendChild(refresh_servers_button);
+
+        document.querySelector('.panel-heading').appendChild(document.createElement('br'));
+        document.querySelector('.panel-heading').appendChild(queue_button);
+        document.querySelector('.panel-heading').appendChild(document.createElement('br'));
+        document.querySelector('.panel-heading').appendChild(auto_join_checkbox);
+        document.querySelector('.panel-heading').appendChild(auto_join_label);
 
         function queue_for_empty_server(region){
             let found = false;
@@ -1562,6 +1633,13 @@
                 }
             });
         }
+
+        // periodically refresh servers
+        setInterval(function () {
+            console.log('Refreshing servers...');
+            create_toast('Refreshing servers...', '','info',5000);
+            refresh_servers();
+        }, 1000*60*2);
     }
 
     function profile_page() {
@@ -2452,16 +2530,20 @@
         let next_rank = find_next_rank(own_rank);
         let points_until_next_rank = 0;
 
-        make_request("https://api.surfheaven.eu/api/rank/"+next_rank, function(data){
-            let next_rank_points = data[0].points;
-            points_until_next_rank = next_rank_points - own_points;
-            console.log(`Points until next rank: ${points_until_next_rank}`);
-            let points_until_next_rank_element = document.createElement('h5');
-            points_until_next_rank_element.innerHTML = `
-            Points needed for [<span style="color: ${GROUP_COLORS[GROUP_THRESHOLDS.indexOf(next_rank)]}">${[GROUP_NAMES[GROUP_THRESHOLDS.indexOf(next_rank)]]}</span>] : ${points_until_next_rank}`;
-            let insert_after = document.querySelector('.media > h5:nth-child(4)');
-            insert_after.parentNode.insertBefore(points_until_next_rank_element, insert_after.nextSibling);
-
+        make_request("https://api.surfheaven.eu/api/rankinfo/", function(data){
+            for(let i = 0; i < data.length; i++){
+                if(data[i].rank < own_rank){
+                    let next_rank_points = data[i].points;
+                    points_until_next_rank = next_rank_points - own_points;
+                    console.log(`Points until next rank: ${points_until_next_rank}`);
+                    let points_until_next_rank_element = document.createElement('h5');
+                    points_until_next_rank_element.innerHTML = `
+                    Points needed for [<span style="color: ${GROUP_COLORS[GROUP_THRESHOLDS.indexOf(next_rank)]}">${[GROUP_NAMES[GROUP_THRESHOLDS.indexOf(next_rank)]]}</span>] : ${points_until_next_rank}`;
+                    let insert_after = document.querySelector('.media > h5:nth-child(4)');
+                    insert_after.parentNode.insertBefore(points_until_next_rank_element, insert_after.nextSibling);
+                    break;
+                }
+            }
         });
     }
 
@@ -2943,7 +3025,7 @@
     }
 
     function create_toast(title, message, type, timeout) {
-        if(!settings.toasts) return;
+        if(!settings.toasts && type != 'info') return;
         const toasts = document.querySelectorAll('.toast');
 
         let total_height = 50; // align just under navbar
