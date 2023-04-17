@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.14
+// @version      4.2.14.1
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -1553,6 +1553,9 @@
             checkbox.click()
         } else {
             auto_fetch_ranks();
+        }
+        if (document.getElementById("region_select").value == "") {
+            document.getElementById("region_select").value = "Global";
         }
 
         let queue_button = document.createElement('button');

@@ -1,3 +1,7 @@
+__4.2.14.1___
+Force a selected region if none set in servers page 
+(Having never selected one broke the script)
+
 ___4.2.14___
 Servers: Added automatic and manual refreshing
          Added highlighting servers with friends
