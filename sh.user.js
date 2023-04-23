@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.14.1
+// @version      4.2.14.2
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -1955,7 +1955,126 @@
         insert_map_picture(current_map_name);
         insert_points_per_rank(current_map_name);
         insert_map_page_tag_list(current_map_name);
+        insert_friend_rankings(current_map_name);
 
+    }
+
+    function insert_friend_rankings(map){
+        let follow_list = get_follow_list();
+        let friend_ranks = [];
+        make_request(`https://api.surfheaven.eu/api/records/${map}/0`, (data) => {
+            for(let i = 0; i < data.length; i++){
+                if(follow_list.includes(data[i].steamid) || data[i].steamid == get_id()){
+                    friend_ranks.push([data[i].rank, data[i].time, data[i].date, data[i].steamid, data[i].name, data[i].points]);
+                }
+            }
+            if(friend_ranks.length > 0){
+                friend_ranks.sort((a,b) => a[0] - b[0]);
+            }
+            const button_target_div = document.querySelector('.links');
+
+            // used for when theres no buttons, e.g when the map has no bonuses
+            const children = button_target_div.children;
+
+            const friends_ranking_button = document.createElement('a');
+            friends_ranking_button.className = "btn btn-w-md btn-primary following";
+            children.length > 1 ? friends_ranking_button.innerHTML = "Friends" : friends_ranking_button.innerHTML = "Show friends";
+            friends_ranking_button.href = "#";
+            friends_ranking_button.setAttribute("for", "table-friends");
+            friends_ranking_button.onclick = function() {
+                if(children.length > 1){
+                    // Has bonuses
+                    if (!$(this).hasClass("active") && $(this).is("[for]")) {
+                        var c = $(this).parent().attr("for");
+                        $("div[for=" + c + "] > a").removeClass("active");
+                        $(this).addClass("active");
+                        $(".map-tables-" + c + " > div").addClass("hide");
+                        $(".map-tables-" + c + " ." + $(this).attr("for")).removeClass("hide");
+                    }
+                    if ($(this).attr('href') == '#') return false;
+                }else{
+                    // No bonuses
+                    let table_maps_div = document.querySelector('.table-maps');
+                    let table_friends_div = document.querySelector('.table-friends');
+                    table_friends_div.classList.toggle('hide');
+                    table_maps_div.classList.toggle('hide');
+                    let button_text = friends_ranking_button.innerHTML;
+                    button_text == "Show friends" ? friends_ranking_button.innerHTML = "Show global" : friends_ranking_button.innerHTML = "Show friends";
+                }
+            }
+
+            let container = document.createElement('div');
+            container.className = "table-responsive table-friends hide"; 
+            let table = document.createElement('table');
+            table.className = "table table-striped table-hover no-footer";
+            let thead = document.createElement('thead');
+            // Rank, name, time, date, points
+            thead.innerHTML = `<tr><th>#</th><th>Name</th><th>Time</th><th>Date</th><th>Points</th></tr>`;
+            table.appendChild(thead);
+            let tbody = document.createElement('tbody');
+            for(let i = 0; i < friend_ranks.length; i++){
+                let tr = document.createElement('tr');
+                let td = document.createElement('td');
+                // rank
+                td.innerHTML = friend_ranks[i][0];
+                tr.appendChild(td);
+                // name
+                td = document.createElement('td');
+                td.innerHTML = `<a href="https://surfheaven.eu/player/${friend_ranks[i][3]}">${friend_ranks[i][4]}</a>`;
+                tr.appendChild(td);
+                // time
+                td = document.createElement('td');
+                td.innerHTML = format_time(friend_ranks[i][1]);
+                tr.appendChild(td);
+                // date
+                td = document.createElement('td');
+                td.innerHTML = new Date(friend_ranks[i][2]).toISOString().substr(0, 19).replace('T', ' ');
+                tr.appendChild(td);
+                // points
+                td = document.createElement('td');
+                td.innerHTML = friend_ranks[i][5];
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+            }
+            table.appendChild(tbody);
+            container.appendChild(table);
+            $(table).DataTable(
+                {
+                    "order": [[0, "asc"]],
+                    "autoWidth": true,
+                    "paging": true,
+                    "searching": true,
+                    "info": false,
+                    "lengthMenu": [10],
+                    "lengthChange": false,
+                    "pagingType": "simple"
+                }
+            );
+            document.querySelector('.map-tables-records').appendChild(container);
+
+            button_target_div.prepend(friends_ranking_button);
+            // whitespace removal
+            for(let i = 0; i < button_target_div.childNodes.length; i++){
+                if(button_target_div.childNodes[i].nodeType == 3){
+                    button_target_div.childNodes[i].remove();
+                }
+            }
+
+            function format_time(time){
+                let hours = Math.floor(time / 3600);
+                let minutes = Math.floor((time - (hours * 3600)) / 60);
+                let seconds = time - (hours * 3600) - (minutes * 60);
+                seconds = seconds.toFixed(3);
+                if (hours < 10) {hours = "0"+hours;}
+                if (minutes < 10) {minutes = "0"+minutes;}
+                if (seconds < 10) {seconds = "0"+seconds;}
+
+                if(hours > 0){
+                    return hours+':'+minutes+':'+seconds;
+                }
+                return minutes+':'+seconds;
+            }
+        });
     }
 
     function insert_map_page_tag_list(current_map_name){

@@ -1,3 +1,6 @@
+___4.2.14.2___
+Added friend ranking table to maps \o/
+
 ___4.2.14.1___
 Force a selected region if none set in servers page 
 (Having never selected one broke the script)
