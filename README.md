@@ -33,6 +33,7 @@ Select a tag, then press export, to quickly share the tag with other people
  - CP Chart
  - Map picture cover (pics from [Sayt123/SurfMapPics](https://github.com/Sayt123/SurfMapPics))
  - Points per rank
+ - Friend ranking table
 
 [Server page](https://iloveur.mom/i/i7z86IDGMw.png):
  - Ranks from the [original SH ranks by Link](https://greasyfork.org/en/scripts/438271-surfheaven-ranks)
