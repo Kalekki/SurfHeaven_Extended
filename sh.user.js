@@ -2920,6 +2920,9 @@
     function open_settings_menu() {
         const settings_div = document.createElement("div");
         settings_div.style.padding = "1rem";
+        settings_div.style.overflowY = "auto";
+        settings_div.style.maxHeight = "calc(100vh - 200px)";
+        settings_div.style.minWidth = "420px";
 
         let settings_row = document.createElement("div");
         settings_row.classList.add("row");
