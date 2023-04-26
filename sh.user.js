@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.14.2
+// @version      4.2.15
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -11,6 +11,7 @@
 // @icon         https://www.google.com/s2/favicons?domain=surfheaven.eu
 // @connect      raw.githubusercontent.com
 // @connect      surfheaven.eu
+// @connect      iloveur.mom
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
 // @grant        GM.getValue
@@ -69,6 +70,8 @@
             map_cover_image: true,
             points_per_rank: true,
             completions_bar_chart: true,
+            user_ratings_table: true,
+            user_ratings: true
         }
         unsafeWindow.localStorage.setItem('settings', JSON.stringify(settings));
     }else{
@@ -89,12 +92,14 @@
         points_per_rank: "Show points per rank",
         completions_bar_chart: "Show completions as bar chart",
         toasts: "Show debug toasts",
+        user_ratings_table: "Show user rated maps",
+        user_ratings: "Show user ratings"
     }
 
     const settings_categories = {
         "Global" : ["flags","follow_list", "hover_info", "update_check", "toasts"],
-        "Dashboard" : ["country_top_100"],
-        "Map page" : ["cp_chart","points_per_rank","map_cover_image"],
+        "Dashboard" : ["country_top_100", "user_ratings_table"],
+        "Map page" : ["cp_chart","points_per_rank","map_cover_image","user_ratings"],
         "Profile" : ["steam_avatar", "completions_by_tier", "completions_bar_chart"],
     }
 
@@ -111,6 +116,8 @@
         if (settings.points_per_rank == null) settings.points_per_rank = true;
         if (settings.completions_bar_chart == null) settings.completions_bar_chart = true;
         if (settings.toasts == null) settings.toasts = false;
+        if (settings.user_ratings_table == null) settings.user_ratings_table = true;
+        if (settings.user_ratings == null) settings.user_ratings = true;
     }
 
     // SERVERS PAGE
@@ -1427,6 +1434,8 @@
     }
 
     function dashboard_page() {
+        insert_user_rated_maps_table();
+
         if(!settings.country_top_100) return;
         // CTOP Panel
         // this shit is such a mess
@@ -1529,6 +1538,92 @@
                     add_country_dropdown();
                 })
             });
+        });
+    }
+
+    function insert_user_rated_maps_table(){
+        if(!settings.user_ratings_table) return;
+        GM_xmlhttpRequest({
+            method: "GET",
+            url: "https://iloveur.mom/surfheaven/get_ratings.php",
+            onload: function (response) {
+                var thirds_class = "col-lg-4 col-md-4 col-sm-12 col-xs-12"
+                //console.log(response.responseText);
+                let maps = JSON.parse(response.responseText);
+                //console.log(maps);
+
+                let table = document.createElement('table');
+                table.className = "table table-striped table-hover";
+                table.id = "user_rated_maps_table";
+                let thead = document.createElement('thead');
+                let tbody = document.createElement('tbody');
+                thead.innerHTML = "<tr><th>Map name</th><th>Ratings</th><th>Difficulty</th><th>Fun</th><th>Unit</th><th>Tech</th></tr>";
+                table.appendChild(thead);
+
+                for (let map in maps){
+                    let row = document.createElement('tr');
+                    let map_name = document.createElement('td');
+                    let num_ratings = document.createElement('td');
+                    let difficulty_rating = document.createElement('td');
+                    let fun_factor_rating = document.createElement('td');
+                    let unit_rating = document.createElement('td');
+                    let tech_rating = document.createElement('td');
+
+                    map_name.innerHTML = `<a href="https://surfheaven.eu/map/${map}">${map}</a>`;
+                    num_ratings.innerHTML = Number(maps[map].num_ratings);
+                    difficulty_rating.innerHTML = Number(maps[map].difficulty_rating).toFixed(maps[map].difficulty_rating % 1 === 0 ? 0 : 2);
+                    fun_factor_rating.innerHTML = Number(maps[map].fun_factor_rating).toFixed(maps[map].fun_factor_rating % 1 === 0 ? 0 : 2);
+                    unit_rating.innerHTML = Number(maps[map].unit_rating).toFixed(maps[map].unit_rating % 1 === 0 ? 0 : 2);
+                    tech_rating.innerHTML = Number(maps[map].tech_rating).toFixed(maps[map].tech_rating % 1 === 0 ? 0 : 2);
+
+                    row.appendChild(map_name);
+                    row.appendChild(num_ratings);
+                    row.appendChild(difficulty_rating);
+                    row.appendChild(fun_factor_rating);
+                    row.appendChild(unit_rating);
+                    row.appendChild(tech_rating);
+
+                    tbody.appendChild(row);
+                }
+
+                table.appendChild(tbody);
+
+                let table_panel_container = document.createElement('div');
+                table_panel_container.className = "col-lg-6 col-md-6 col-sm-12 col-xs-12";
+                let table_panel = document.createElement('div');
+                table_panel.className = "panel panel-filled";
+                let table_panel_heading = document.createElement('div');
+                table_panel_heading.className = "panel-heading";
+                let table_panel_title = document.createElement('span');
+                table_panel_title.innerHTML = "USER RATED MAPS";
+                table_panel_heading.appendChild(table_panel_title);
+                table_panel.appendChild(table_panel_heading);
+                let table_panel_body = document.createElement('div');
+                table_panel_body.className = "panel-body";
+                table_panel_body.appendChild(table);
+                table_panel.appendChild(table_panel_body);
+                table_panel_container.appendChild(table_panel);
+
+                let target_div = document.querySelector('.content > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)');
+                target_div.insertBefore(table_panel_container, target_div.children[1]);
+
+                for (let i = 0; i < target_div.children.length; i++){
+                    target_div.children[i].className = thirds_class;
+                }
+
+                $('#user_rated_maps_table').DataTable({
+                    "ordering": true,
+                    "order": [[ 1, "desc" ]],
+                    "pagingType": "simple",
+                    "info": false,
+                    "searching": true,
+                    "lengthChange": false,
+                    "oLanguage": {
+                        "sSearch": '<i class="fas fa-search"></i>'
+                    }
+                });
+
+            }
         });
     }
 
@@ -1956,6 +2051,359 @@
         insert_points_per_rank(current_map_name);
         insert_map_page_tag_list(current_map_name);
         insert_friend_rankings(current_map_name);
+        insert_rating(current_map_name);
+
+    }
+
+    function insert_rating(map){
+        if(!settings.user_ratings) return;
+
+        function toggle_rating_modal(){
+            if(!document.querySelector('#rating_modal')){
+                let modal_fade = document.createElement('div');
+                modal_fade.className = "modal fade";
+                modal_fade.id = "rating_modal";
+                modal_fade.style = "display: flex;"
+                modal_fade.setAttribute("tabindex", "-1");
+                modal_fade.setAttribute("role", "dialog");
+                
+                let modal = document.createElement('div');
+                modal.className = "modal";
+                modal.id = "rating_modal";
+                modal.style = "display: flex;";
+                modal.setAttribute("role", "dialog");
+                modal_fade.appendChild(modal);
+
+                let modal_dialog = document.createElement('div');
+                modal_dialog.className = "modal-dialog";
+                modal.appendChild(modal_dialog);
+
+                let modal_content = document.createElement('div');
+                modal_content.className = "modal-content";
+                modal_dialog.appendChild(modal_content);
+
+
+                let modal_body = document.createElement('div');
+                modal_body.className = "modal-body";
+                modal_body.style.paddingTop = "0px";
+                modal_body.style.paddingBottom = "1rem";
+                modal_content.appendChild(modal_body);
+
+                let modal_title = document.createElement('h2');
+                modal_title.className = "text-center";
+                modal_title.innerHTML = "Rate this map";
+                modal_body.appendChild(modal_title);
+
+                let difficulty = document.createElement('div');
+                difficulty.className = "form-group";
+                let difficulty_label = document.createElement('label');
+                difficulty_label.setAttribute("for", "difficulty");
+                difficulty_label.innerHTML = "Difficulty 3/5";
+                difficulty.appendChild(difficulty_label);
+                let difficulty_label_small = document.createElement('small');
+                difficulty_label_small.innerHTML = "<br>How hard do you find this map relative to its tier?";
+                difficulty_label.appendChild(difficulty_label_small);
+                let difficulty_rating_input = document.createElement('input');
+                difficulty_rating_input.setAttribute("type", "range");
+                difficulty_rating_input.setAttribute("class", "form-control-range");
+                difficulty_rating_input.setAttribute("id", "difficulty");
+                difficulty_rating_input.setAttribute("min", "1");
+                difficulty_rating_input.setAttribute("max", "5");
+                difficulty_rating_input.setAttribute("value", "3");
+                difficulty.appendChild(difficulty_rating_input);
+                difficulty_rating_input.addEventListener('input', function(){
+                    difficulty_label.innerHTML = "Difficulty " + difficulty_rating_input.value + "/5" + "<br><small>How hard do you find this map relative to its tier?</small>";
+                });
+                modal_body.appendChild(difficulty);
+
+                let fun = document.createElement('div');
+                fun.className = "form-group";
+                let fun_label = document.createElement('label');
+                fun_label.setAttribute("for", "fun");
+                fun_label.innerHTML = "Fun 3/5";
+                fun.appendChild(fun_label);
+                let fun_label_small = document.createElement('small');
+                fun_label_small.innerHTML = "<br>How fun do you find this map?";
+                fun_label.appendChild(fun_label_small);
+                let fun_rating_input = document.createElement('input');
+                fun_rating_input.setAttribute("type", "range");
+                fun_rating_input.setAttribute("class", "form-control-range");
+                fun_rating_input.setAttribute("id", "fun");
+                fun_rating_input.setAttribute("min", "1");
+                fun_rating_input.setAttribute("max", "5");
+                fun_rating_input.setAttribute("value", "3");
+                fun.appendChild(fun_rating_input);
+                fun_rating_input.addEventListener('input', function(){
+                    fun_label.innerHTML = "Fun " + fun_rating_input.value + "/5" + "<br><small>How fun do you find this map?</small>";
+                });
+                modal_body.appendChild(fun);
+
+                // unit rating
+                let unit_rating = document.createElement('div');
+                unit_rating.className = "form-group";
+
+                let unit_rating_label = document.createElement('label');
+                unit_rating_label.setAttribute("for", "unit_rating");
+                unit_rating_label.innerText = "Unit 3/5";
+
+                let unit_rating_small = document.createElement('small');
+                unit_rating_small.innerHTML = "<br>Is the map unit heavy?";
+                unit_rating_label.appendChild(unit_rating_small);
+                let unit_rating_input = document.createElement('input');
+                unit_rating_input.setAttribute("type", "range");
+                unit_rating_input.setAttribute("class", "form-control-range");
+                unit_rating_input.setAttribute("id", "unit_rating");
+                unit_rating_input.setAttribute("min", "1");
+                unit_rating_input.setAttribute("max", "5");
+                unit_rating_input.setAttribute("value", "3")
+                unit_rating.appendChild(unit_rating_label);
+                unit_rating.appendChild(unit_rating_input);
+
+                unit_rating_input.addEventListener('input', function() {
+                    unit_rating_label.innerHTML = 'Unit ' + unit_rating_input.value + "/5" + "<small><br>Is the map unit heavy?</small>";
+                });
+                modal_body.appendChild(unit_rating);
+
+                // tech rating
+                let tech_rating = document.createElement('div');
+                tech_rating.className = "form-group";
+
+                let tech_rating_label = document.createElement('label');
+                tech_rating_label.setAttribute("for", "tech_rating");
+                tech_rating_label.innerText = "Tech 3/5";
+                let tech_rating_small = document.createElement('small');
+                tech_rating_small.innerHTML = "<br>How technical is the map?";
+                tech_rating_label.appendChild(tech_rating_small);
+                let tech_rating_input = document.createElement('input');
+                tech_rating_input.setAttribute("type", "range");
+                tech_rating_input.setAttribute("class", "form-control-range");
+                tech_rating_input.setAttribute("id", "tech_rating");
+                tech_rating_input.setAttribute("min", "1");
+                tech_rating_input.setAttribute("max", "5");
+                tech_rating_input.setAttribute("value", "3")
+                tech_rating.appendChild(tech_rating_label);
+                tech_rating.appendChild(tech_rating_input);
+
+                tech_rating_input.addEventListener('input', function() {
+                    tech_rating_label.innerHTML = 'Tech ' + tech_rating_input.value + "/5" + "<small><br>How technical is the map?</small>";
+                });
+
+                modal_body.appendChild(tech_rating);
+
+                let modal_footer = document.createElement('div');
+                modal_footer.className = "modal-footer";
+                modal_content.appendChild(modal_footer);
+
+                let submit_button = document.createElement('button');
+                submit_button.className = "btn btn-primary";
+                submit_button.innerHTML = "Submit";
+                submit_button.addEventListener('click', () => {
+                    let difficulty_value = document.querySelector('#difficulty').value;
+                    let fun_factor = document.querySelector('#fun').value;
+                    let unit_rating = document.querySelector('#unit_rating').value;
+                    let tech_rating = document.querySelector('#tech_rating').value;
+                    GM_xmlhttpRequest({
+                        method: 'POST',
+                        url: 'https://iloveur.mom/surfheaven/submit_rating.php',
+                        data: "map=" + map + "&id=" + get_id() + "&difficulty=" + difficulty_value + "&fun=" + fun_factor + "&unit=" + unit_rating + "&tech=" + tech_rating,
+                        headers:{
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        onload: function(response) {
+                            //console.log(response);
+                            let json = JSON.parse(response.responseText);
+
+                            if(json.error_message){
+                                create_toast("Error submitting rating", json.error_message, "error", 5000);
+                            }else{
+                                create_toast("Success", json.success_message, "success", 5000);
+                                update_ratings_text();
+                            }
+                        },
+                        onerror: function(error) {
+                            console.error(error);
+                            create_toast("Error submitting rating", "error", "error", 5000);
+                        }
+                    });
+                    $('#rating_modal').modal('hide');
+                });
+                modal_footer.appendChild(submit_button);
+
+                let cancel_button = document.createElement('button');
+                cancel_button.className = "btn btn-secondary";
+                cancel_button.innerHTML = "Cancel";
+                cancel_button.addEventListener('click', () => {
+                    $('#rating_modal').modal('hide');
+                }
+                );
+                modal_footer.appendChild(cancel_button);
+                document.body.appendChild(modal_fade);
+                $('#rating_modal').modal('show');
+            }else{
+                $('#rating_modal').modal('show');
+            }
+        }
+
+        let rate_this_map_link = document.createElement('a');
+        rate_this_map_link.href = "#";
+        rate_this_map_link.innerHTML = "Rate this map";
+        rate_this_map_link.style = "font-weight:bold !important; color:#fff !important;";
+        rate_this_map_link.addEventListener('click', () => {
+            toggle_rating_modal();
+        });
+
+        let map_ratings_column = document.createElement('div');
+        map_ratings_column.className = "col xs-12 col-sm-12";
+
+        let col1 = document.createElement('div');
+        col1.className = "col xs-12 col-sm-12";
+
+        let col2 = document.createElement('div');
+        col2.className = "col-sm-12";
+
+        let panel_heading = document.createElement('div');
+        panel_heading.className = "panel-heading";
+        let panel_heading_span = document.createElement('span');
+        panel_heading_span.innerHTML = "Map user ratings";
+        panel_heading.appendChild(panel_heading_span);
+
+        let panel_tools = document.createElement('div');
+        panel_tools.className = "panel-tools";
+        panel_tools.appendChild(rate_this_map_link);
+
+        let map_ratings_row = document.createElement('div');
+        map_ratings_row.className = "row panel panel-filled";
+
+
+        map_ratings_row.appendChild(panel_heading);
+        panel_heading.appendChild(panel_tools);
+        col2.appendChild(map_ratings_row);
+        col2.appendChild(map_ratings_column)
+        col1.appendChild(col2);
+
+
+        let ratings_row_target = document.querySelector('.content > div:nth-child(1)');
+
+        ratings_row_target.insertBefore(col1, ratings_row_target.childNodes[3]);
+
+        let difficulty_column = document.createElement('div');
+        difficulty_column.className = "col-md-3";
+        let difficulty_panel = document.createElement('div');
+        difficulty_panel.className = "panel panel-c-danger";
+
+
+        let difficulty_panel_body = document.createElement('div');
+        difficulty_panel_body.className = "panel-body";
+        let difficulty_panel_body_text = document.createElement('h3');
+        difficulty_panel_body_text.className = "m-b-none";
+        difficulty_panel_body_text.innerHTML = 'Difficulty';
+        let difficulty_panel_text_description = document.createElement('div');
+        difficulty_panel_text_description.className = "small";
+        difficulty_panel_text_description.innerHTML = 'Map difficulty relative to its tier';
+        difficulty_panel_body.appendChild(difficulty_panel_body_text);
+        difficulty_panel_body.appendChild(difficulty_panel_text_description);
+        difficulty_panel.appendChild(difficulty_panel_body);
+        difficulty_column.appendChild(difficulty_panel);
+        map_ratings_row.appendChild(difficulty_column);
+
+        let fun_column = document.createElement('div');
+        fun_column.className = "col-md-3 ";
+        let fun_panel = document.createElement('div');
+        fun_panel.className = "panel panel-c-success m-b-none";
+        let fun_panel_body = document.createElement('div');
+        fun_panel_body.className = "panel-body";
+        let fun_panel_body_text = document.createElement('h3');
+        fun_panel_body_text.className = "m-b-none";
+        fun_panel_body_text.innerHTML = 'Fun';
+        let fun_panel_text_description = document.createElement('div');
+        fun_panel_text_description.className = "small";
+        fun_panel_text_description.innerHTML = 'How fun the map is to play';
+        fun_panel_body.appendChild(fun_panel_body_text);
+        fun_panel_body.appendChild(fun_panel_text_description);
+        fun_panel.appendChild(fun_panel_body);
+        fun_column.appendChild(fun_panel);
+        map_ratings_row.appendChild(fun_column);
+
+        let unit_column = document.createElement('div');
+        unit_column.className = "col-md-3";
+        let unit_panel = document.createElement('div');
+        unit_panel.className = "panel panel-c-info m-b-none";
+        let unit_panel_body = document.createElement('div');
+        unit_panel_body.className = "panel-body";
+        let unit_panel_body_text = document.createElement('h3');
+        unit_panel_body_text.className = "m-b-none";
+        unit_panel_body_text.innerHTML = 'Unit';
+        let unit_panel_text_description = document.createElement('div');
+        unit_panel_text_description.className = "small";
+        unit_panel_text_description.innerHTML = 'How unit dependent the map is';
+        unit_panel_body.appendChild(unit_panel_body_text);
+        unit_panel_body.appendChild(unit_panel_text_description);
+        unit_panel.appendChild(unit_panel_body);
+        unit_column.appendChild(unit_panel);
+        map_ratings_row.appendChild(unit_column);
+
+        let tech_column = document.createElement('div');
+        tech_column.className = "col-md-3";
+        let tech_panel = document.createElement('div');
+        tech_panel.className = "panel panel-c-warning m-b-none";
+        let tech_panel_body = document.createElement('div');
+        tech_panel_body.className = "panel-body";
+        let tech_panel_body_text = document.createElement('h3');
+        tech_panel_body_text.className = "m-b-none";
+        tech_panel_body_text.innerHTML = 'Tech';
+        let tech_panel_text_description = document.createElement('div');
+        tech_panel_text_description.className = "small";
+        tech_panel_text_description.innerHTML = 'How technical the map is';
+        tech_panel_body.appendChild(tech_panel_body_text);
+        tech_panel_body.appendChild(tech_panel_text_description);
+        tech_panel.appendChild(tech_panel_body);
+        tech_column.appendChild(tech_panel);
+        map_ratings_row.appendChild(tech_column);
+
+
+        let map_ratings = [];
+        update_ratings_text();
+
+        function update_ratings_text(){
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: 'https://iloveur.mom/surfheaven/get_rating.php?map=' + map,
+                onload: function(response) {
+                    let json = JSON.parse(response.responseText);
+                    if(json.error_message){
+                        console.log(json.error_message);
+                        //create_toast("Error",json.error_message,"warning",5000) // most likely no ratings error
+                        difficulty_panel_body_text.innerHTML = "Difficulty N/A";
+                        fun_panel_body_text.innerHTML = "Fun N/A";
+                        unit_panel_body_text.innerHTML = "Unit N/A";
+                        tech_panel_body_text.innerHTML = "Tech N/A";
+                        panel_heading_span.innerHTML += " (0 Ratings, be the first to rate this map!)";
+
+                    }else{
+                        map_ratings = json;
+                        console.log(map_ratings);
+                        let difficulty = Number(map_ratings.difficulty_rating);
+                        let fun = Number(map_ratings.fun_factor_rating);
+                        let unit = Number(map_ratings.unit_rating);
+                        let tech = Number(map_ratings.tech_rating);
+                        let num_ratings = Number(map_ratings.num_ratings);
+
+                        difficulty_panel_body_text.innerHTML = "Difficulty "+difficulty.toFixed(difficulty % 1 === 0 ? 0 : 2) + "/5";
+                        fun_panel_body_text.innerHTML = "Fun "+fun.toFixed(fun % 1 === 0 ? 0 : 2) + "/5";
+                        unit_panel_body_text.innerHTML = "Unit "+unit.toFixed(unit % 1 === 0 ? 0 : 2) + "/5";
+                        tech_panel_body_text.innerHTML = "Tech "+tech.toFixed(tech % 1 === 0 ? 0 : 2) + "/5";
+                        panel_heading_span.innerHTML = "Map Ratings ("+num_ratings+")";
+
+                    }
+                },
+                onerror: function(error) {
+                    console.log(error);
+                    create_toast("Error",error,"error",5000)
+                }
+            });
+        }
+
+
 
     }
 
@@ -3150,7 +3598,7 @@
     }
 
     function create_toast(title, message, type, timeout) {
-        if(!settings.toasts && type != 'info') return;
+        if(!settings.toasts && type != 'info' && type != 'success') return;
         const toasts = document.querySelectorAll('.toast');
 
         let total_height = 50; // align just under navbar

@@ -1,3 +1,7 @@
+___4.2.15___
+Added map ratings!! very experimental, things might break or change etc etc 
+(Thanks house, Trick, Pliip, and o_oil for testing and others for feedback)
+
 ___4.2.14.2___
 Added friend ranking table to maps \o/
 

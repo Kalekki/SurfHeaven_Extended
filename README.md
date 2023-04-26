@@ -15,6 +15,7 @@ Select a tag, then press export, to quickly share the tag with other people
 
 [Dashboard](https://iloveur.mom/i/fu6KwGrh8k.png):
  - Country Top 100 list
+ - User rated maps
 
 [Profile page](https://iloveur.mom/i/ChMAA91eqx.png):
  - Completions by tier chart
@@ -34,6 +35,7 @@ Select a tag, then press export, to quickly share the tag with other people
  - Map picture cover (pics from [Sayt123/SurfMapPics](https://github.com/Sayt123/SurfMapPics))
  - Points per rank
  - Friend ranking table
+ - User submitted ratings (Difficulty, Fun, Unit, Tech)
 
 [Server page](https://iloveur.mom/i/i7z86IDGMw.png):
  - Ranks from the [original SH ranks by Link](https://greasyfork.org/en/scripts/438271-surfheaven-ranks)
