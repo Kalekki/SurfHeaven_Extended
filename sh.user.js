@@ -26,10 +26,9 @@
 
     const VERSION = GM_info.script.version;
     var use_custom = await GM.getValue('sh_ranks_use_custom_id', false);
-    var defaut_id = await GM.getValue('sh_ranks_default_id', get_id());
-    var custom_id = await GM.getValue('sh_ranks_custom_id', defaut_id);
+    var custom_id = await GM.getValue('sh_ranks_custom_id', unsafeWindow.localStorage.getItem('cached_id'));
+    let showed_id_prompt = false;
     var current_page = "";
-
     var url_path = window.location.pathname.split('/');
     var api_call_count = 0;
     var has_fetched = false; // has fetched completions of uncompleted maps and bonuses
@@ -152,7 +151,6 @@
             }
         }
     }
-    console.log("Current page: " + current_page);
 
     // Navbar crowded fix
     if (document.getElementById("navbar").clientHeight > 60) {
@@ -634,15 +632,15 @@
     }
     
     function make_request(url, func) {
-      make_request_async(url)
-        .then((data) => {
-            if(data){
-                func(data);
-            }else{
-                func(false)
-            }
-        });
-      api_call_count++;
+        make_request_async(url)
+            .then((data) => {
+                if(data){
+                    func(data);
+                }else{
+                    func(false)
+                }
+            });
+        api_call_count++;
     }
     
     function make_navbar_compact(){
@@ -974,13 +972,53 @@
         var id = "";
         if (use_custom) {
             id = custom_id;
-        } else {
-            make_request("https://api.surfheaven.eu/api/id", (data) => {
-                id = data[0].steamid;
-                GM.setValue('sh_ranks_default_id', id);
-            });
+        }else{
+            if(unsafeWindow.localStorage.getItem('cached_id') != null){
+                console.log("get_id() -> using cached id");
+                id = localStorage.getItem('cached_id');
+                return id;
+            }else{console.log("no saved id found in local storage, checking dom");}
+            // trying to get the id from the dom to save on api calls, if that fails we use the api
+            try{
+                let profile_href = document.querySelector("#navbar > form > ul > li:nth-child(1) > a").href;
+                let profile_id = profile_href.split('/').pop();
+                // rudimentary check to see if we got a valid id
+                if (Number.isInteger(Number(profile_id))) {
+                    console.log("could not get id from dom");
+                    throw "need api for id";
+                }else{
+                    id = profile_id;
+                    unsafeWindow.localStorage.setItem('cached_id', id);
+                    console.log("id from dom: " + id);
+                }
+            }catch{
+                make_request("https://api.surfheaven.eu/api/id", (data) => {
+                    console.log(data)
+                    if(data){
+                        id = data[0].steamid;
+                        console.log("id from api: " + id);
+                        unsafeWindow.localStorage.setItem('cached_id', id);
+                    }else{
+                        console.log("even the api failed to return an id, prompting user for id");
+                        if (!showed_id_prompt && (!unsafeWindow.localStorage.getItem("waiting_for_id") || unsafeWindow.localStorage.getItem("waiting_for_id") == "false")){
+                            let last_ditch_id = prompt("The script couldn't figure out your ID. Please go to your profile, you will be prompted to confirm there. Alternatively you can type your username here, and then select your profile", "Your Steam username");
+                            showed_id_prompt = true;
+                            unsafeWindow.localStorage.setItem("waiting_for_id", "true")
+
+                            if(!isNaN(last_ditch_id) && last_ditch_id != "" && last_ditch_id != null){
+                                // if your steam username happens to be just numbers, fuck you
+                                id = last_ditch_id;
+                                unsafeWindow.localStorage.setItem('cached_id', id);
+                            }else if(last_ditch_id != null && last_ditch_id != ""){
+                                unsafeWindow.location.href = "https://surfheaven.eu/search/"+last_ditch_id;
+                            }
+                        }
+                    }
+                });
+            }
+
         }
-        return id != "" ? id : defaut_id;
+        return id !== "" ? id : (() => { throw new Error("Unable to get ID from api, new ip?"); })();
     }
 
     function fetch_country_rank(id) {
@@ -1400,10 +1438,7 @@
     }
 
     function auto_fetch_ranks() {
-        make_request("https://api.surfheaven.eu/api/id", (data) => {
-            const id = data[0].steamid;
-            fetch_ranks(id);
-        });
+        fetch_ranks(get_id());
     }
 
     function follow_user(id) {
@@ -1750,6 +1785,17 @@
         let star_span = document.createElement('span');
 
         original_username = original_username.trim();
+
+        // Prompt user to confirm profile if it's not cached
+        if(unsafeWindow.localStorage.getItem('waiting_for_id') == 'true'){
+            console.log("profile confirmation")
+            do_after(() => {
+                if(window.confirm('Is this the correct profile? ('+original_username +', ID: '+current_profile_id+')')){
+                    unsafeWindow.localStorage.setItem('cached_id', current_profile_id);
+                    unsafeWindow.localStorage.setItem('waiting_for_id', false);
+                }
+            },1000);
+        }
 
         star_span.textContent = '* ';
         star_span.title = "Actual username: "+original_username;
