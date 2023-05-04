@@ -1,3 +1,8 @@
+___4.2.15.1___
+Show raters in map page
+Improve the uncompleted map tables in profile
+Highlight rank in servers page, based on completion % (Thanks Isark)
+
 ___4.2.15___
 Added map ratings!! very experimental, things might break or change etc etc 
 (Thanks house, Trick, Pliip, and o_oil for testing and others for feedback)

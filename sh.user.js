@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.15
+// @version      4.2.15.1
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -31,10 +31,10 @@
     var current_page = "";
     var url_path = window.location.pathname.split('/');
     var api_call_count = 0;
-    var has_fetched = false; // has fetched completions of uncompleted maps and bonuses
     var map_completions = {};
     var map_types = {};
     var map_tiers = {};
+    let map_dates = {};
     var bonus_completions = {};
 
     // colors are approximate and might be wrong, let me know
@@ -119,6 +119,22 @@
         if (settings.user_ratings == null) settings.user_ratings = true;
     }
 
+    // Text under "SurfHeaven"
+    let logo = document.querySelector(".navbar-brand");
+    let logo_text = document.createElement("div");
+    logo_text.id = "logo_text";
+    logo_text.innerHTML = "<a style='color:#FFFFFF;' href='https://github.com/Kalekki/SurfHeaven_Extended' target='_blank'>Extended</a>";
+    logo_text.style.position = "absolute";
+    logo_text.style.bottom = "0px";
+    logo_text.style.fontSize = "10px";
+    logo_text.style.color = "#FFFFFF";
+    logo_text.style.padding = "0px 0px";
+    logo_text.style.zIndex = "100";
+    logo_text.style.bottom = "5px";
+    logo_text.style.left = "95px"
+    logo.appendChild(logo_text);
+
+
     // SERVERS PAGE
     if (window.location.pathname.endsWith("/servers/")) {
         current_page = "servers";
@@ -171,7 +187,6 @@
             unsafeWindow.localStorage.setItem('update_last_checked', Date.now());
             check_for_updates();
         }
-    
     }
 
     function check_for_updates(){
@@ -980,16 +995,25 @@
             }else{console.log("no saved id found in local storage, checking dom");}
             // trying to get the id from the dom to save on api calls, if that fails we use the api
             try{
-                let profile_href = document.querySelector("#navbar > form > ul > li:nth-child(1) > a").href;
-                let profile_id = profile_href.split('/').pop();
+                let navbar_links = document.querySelectorAll(".nav > li > a");
+                let profile_href = "";
+                for (let i = 0; i < navbar_links.length; i++) {
+                    if (navbar_links[i].href.includes("https://surfheaven.eu/player/")) {
+                        console.log("found profile link");
+                        profile_href = navbar_links[i].href;
+                        break;
+                    }
+    
+                }
+                let profile_id = profile_href.split("/").pop();
                 // rudimentary check to see if we got a valid id
-                if (Number.isInteger(Number(profile_id))) {
+                if (!Number.isInteger(Number(profile_id))) {
                     console.log("could not get id from dom");
                     throw "need api for id";
                 }else{
                     id = profile_id;
                     unsafeWindow.localStorage.setItem('cached_id', id);
-                    console.log("id from dom: " + id);
+                    console.log("id from dom: " + id + ", caching");
                 }
             }catch{
                 make_request("https://api.surfheaven.eu/api/id", (data) => {
@@ -1018,7 +1042,7 @@
             }
 
         }
-        return id !== "" ? id : (() => { throw new Error("Unable to get ID from api, new ip?"); })();
+        return id !== "" ? id : console.error("Unable to get id, behind vpn?");
     }
 
     function fetch_country_rank(id) {
@@ -1078,8 +1102,8 @@
                     if (data2) {
                         data2.forEach((map) => {
                             map_tiers[map.map] = map.tier;
+                            map_dates[map.map] = map.date_added;
                         })
-                        has_fetched = true;
                         update_map_completions();
                         update_bonus_completions();
                     }
@@ -1089,119 +1113,75 @@
     }
 
     function update_map_completions() {
-        var a_elements = document.querySelectorAll('#DataTables_Table_1 a');
-        a_elements.forEach((a_element) => {
-            var map_name = a_element.innerHTML;
-            if (map_name.includes("completions")) {
-                return;
+        let table = $('#DataTables_Table_1').DataTable();
+        let data = table.data().toArray();
+        table.destroy();
+        $('#DataTables_Table_1').empty();
+        for(let i = 0; i < data.length; i++){
+            let map_name = data[i][0].split(">")[1].split("<")[0];
+            data[i].push(map_completions[map_name]);
+            data[i].push(map_dates[map_name].split("T")[0]);
+        }
+
+        $('#DataTables_Table_1').DataTable({
+            data: data,
+            columns: [
+                { title: "Map" },
+                { title: "Tier" },
+                { title: "Type" },
+                { title: "Completions" },
+                { title: "Date Added" }
+            ],
+            "order": [[ 3, "desc" ]],
+            "paging": true,
+            //"pagingType": "simple",
+            "info": false,
+            "lengthChange": false,
+            "autoWidth": false,
+            "oLanguage": {
+                "sSearch": '<i class="fas fa-search"></i>'
             }
-            var completions_txt = document.createElement('td');
-            completions_txt.innerHTML = " " + map_completions[map_name] + " completions";
-            completions_txt.style.color = "#949BA2";
-            completions_txt.style.float = "right";
-            completions_txt.style.marginRight = "15%";
-            if (has_fetched) a_element.appendChild(completions_txt);
+            
         });
-    }
 
-    function sort_map_completions(order) {
-        var map_completions_table = document.querySelector('#DataTables_Table_1');
-        var map_rows = map_completions_table.rows;
-        var map_names = [];
-        for (var i = 1; i < map_rows.length; i++) {
-            var map_name = map_rows[i].cells[0].innerHTML;
-            map_name = map_name.split(">")[1].split("<")[0];
-            map_names.push(map_name);
-        }
-        if (order == "asc") {
-            map_names.sort((a, b) => {
-                return map_completions[a] - map_completions[b];
-            });
-        } else {
-            map_names.sort((a, b) => {
-                return map_completions[b] - map_completions[a];
-            });
-        }
-        var map_completions_tbody = document.querySelector('#DataTables_Table_1 > tbody:nth-child(2)');
-        map_completions_tbody.innerHTML = "";
-        map_names.forEach((map_name) => {
-            var map_tier = map_tiers[map_name]
-            var map_type = map_types[map_name];
-            var map_row = document.createElement('tr');
-            var map_name_td = document.createElement('td');
-            var map_tier_td = document.createElement('td');
-            var map_type_td = document.createElement('td');
-            map_name_td.innerHTML = "<a href=\"https://surfheaven.eu/map/" + map_name + "\">" + map_name + "</a> <span style=\"color: #949BA2; float: right; margin-right: 15%;\">" + map_completions[map_name] + " completions</span>";
-            map_tier_td.innerHTML = map_tier;
-            map_type_td.innerHTML = map_type;
-            map_row.appendChild(map_name_td);
-            map_row.appendChild(map_tier_td);
-            map_row.appendChild(map_type_td);
-            map_completions_tbody.appendChild(map_row);
-        });
-    }
-
-    function sort_bonus_completions(order) {
-        var bonus_completions_table = document.querySelector('#DataTables_Table_2');
-        var bonus_rows = bonus_completions_table.rows;
-        var bonus_maps = [];
-        for (var i = 1; i < bonus_rows.length; i++) {
-            var bonus_map = bonus_rows[i].cells[0].innerHTML;
-            bonus_map = bonus_map.split(">")[1].split("<")[0];
-            var bonus_number = bonus_rows[i].cells[1].innerHTML;
-            bonus_number = bonus_number.split(" ")[1];
-            bonus_map = bonus_map + " " + bonus_number;
-            bonus_maps.push(bonus_map);
-        }
-        // some amazing reason surf_fornax b7 is not in the api but is in the table??? without filtering the ordering is broken
-        bonus_maps = bonus_maps.filter((bonus_map) => {
-            return bonus_map != "surf_fornax 7";
-        })
-        if (order == "asc") {
-            bonus_maps.sort((a, b) => {
-                return bonus_completions[a] - bonus_completions[b];
-            });
-        } else {
-            bonus_maps.sort((a, b) => {
-                return bonus_completions[b] - bonus_completions[a];
-            });
-        }
-        var bonus_completions_tbody = document.querySelector('#DataTables_Table_2 > tbody:nth-child(2)');
-        bonus_completions_tbody.innerHTML = "";
-        bonus_maps.forEach((bonus_map) => {
-            var bonus_map_row = document.createElement('tr');
-            var bonus_map_name_td = document.createElement('td');
-            var bonus_map_number_td = document.createElement('td');
-            bonus_map_name_td.innerHTML = "<a href=\"https://surfheaven.eu/map/" + bonus_map.split(" ")[0] + "\">" + bonus_map.split(" ")[0] + "</a> <span style=\"color: #949BA2; float: right; margin-right: 15%;\">" + (bonus_completions[bonus_map] != undefined ? bonus_completions[bonus_map] : 0) + " completions</span>"
-            bonus_map_number_td.innerHTML = "Bonus " + bonus_map.split(" ")[1];
-            bonus_map_row.appendChild(bonus_map_name_td);
-            bonus_map_row.appendChild(bonus_map_number_td);
-            bonus_completions_tbody.appendChild(bonus_map_row);
-        });
     }
 
     function update_bonus_completions() {
-        // each tr has 2 td's, first is map name, second is the bonus number
-        var bonus_table = document.querySelector('#DataTables_Table_2');
-        var bonus_rows = bonus_table.rows;
-        var bonus_maps = [];
-        for (var i = 1; i < bonus_rows.length; i++) {
-            var bonus_map = bonus_rows[i].cells[0].innerHTML;
-            bonus_map = bonus_map.split(">")[1].split("<")[0];
-            var bonus_number = bonus_rows[i].cells[1].innerHTML;
-            bonus_number = bonus_number.split(" ")[1];
-            bonus_map = bonus_map + " " + bonus_number;
-            bonus_maps.push(bonus_map);
-            var completions_txt = document.createElement('span');
-            completions_txt.innerHTML = " " + bonus_completions[bonus_map] + " completions";
-            completions_txt.style.color = "#949BA2";
-            completions_txt.style.float = "right";
-            completions_txt.style.marginRight = "15%";
-            if (has_fetched) {
-                if (bonus_rows[i].cells[0].innerHTML.includes("completions")) return;
-                bonus_rows[i].cells[0].appendChild(completions_txt);
+        let table = $('#DataTables_Table_2').DataTable();
+        let data = table.data().toArray();
+        table.destroy();
+        $('#DataTables_Table_2').empty();
+        for(var i = 0; i < data.length; i++) {
+            let map_name = data[i][0].split(">")[1].split("<")[0];
+            let bonus_number = data[i][1].split(" ")[1];
+            let bonus_map = map_name + " " + bonus_number;
+            let completions = bonus_completions[bonus_map];
+            let date_added = map_dates[map_name].split("T")[0];
+            if(completions == undefined) {
+                completions = "??";
             }
+            data[i].push(completions);
+            data[i].push(date_added);
         }
+        $('#DataTables_Table_2').DataTable({
+            data: data,
+            columns: [
+                { title: "Map" },
+                { title: "Bonus" },
+                { title: "Completions" },
+                { title: "Date Added" }
+            ],
+            "order": [[ 2, "desc" ]],
+            "paging": true,
+            //"pagingType": "simple", 
+            "info": false,
+            "lengthChange": false,
+            "autoWidth": false,
+            "oLanguage": {
+                "sSearch": '<i class="fas fa-search"></i>'
+            }
+        });
+
     }
 
     function country_code_to_flag_url(country_code) {
@@ -1340,8 +1320,19 @@
                             const map_record = rec[0];
                             if (map_record) { 
                                 server_row[2].innerHTML += `<i title="You have completed this map!" class="fas fa-check text-success"></i>`;
-                                const txt = document.createTextNode(map_record.rank + " / " + server.mapinfo.completions);
-                                rank_cells[i].appendChild(txt);
+
+                                const top_percent = unsafeWindow.localStorage.getItem('rank_threshold') / 100;
+                                const top_x = Math.ceil(server.mapinfo.completions * top_percent);
+                                let element_with_color = document.createElement('span');
+                                element_with_color.textContent = map_record.rank
+                                let complete_rank = document.createTextNode(" / " + server.mapinfo.completions);
+                                if (map_record.rank <= top_x) {
+                                    element_with_color.className = 'text-success';
+                                } else {
+                                    element_with_color.className = 'text-danger';
+                                }
+                                rank_cells[i].appendChild(element_with_color);
+                                rank_cells[i].appendChild(complete_rank);
                             } else { 
                                 const txt = document.createTextNode("0 / " + server.mapinfo.completions);
                                 rank_cells[i].appendChild(txt);
@@ -1418,13 +1409,21 @@
                         if (!records || !records[completion.track]) {
                             rank_text = `0 / ${completion.completions}`
                         } else {
-                            rank_text = `${records[completion.track].rank} / ${completion.completions}`
+                            const top_percent = unsafeWindow.localStorage.getItem('rank_threshold') / 100;
+
+                            if ((records[completion.track].rank / completion.completions) <= top_percent ) {
+                                rank_text = `<span class="text-success">${records[completion.track].rank}  </span>`;
+                            } else {
+                                rank_text = `<span class="text-danger">${records[completion.track].rank}  </span>`;
+                            }
+
+                            rank_text += `/ ${completion.completions}`
                             h5_elem.textContent = `Bonus ${completion.track}`;
                         }
 
                         const rank_elem = document.createElement('p');
                         rank_elem.style = "margin-top: 10px;margin-bottom: 10px;font-size: 14px;font-family: inherit;display: block;   margin-inline-start: 0px;margin-inline-end: 0px;line-height: 1.1;";
-                        rank_elem.textContent = rank_text;
+                        rank_elem.innerHTML = rank_text;
                         div_2.appendChild(h5_elem);
                         div.appendChild(rank_elem);
                     });
@@ -1688,6 +1687,34 @@
             document.getElementById("region_select").value = "Global";
         }
 
+        let rank_threshold_input = document.createElement('input');
+        rank_threshold_input.type = 'number';
+        rank_threshold_input.min = 0;
+        rank_threshold_input.max = 100;
+        let rank_threshold = 50;
+        if(unsafeWindow.localStorage.getItem('rank_threshold') === null){
+            unsafeWindow.localStorage.setItem('rank_threshold', rank_threshold);
+        }else{
+            rank_threshold = unsafeWindow.localStorage.getItem('rank_threshold');
+        }
+        rank_threshold_input.value = rank_threshold;
+        rank_threshold_input.id = 'rank_threshold_input';
+        rank_threshold_input.className = 'form-control';
+        rank_threshold_input.style = 'width: 80px; display: inline-block;';
+        rank_threshold_input.value = rank_threshold;
+        let rank_threshold_label = document.createElement('label');
+        rank_threshold_label.htmlFor = 'rank_threshold_input';
+        rank_threshold_label.innerHTML = 'Highlight your rank based on completion % : ';
+        let rank_threshold_container = document.createElement('div');
+        rank_threshold_container.className = 'form-group';
+        rank_threshold_container.appendChild(rank_threshold_label);
+        rank_threshold_container.appendChild(rank_threshold_input);
+
+        rank_threshold_input.addEventListener('change', function(){
+            unsafeWindow.localStorage.setItem('rank_threshold', rank_threshold_input.value);
+            refresh_servers();
+        });
+
         let queue_button = document.createElement('button');
         queue_button.className = 'btn btn-success btn-lg';
         queue_button.innerHTML = 'Queue for empty server';
@@ -1727,6 +1754,9 @@
         document.querySelector('.panel-heading').appendChild(document.createElement('br'));
         document.querySelector('.panel-heading').appendChild(auto_join_checkbox);
         document.querySelector('.panel-heading').appendChild(auto_join_label);
+        document.querySelector('.panel-heading').appendChild(document.createElement('br'));
+        document.querySelector('.panel-heading').appendChild(rank_threshold_container);
+
 
         function queue_for_empty_server(region){
             let found = false;
@@ -1919,54 +1949,6 @@
             common_uncompleted_maps_target_div.insertBefore(common_uncompleted_maps_button, common_uncompleted_maps_target_div.children[1]);
         }
 
-        // uncompleted maps table
-        $('#DataTables_Table_1').on('draw.dt', function () {
-            update_map_completions();
-        });
-        // uncompleted bonuses table
-        $('#DataTables_Table_2').on('draw.dt', function () {
-            update_bonus_completions();
-        });
-        // SORTING BY COMPLETIONS
-        var sort_completions_button = document.createElement('button');
-        sort_completions_button.className = 'btn btn-success btn-xs';
-        var order_arrow_direction = "▼"; // ↓ or ↑;
-        sort_completions_button.innerHTML = "Sort by completions " + order_arrow_direction;
-        sort_completions_button.style = "margin-right: 10px;padding-right: 10px;";
-        var sort_map_completions_order = "desc";
-        var sort_bonus_completions_order = "desc";
-
-        sort_completions_button.onclick = function () {
-            // show all rows in the table MUST BE DONE otherwise only the 10 visible rows will be sorted
-            var table = $('#DataTables_Table_1').DataTable();
-            table.page.len(-1).draw()
-            sort_map_completions(sort_map_completions_order);
-            // scrollbar
-            var table_div = document.querySelector('#DataTables_Table_1_wrapper');
-            table_div.style = "overflow-y: scroll; height: 500px;"
-            sort_map_completions_order = sort_map_completions_order == "asc" ? "desc" : "asc";
-            // Arrow dir
-            order_arrow_direction = sort_map_completions_order == "asc" ? "▲" : "▼";
-            sort_completions_button.innerHTML = "Sort by completions " + order_arrow_direction;
-        }
-        $('#DataTables_Table_1_filter').prepend(sort_completions_button);
-        // Bonus table
-        var sort_completions_button_b = document.createElement('button');
-        sort_completions_button_b.className = 'btn btn-success btn-xs';
-        sort_completions_button_b.innerHTML = "Sort by completions ▼";
-        sort_completions_button_b.style = "margin-right: 10px;";
-        sort_completions_button_b.onclick = function () {
-            var table = $('#DataTables_Table_2').DataTable();
-            table.page.len(-1).draw()
-            sort_bonus_completions(sort_bonus_completions_order);
-            var table_div = document.querySelector('#DataTables_Table_2_wrapper');
-            table_div.style = "overflow-y: scroll; height: 500px;"
-            sort_bonus_completions_order = sort_bonus_completions_order == "asc" ? "desc" : "asc";
-            order_arrow_direction = sort_bonus_completions_order == "asc" ? "▲" : "▼";
-            sort_completions_button_b.innerHTML = "Sort by completions " + order_arrow_direction;
-        }
-        $('#DataTables_Table_2_filter').prepend(sort_completions_button_b);
-
     }
 
     function player_comparison(id_array, find_common_uncompleted = false){
@@ -2098,7 +2080,7 @@
         insert_map_page_tag_list(current_map_name);
         insert_friend_rankings(current_map_name);
         insert_rating(current_map_name);
-
+        
     }
 
     function insert_rating(map){
@@ -2310,7 +2292,7 @@
         let panel_heading = document.createElement('div');
         panel_heading.className = "panel-heading";
         let panel_heading_span = document.createElement('span');
-        panel_heading_span.innerHTML = "Map user ratings";
+        panel_heading_span.innerHTML = "Map user ratings ";
         panel_heading.appendChild(panel_heading_span);
 
         let panel_tools = document.createElement('div');
@@ -2427,18 +2409,24 @@
 
                     }else{
                         map_ratings = json;
-                        console.log(map_ratings);
                         let difficulty = Number(map_ratings.difficulty_rating);
                         let fun = Number(map_ratings.fun_factor_rating);
                         let unit = Number(map_ratings.unit_rating);
                         let tech = Number(map_ratings.tech_rating);
                         let num_ratings = Number(map_ratings.num_ratings);
+                        let show_raters_link = document.createElement('a');
+                        show_raters_link.href = "#";
+                        show_raters_link.innerHTML = '('+num_ratings+')';
+                        show_raters_link.onclick = function(){
+                            show_map_raters(map);
+                        };
 
                         difficulty_panel_body_text.innerHTML = "Difficulty "+difficulty.toFixed(difficulty % 1 === 0 ? 0 : 2) + "/5";
                         fun_panel_body_text.innerHTML = "Fun "+fun.toFixed(fun % 1 === 0 ? 0 : 2) + "/5";
                         unit_panel_body_text.innerHTML = "Unit "+unit.toFixed(unit % 1 === 0 ? 0 : 2) + "/5";
                         tech_panel_body_text.innerHTML = "Tech "+tech.toFixed(tech % 1 === 0 ? 0 : 2) + "/5";
-                        panel_heading_span.innerHTML = "Map Ratings ("+num_ratings+")";
+                        panel_heading_span.innerHTML = "Map Ratings "
+                        panel_heading_span.appendChild(show_raters_link);
 
                     }
                 },
@@ -2451,6 +2439,55 @@
 
 
 
+    }
+
+    function show_map_raters(map_name){
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url: 'https://iloveur.mom/surfheaven/get_raters.php?map='+map_name,
+            onload: function (response) {
+                let ratings = JSON.parse(response.responseText);
+                if(!ratings.error_message){
+                    let max_ratings_to_show = 20;
+                    let ratings_div = document.createElement('div');
+                    ratings_div.id = "ratings_div";
+                    ratings_div.style.padding = "5px";
+                    ratings_div.style.maxHeight = "300px";
+                    ratings_div.style.minWidth = "200px";
+                    ratings_div.style.overflowY = "scroll";
+                    ratings_div.style.overflowX = "hidden";
+
+                    let ratings_div_list = document.createElement('ul');
+                    ratings_div_list.style.padding = "0";
+                    ratings_div_list.style.marginLeft = "0";
+                    ratings_div.appendChild(ratings_div_list);
+                    for(let i = 0; i < ratings.length; i++){
+                        let ratings_div_list_item = document.createElement('li');
+                        if(i >= max_ratings_to_show){
+                            ratings_div_list_item.innerHTML = `... and ${ratings.length - max_ratings_to_show} others`;
+                            ratings_div.appendChild(ratings_div_list_item);
+                            break;
+                        }
+                        make_request('https://api.surfheaven.eu/api/playerinfo/'+ratings[i], (data) => {
+                            if(data){
+                                ratings_div_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${ratings[i]}" target="_blank">${data[0].name}</a>`
+                                ratings_div_list.appendChild(ratings_div_list_item);
+                                insert_flags_to_profiles();
+                            }else{
+                                ratings_div_list_item.innerHTML = `<a href="https://steamcommunity.com/profiles/${ratings[i]}" target="_blank">${ratings[i]}</a>`
+                                ratings_div_list.appendChild(ratings_div_list_item);
+                            }
+                        });
+
+
+                    }
+                    show_overlay_window("Rated by",ratings_div);
+                }else{
+                    create_toast("Error",ratings.error_message,"error",5000)
+                }
+            }
+        })
+            
     }
 
     function insert_friend_rankings(map){
@@ -2475,7 +2512,7 @@
             children.length > 1 ? friends_ranking_button.innerHTML = "Friends" : friends_ranking_button.innerHTML = "Show friends";
             friends_ranking_button.href = "#";
             friends_ranking_button.setAttribute("for", "table-friends");
-            friends_ranking_button.onclick = function() {
+            friends_ranking_button.onclick = function(e) {
                 if(children.length > 1){
                     // Has bonuses
                     if (!$(this).hasClass("active") && $(this).is("[for]")) {
@@ -2488,6 +2525,7 @@
                     if ($(this).attr('href') == '#') return false;
                 }else{
                     // No bonuses
+                    e.preventDefault();
                     let table_maps_div = document.querySelector('.table-maps');
                     let table_friends_div = document.querySelector('.table-friends');
                     table_friends_div.classList.toggle('hide');
@@ -3459,7 +3497,7 @@
         //save settings
         const save_settings_button = document.createElement("button");
         save_settings_button.classList.add("btn", "btn-sm", "btn-success");
-        save_settings_button.textContent = "Save settings";
+        save_settings_button.textContent = "Apply settings";
         save_settings_button.style.marginTop = "1rem";
         save_settings_button.style.marginBottom = "1rem";
         settings_div.appendChild(save_settings_button);
@@ -3589,7 +3627,20 @@
         api_call_count_p.textContent = "API calls: " + api_call_count;
         api_call_count_p.style.marginTop = "0.5rem";
         settings_div.appendChild(api_call_count_p);
-        
+
+        let show_raters_button = document.createElement("button");
+        show_raters_button.classList.add("btn", "btn-xs", "btn-primary");
+        show_raters_button.textContent = "Map raters";
+        show_raters_button.style.marginRight = "1rem";
+        show_raters_button.onclick = () => {
+            let overlay = document.getElementById("overlay");
+            if (overlay) {
+                overlay.remove();
+            }
+            show_all_map_raters();
+        }
+        settings_div.appendChild(show_raters_button);
+
         //changelog title
         const changelog_title = document.createElement("h5");
         changelog_title.textContent = "Changelog";
@@ -3717,6 +3768,51 @@
             nickname = unsafeWindow.localStorage.getItem("nickname_"+id);
         }
         return nickname;
+    }
+
+    function show_all_map_raters(){
+
+        let rater_list = [];
+        let raters_div = document.createElement("div");
+        raters_div.style.minWidth = "300px";
+        raters_div.style.maxHeight = "500px";
+        raters_div.style.overflowY = "scroll";
+
+        let raters_list = document.createElement("ul");
+        raters_list.style.listStyleType = "none";
+        raters_list.style.paddingLeft = "0px";
+        raters_list.style.marginLeft = "0px";
+
+        make_request('https://iloveur.mom/surfheaven/get_all_ids.php', function(response){
+            let rater_count  = response.length;
+            show_overlay_window(rater_count + " lovely raters",raters_div);
+            let loading_element = document.createElement("h3");
+
+            raters_div.appendChild(loading_element);
+            response.forEach(rater => {
+                make_request('https://api.surfheaven.eu/api/playerinfo/'+rater, function(player){
+                    const rater_info = player[0].name;
+                    console.log(rater_info);
+                    rater_list.push([rater, rater_info]);
+                    loading_element.innerHTML = "Loading raters... ("+rater_list.length+"/"+rater_count+") <i class='fas fa-spinner fa-spin'></i>";
+
+                    if(rater_list.length == rater_count){
+                        console.log("got all raters, displaying rater list");
+                        raters_div.innerHTML = "";
+                        for(let i = 0; i < rater_list.length; i++){
+                            let rater_li = document.createElement("li");
+                            rater_li.innerHTML = `<a href="https://surfheaven.eu/player/${rater_list[i][0]}" target="_blank">${rater_list[i][1]}</a>`;
+                            raters_list.appendChild(rater_li);
+                        }
+                        raters_div.appendChild(raters_list);
+
+                        insert_flags_to_profiles();
+                    }
+
+                });
+            });
+        });
+
     }
 
 })();
@@ -4014,9 +4110,10 @@ GM_addStyle(`
         font-weight: bold;
     }
     .rainbow-text {
-        background: linear-gradient(to right, #FF6663, #FEB144, #FDFD97, #9EE09E, #9EC1CF, #BAC5E8, #CC99C9);
+        background: repeating-linear-gradient(to right, #FF6663, #FEB144, #FDFD97, #9EE09E, #9EC1CF, #BAC5E8, #CC99C9);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        animation: 40s linear 40s infinite;
         font-weight: 600;
     }
 `);
