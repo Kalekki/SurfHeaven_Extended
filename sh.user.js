@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.15.1
+// @version      4.2.16
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -1905,6 +1905,7 @@
         fetch_time_spent(current_profile_id);
         completions_by_tier(current_profile_id);
         insert_points_until_next_rank();
+        insert_profile_dropdown_stats(current_profile_id);
 
         const compare_button = document.createElement('button');
         compare_button.className = 'btn btn-success btn-xs';
@@ -1915,16 +1916,18 @@
         let compare_target_div = document.querySelector('div.col-sm-12:nth-child(3) > div:nth-child(1) > div:nth-child(1)');
         compare_target_div.insertBefore(compare_button, compare_target_div.children[1]);
 
-        // total points from map completions
-        let map_points = 0;
-        make_request("https://api.surfheaven.eu/api/records/"+current_profile_id+"/track", function (data) {
+        // avg bonus rank
+        let bonus_ranks = [];
+        make_request("https://api.surfheaven.eu/api/records/"+current_profile_id, function (data) {
             for(let i = 0; i < data.length; i++){
-                map_points += data[i].points;
+                if(data[i].track != 0)
+                bonus_ranks.push(data[i].rank);
             }
+            let avg_brank = Math.ceil(bonus_ranks.reduce((a, b) => a + b, 0) / bonus_ranks.length);
             var stats_table = document.querySelector('.medium > tbody:nth-child(1)');
             var stats_table_rows = stats_table.children;
             var points_td = document.createElement('td');
-            points_td.innerHTML = '<strong class="c-white">'+map_points+'</strong> Points from map completions';
+            points_td.innerHTML = '<strong class="c-white">'+avg_brank+'</strong> Avg Bonus Rank';
             stats_table_rows[4].appendChild(points_td);
 
         });
@@ -2074,6 +2077,7 @@
 
         map_youtube_link(current_map_name);
         fetch_map_rank(current_map_name);
+        insert_dropdown_stats(current_map_name);
         cp_chart();
         insert_map_picture(current_map_name);
         insert_points_per_rank(current_map_name);
@@ -2081,6 +2085,160 @@
         insert_friend_rankings(current_map_name);
         insert_rating(current_map_name);
         
+    }
+
+    function insert_dropdown_stats(map, friends = false){
+        let records_table
+
+        let target_div = document.querySelectorAll('div.col')
+        let correct_div = target_div[target_div.length -1]
+        let table_div = correct_div.querySelector('div.table-responsive.table-maps')
+        let table = table_div.childNodes[1]
+
+        if(friends){
+            table = document.querySelector('div.table-responsive.table-friends')
+        }
+        console.log(table)
+        records_table = table.querySelectorAll('a')
+
+        insert_glyphs()
+
+        function insert_glyphs(){ // local variation of the same function, i'll fix this later
+            records_table.forEach((record) => {
+                let toggle_glyph = document.createElement('A')
+                toggle_glyph.className = "glyphicon glyphicon-menu-down"
+                toggle_glyph.style = "float: right; margin-right: 10px;margin-left: 20px; cursor: pointer;"
+                toggle_glyph.href = "#"
+    
+                let link = record.href.split('/')
+                let id = link[link.length - 1]
+    
+                if(!record.href.includes('#')){
+                    if(!record.parentElement.querySelector('.glyphicon')){
+                        record.insertAdjacentElement('afterend', toggle_glyph);
+                    }
+                } 
+                toggle_glyph.onclick = function(e){
+                    e.preventDefault()
+                    toggle_glyph.className = toggle_glyph.className == "glyphicon glyphicon-menu-down" ? "glyphicon glyphicon-menu-up" : "glyphicon glyphicon-menu-down"
+                    let hidden_row = document.createElement('div')
+                    hidden_row.className = "hidden-row"
+                    hidden_row.style = "display: none;"
+                    hidden_row.innerHTML = "<p>Loading... <i class='fa fa-spinner fa-spin'></i></p>"
+
+                    if(!$(this).closest("td").find(".hidden-row").length){
+                        hidden_row.setAttribute("fetched", "false")
+                        $(this).closest("td").append(hidden_row);
+                    } 
+                    $(this).closest("td").find(".hidden-row").slideToggle();
+
+                    if(hidden_row.getAttribute("fetched") == "false"){
+                        insert_dropdown_stats_div(map,id,hidden_row)
+                    }
+                }
+    
+            })
+        }
+
+        $(table).on('draw.dt', function () {
+            records_table = table.querySelectorAll('a')
+            insert_glyphs(records_table);
+        });
+
+    }
+
+    function insert_profile_dropdown_stats(current_profile_id){
+        let table = document.querySelector('#player-maps')
+        let records_table = table.querySelectorAll('a')
+
+        insert_glyphs(records_table, current_profile_id)
+
+        $(table).on('draw.dt', function () {
+            records_table = table.querySelectorAll('a')
+            insert_glyphs(records_table, current_profile_id);
+        });
+    }
+
+    function insert_glyphs(records_table, id){
+        records_table.forEach((record, i) => {
+            let toggle_glyph = document.createElement('A')
+            toggle_glyph.className = "glyphicon glyphicon-menu-down"
+            toggle_glyph.style = "float: right; margin-right: 10px;margin-left: 20px; cursor: pointer;"
+            toggle_glyph.href = "#"
+
+            let map = record.href.split('/').pop()
+
+            if(!record.href.includes('#')){
+                if(!record.parentElement.querySelector('.glyphicon')){
+                    record.insertAdjacentElement('afterend', toggle_glyph);
+                }
+            } 
+            toggle_glyph.onclick = function(e){
+                e.preventDefault()
+                toggle_glyph.className = toggle_glyph.className == "glyphicon glyphicon-menu-down" ? "glyphicon glyphicon-menu-up" : "glyphicon glyphicon-menu-down"
+                let hidden_row = document.createElement('div')
+                hidden_row.className = "hidden-row"
+                hidden_row.style = "display: none;"
+                hidden_row.innerHTML = "<p>Loading... <i class='fa fa-spinner fa-spin'></i></p>"
+
+                if(!$(this).closest("td").find(".hidden-row").length){
+                    hidden_row.setAttribute("fetched", "false")
+                    $(this).closest("td").append(hidden_row);
+                } 
+                $(this).closest("td").find(".hidden-row").slideToggle();
+
+                if(hidden_row.getAttribute("fetched") == "false"){
+                    insert_dropdown_stats_div(map,id,hidden_row)
+                }
+            }
+        })
+    }
+
+    function insert_dropdown_stats_div(map,id,hidden_row){
+        make_request("https://api.surfheaven.eu/api/records/"+map+"/"+id, function(data){
+            let index = data.findIndex(x => x.map == map && x.track == 0)
+            hidden_row.setAttribute("fetched", "true")
+            if(data){
+                console.log(data[index])
+                let session_attempts = data[index].session_zonestarts
+                let total_attempts = data[index].zonestarts
+                let session_leveltime = data[index].session_levelseconds
+                let total_leveltime = data[index].levelseconds
+                let session_mapseconds = data[index].session_mapseconds
+                let total_mapseconds = data[index].mapseconds
+
+                if(session_mapseconds == 0){
+                    hidden_row.innerHTML = `<p style="margin-bottom:0px; ">&emsp;&emsp;Record predates the collection of session stats :( <br>
+                        &emsp;&emsp;Points: <strong>${data[index].points}</strong><br>
+                        &emsp;&emsp;Finishes: <strong>${data[index].finishcount}</strong></p>`
+                }else{
+                    hidden_row.innerHTML = `<p style="margin-bottom:0px; ">&emsp;&emsp;Attempts: <strong>${session_attempts}</strong> in session (<strong>${total_attempts}</strong> total) <br>
+                    &emsp;&emsp;Time in map: <strong>${format_time_noms(session_mapseconds)}</strong> in session (<strong>${format_time_noms(total_mapseconds)}</strong> total) <br>
+                    &emsp;&emsp;Time in level: <strong>${format_time_noms(session_leveltime)}</strong> in session (<strong>${format_time_noms(total_leveltime)}</strong> total) <br>
+                    &emsp;&emsp;Finishes: <strong>${data[index].finishcount}</strong><br> 
+                    &emsp;&emsp;Points: <strong>${data[index].points}</strong></p>`;
+                }
+
+            }else{
+                hidden_row.innerHTML = "<p style='margin-bottom:0px;'>&emsp;&emsp;Cant get stats for map " + map +"</p>"
+            }
+            
+        })
+
+    }
+
+    function format_time_noms(time){
+        let hours = Math.floor(time / 3600);
+        let minutes = Math.floor((time - (hours * 3600)) / 60);
+        let seconds = time - (hours * 3600) - (minutes * 60);
+        if (hours < 10) {hours = "0"+hours;}
+        if (minutes < 10) {minutes = "0"+minutes;}
+        if (seconds < 10) {seconds = "0"+seconds;}
+
+        if(hours > 0){
+            return hours+':'+minutes+':'+seconds;
+        }
+        return minutes+':'+seconds;
     }
 
     function insert_rating(map){
@@ -2513,6 +2671,7 @@
             friends_ranking_button.href = "#";
             friends_ranking_button.setAttribute("for", "table-friends");
             friends_ranking_button.onclick = function(e) {
+                insert_dropdown_stats(map, true);
                 if(children.length > 1){
                     // Has bonuses
                     if (!$(this).hasClass("active") && $(this).is("[for]")) {
@@ -2583,7 +2742,7 @@
                 }
             );
             document.querySelector('.map-tables-records').appendChild(container);
-
+            
             button_target_div.prepend(friends_ranking_button);
             // whitespace removal
             for(let i = 0; i < button_target_div.childNodes.length; i++){
@@ -3399,8 +3558,10 @@
                     let link = a_element.href.split('/')
                     let id = link[link.length - 1]
                     if (id == get_id()) button_element.style.display = 'none';
-                    if (a_element.nextElementSibling) return;
-                    if(!a_element.href.includes('#')) a_element.insertAdjacentElement('afterend', button_element);
+                    if(!a_element.href.includes('#')){
+                        if(a_element.parentElement.querySelector('button')) return;
+                        a_element.parentElement.appendChild(button_element);
+                    } 
                     button_element.onclick = function () {
                         make_request('https://api.surfheaven.eu/api/checkpoints/' + current_map_name + '/' + id, function (data3) {
                             var new_series = [0];

@@ -23,10 +23,11 @@ Select a tag, then press export, to quickly share the tag with other people
  - Crank in profile  
  - Time spent in spec and loc  
  - Steam avatar
- - Points from map completions
+ - Average bonus rank
  - Points to rank up
  - Compare map completions (compare with yourself for pseudo !pt)
  - Find mutual uncompleted maps
+ - [!pr stats on records](https://iloveur.mom/i/Y6TaPzVxHS.gif)
 
 [Map page](https://iloveur.mom/i/rv8t.png):
  - Show your map rank and time in map page  
@@ -36,6 +37,7 @@ Select a tag, then press export, to quickly share the tag with other people
  - Points per rank
  - Friend ranking table
  - User submitted ratings (Difficulty, Fun, Unit, Tech)
+ - [!pr stats on records](https://iloveur.mom/i/Y6TaPzVxHS.gif)
 
 [Server page](https://iloveur.mom/i/i7z86IDGMw.png):
  - Ranks from the [original SH ranks by Link](https://greasyfork.org/en/scripts/438271-surfheaven-ranks)

@@ -1,3 +1,7 @@
+___4.2.16___
+Added dropdown stats to map and profile rankings, similar to !pr from discord bot (Thanks Sam| for the idea)
+Added Avg bonus rank to profile
+
 ___4.2.15.1___
 Show raters in map page
 Improve the uncompleted map tables in profile
@@ -113,7 +117,3 @@ Added settings menu
 Added ability to toggle individual features
 Added ability to purge flags cache
 Fixed doubled flags (hopefully)
-
-I made a github repo for this,
-if u have issues or want to clean up this mess, please post them there.
-https://github.com/Kalekki/SurfHeaven_Extended
