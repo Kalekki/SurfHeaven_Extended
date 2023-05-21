@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.16
+// @version      4.2.16.1
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -19,6 +19,12 @@
 // @grant        GM_info
 // @license      MIT
 // ==/UserScript==
+
+/*  
+    Todo
+    - Activity chart on profile page
+    - (prettier) Rank threshold settings in servers page
+*/
 
 
 (async function () {
@@ -117,6 +123,78 @@
         if (settings.toasts == null) settings.toasts = false;
         if (settings.user_ratings_table == null) settings.user_ratings_table = true;
         if (settings.user_ratings == null) settings.user_ratings = true;
+    }
+
+    // USER EFFECTS
+    let last_updated_effects = unsafeWindow.localStorage.getItem('user_effects_last_updated');
+    if (last_updated_effects == null || Date.now() - Number(last_updated_effects) > 1000 * 60 * 5 ) {
+        console.log("Updating user_effects.json")
+        unsafeWindow.localStorage.setItem('user_effects_last_updated', Date.now());
+        fetch("https://iloveur.mom/i/user_effects.json")
+            .then(response => response.json())
+            .then(data => {
+                console.log("Updated user_effects.json")
+                unsafeWindow.localStorage.setItem('user_effects', JSON.stringify(data));
+                user_effects = data;
+            });
+    }
+
+    let user_effects = JSON.parse(unsafeWindow.localStorage.getItem('user_effects'));
+    for (let user in user_effects) {
+        if (user_effects[user].startsWith("candycane-custom")) {
+            create_custom_candycane_style(user_effects[user]);
+        }
+    }
+
+    function create_custom_candycane_style(style_name){
+        let colors = style_name.split("-").slice(2);
+        if (colors.length == 1){
+            // single color
+            //console.log(`Creating custom style: ${colors[0]}`);
+            GM_addStyle(`.candycane-custom-${colors[0]} {
+                color: ${colors[0]};
+            }`);
+            return;
+        };
+        let cssColors = colors.map((color, index) => {
+            if (index === 0) {
+                return `${color}, ${color} 10px,`;
+              } else if (index === colors.length - 1) {
+                return `${color} ${index * 10}px, ${color} ${(index + 1) * 10}px`;
+              }
+              return `${color} ${index * 10}px, ${color} ${(index + 1) * 10}px,`;
+            }).join(' ');
+        
+        //console.log(`Creating custom style: ${colors.join(' ')}`);
+        GM_addStyle(`.candycane-custom-${colors.join('-')} {
+          background: repeating-linear-gradient(45deg, ${cssColors});
+          background-size: 1600%;
+          color: transparent;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          -webkit-animation: 40s linear 0s infinite move;
+          animation: 40s linear 0s infinite move;
+          font-weight: bold;
+        }`);
+        //console.log(`.candycane-custom-${colors.join('-')} {
+        //    background: repeating-linear-gradient(45deg, ${cssColors});
+        //  `)
+
+    }
+
+    function apply_user_effect(id, element){
+        let effect = '';
+        if(id in user_effects){
+            effect = user_effects[id];
+            element.classList.remove('vip-name')
+        }
+        let text = element.textContent;
+        let flag_img = element.childNodes[0];
+        let steam_link = element.childNodes[2];
+        element.innerHTML = '';
+        element.appendChild(flag_img);
+        element.innerHTML += '<span class='+effect+'> ' + text + ' </span>';
+        element.appendChild(steam_link);
     }
 
     // Text under "SurfHeaven"
@@ -253,27 +331,38 @@
         make_request("https://api.surfheaven.eu/api/online/", (data) => {
             let follow_list = get_follow_list();
             let online_players = [];
+            let followed_players = [];
             let friends_online = false;
             data.forEach((player) => {
                 online_players.push([player.steamid, player.name, player.server, player.map, player.region]);
             });
             online_players.forEach((player) => {
                 if (follow_list.includes(player[0])) {
+                    followed_players.push(player);
                     friends_online = true;
-                    let follow_list_item = document.createElement('h5');
-                    if(player[4] == "AU"){
-                        follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/${AU_SERVERS[player[2]]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]-13} (AU)</a>`
-                    } else {
-                        follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/surf${player[2]}.surfheaven.eu" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
-                    }
-                    follow_list_panel_body_div.appendChild(follow_list_item);
                 }
+
             });
+
             if (!friends_online) {
                 let follow_list_item = document.createElement('h5');
                 follow_list_item.innerHTML = "No friends online :(";
                 follow_list_panel_body_div.appendChild(follow_list_item);
             }
+
+            followed_players.sort(function(a, b) {
+                return a[2] - b[2];
+            });
+
+            followed_players.forEach((player) => {
+                let follow_list_item = document.createElement('h5');
+                if(player[4] == "AU"){
+                    follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/${AU_SERVERS[player[2]]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]-13} (AU)</a>`
+                } else {
+                    follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/surf${player[2]}.surfheaven.eu" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
+                }
+                follow_list_panel_body_div.appendChild(follow_list_item);
+            });
 
             if (follow_list != null && follow_list[0] != "") {
                 sidebar_div.insertBefore(follow_list_root_div, sidebar_div.firstChild);
@@ -378,6 +467,9 @@
                     if (follow_list.includes(player[0])) {
                         friends_online = true;
                     }
+                });
+                online_players.sort((a, b) => {
+                    return a[2] - b[2];
                 });
                 if (friends_online) {
                     follow_list_panel_body_div.innerHTML = "";
@@ -827,22 +919,36 @@
                 if (link.href.includes("#")) {
                     return;
                 }
-                // robert added flags on his ctop in a different way compared to the global top
+
+                if (link.closest('.nav')) {
+                    return;
+                }
+
+                var id = link.href.split("https://surfheaven.eu/player/")[1];
+                let nickname = get_nickname(id);
+                let original_name = link.textContent;
+
+                if (nickname){
+                    link.innerHTML = nickname;
+                    link.title = original_name;
+                }
+
+                if (follow_list.includes(id) && link.parentElement.parentElement.id != "follow_list")  {
+                    link.classList.add("following");
+                }
+
+                if (id in user_effects) {
+                    if (!link.querySelector('b')) {
+                        link.innerHTML = "<b>" + link.innerHTML + "</b>";
+                    }
+                    link.classList.add(user_effects[id]);
+                    link.classList.remove("following")
+                }
+
                 if (link.previousElementSibling && link.previousElementSibling.className.includes("flag")) return;
 
                 if (!link.querySelector('img')) {
                     var country = ""
-                    var id = link.href.split("https://surfheaven.eu/player/")[1];
-                    let nickname = get_nickname(id);
-                    let original_name = link.innerHTML;
-
-                    if (follow_list.includes(id) && link.parentElement.parentElement.id != "follow_list")  {
-                        link.classList.add("following");
-                    }
-                    if (nickname){
-                        link.innerHTML = nickname;
-                        link.title = original_name;
-                    }
 
                     if(!settings.flags) return;
                     var cached_country = unsafeWindow.localStorage.getItem(id);
@@ -1687,6 +1793,23 @@
             document.getElementById("region_select").value = "Global";
         }
 
+    //    let rank_threshold_toggle = document.createElement('input');
+    //    rank_threshold_toggle.type = 'checkbox';
+    //    if(unsafeWindow.localStorage.getItem('rank_threshold_toggle') === null){
+    //        unsafeWindow.localStorage.setItem('rank_threshold_toggle', true);
+    //        rank_threshold_toggle.checked = true;
+    //    }else{
+    //        rank_threshold_toggle.checked = unsafeWindow.localStorage.getItem('rank_threshold_toggle') === 'true';
+    //    }
+    //    rank_threshold_toggle.onchange = function(){
+    //        unsafeWindow.localStorage.setItem('rank_threshold_toggle', rank_threshold_toggle.checked);
+    //    };
+
+
+    //    let rank_threshold_toggle_label = document.createElement('label');
+    //    rank_threshold_toggle_label.htmlFor = 'rank_threshold_toggle';
+    //    rank_threshold_toggle_label.innerHTML = 'Enable rank threshold coloring ';
+
         let rank_threshold_input = document.createElement('input');
         rank_threshold_input.type = 'number';
         rank_threshold_input.min = 0;
@@ -1707,8 +1830,17 @@
         rank_threshold_label.innerHTML = 'Highlight your rank based on completion % : ';
         let rank_threshold_container = document.createElement('div');
         rank_threshold_container.className = 'form-group';
+        
+        //rank_threshold_container.appendChild(rank_threshold_toggle);
+        //rank_threshold_container.appendChild(rank_threshold_toggle_label);
+        //rank_threshold_container.appendChild(document.createElement("br"));
         rank_threshold_container.appendChild(rank_threshold_label);
         rank_threshold_container.appendChild(rank_threshold_input);
+        
+        //rank_threshold_container.style.border = '1px solid white';
+        //rank_threshold_container.style.borderRadius = '1rem';
+        //rank_threshold_container.style.display = 'inline-block';
+        //rank_threshold_container.style.padding = '10px';
 
         rank_threshold_input.addEventListener('change', function(){
             unsafeWindow.localStorage.setItem('rank_threshold', rank_threshold_input.value);
@@ -1813,6 +1945,7 @@
         let original_username = username_text_element.textContent;
         let steam_button = document.querySelector('.m-t-xs > a:nth-child(2)');
         let star_span = document.createElement('span');
+        apply_user_effect(current_profile_id, username_h2);
 
         original_username = original_username.trim();
 
@@ -3835,7 +3968,7 @@
         version_button.textContent = VERSION;
         version_button.onclick = () => {
             check_for_updates();
-            document.getElementById("overlay_window").remove();
+            document.getElementById("overlay").remove();
         }
         version_button.style.float = "right";
         settings_footer.appendChild(version_button);
@@ -4270,11 +4403,45 @@ GM_addStyle(`
         color: MediumSeaGreen;
         font-weight: bold;
     }
-    .rainbow-text {
-        background: repeating-linear-gradient(to right, #FF6663, #FEB144, #FDFD97, #9EE09E, #9EC1CF, #BAC5E8, #CC99C9);
+    .candycane-rainbow{
+        background: repeating-linear-gradient(45deg, red, red 10px, orange 10px, orange 20px, yellow 20px, yellow 30px, green 30px, green 40px, dodgerblue 40px, dodgerblue 50px, blueviolet 50px, blueviolet 60px);
+        background-size: 1600%;
+        color: transparent;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: 40s linear 40s infinite;
-        font-weight: 600;
+        -webkit-animation: 40s linear 0s infinite move;
+        animation: 40s linear 0s infinite move;
+        font-weight: bold;
     }
+    .candycane-fin {
+        background: repeating-linear-gradient(45deg, #ffffff, #ffffff 10px, #0066FF 10px, #0066FF 20px);
+        background-size: 1600%;
+        color: transparent;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        -webkit-animation: 40s linear 0s infinite move;
+        animation: 40s linear 0s infinite move;
+        font-weight: bold;
+    }
+
+    .candycane-swe {
+        background: repeating-linear-gradient(45deg, #006aa7, #006aa7 10px, #fecc00 10px, #fecc00 20px);
+        background-size: 1600%;
+        color: transparent;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        -webkit-animation: 40s linear 0s infinite move;
+        animation: 40s linear 0s infinite move;
+        font-weight: bold;
+    }
+    
+    @keyframes move {
+        0% {
+            background-position: 0 0;
+        }
+        100% {
+            background-position: 100% 0;
+        }
+    }
+
 `);

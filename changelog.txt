@@ -1,3 +1,8 @@
+___4.2.16.1___
+Sort online friends by server number
+Fixed nicknames getting broken after website changes
+Added some username effects 
+
 ___4.2.16___
 Added dropdown stats to map and profile rankings, similar to !pr from discord bot (Thanks Sam| for the idea)
 Added Avg bonus rank to profile
