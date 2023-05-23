@@ -1,3 +1,7 @@
+___4.2.16.2___
+User effect editor in profile
+Add setting to disable user effects
+
 ___4.2.16.1___
 Sort online friends by server number
 Fixed nicknames getting broken after website changes

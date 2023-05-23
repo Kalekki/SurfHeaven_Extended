@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.16.1
+// @version      4.2.16.2
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -24,6 +24,7 @@
     Todo
     - Activity chart on profile page
     - (prettier) Rank threshold settings in servers page
+    - user effects seem to disable hover div???
 */
 
 
@@ -76,7 +77,8 @@
             points_per_rank: true,
             completions_bar_chart: true,
             user_ratings_table: true,
-            user_ratings: true
+            user_ratings: true,
+            user_effects: true
         }
         unsafeWindow.localStorage.setItem('settings', JSON.stringify(settings));
     }else{
@@ -98,11 +100,12 @@
         completions_bar_chart: "Show completions as bar chart",
         toasts: "Show debug toasts",
         user_ratings_table: "Show user rated maps",
-        user_ratings: "Show user ratings"
+        user_ratings: "Show user ratings",
+        user_effects: "Show user effects"
     }
 
     const settings_categories = {
-        "Global" : ["flags","follow_list", "hover_info", "update_check", "toasts"],
+        "Global" : ["flags","follow_list", "hover_info", "update_check", "toasts", "user_effects"],
         "Dashboard" : ["country_top_100", "user_ratings_table"],
         "Map page" : ["cp_chart","points_per_rank","map_cover_image","user_ratings"],
         "Profile" : ["steam_avatar", "completions_by_tier", "completions_bar_chart"],
@@ -123,14 +126,16 @@
         if (settings.toasts == null) settings.toasts = false;
         if (settings.user_ratings_table == null) settings.user_ratings_table = true;
         if (settings.user_ratings == null) settings.user_ratings = true;
+        if (settings.user_effects == null) settings.user_effects = true;
     }
 
     // USER EFFECTS
+    let user_effects = {};
     let last_updated_effects = unsafeWindow.localStorage.getItem('user_effects_last_updated');
     if (last_updated_effects == null || Date.now() - Number(last_updated_effects) > 1000 * 60 * 5 ) {
         console.log("Updating user_effects.json")
         unsafeWindow.localStorage.setItem('user_effects_last_updated', Date.now());
-        fetch("https://iloveur.mom/i/user_effects.json")
+        fetch("https://iloveur.mom/surfheaven/user_effects.json", {cache: "no-cache"})
             .then(response => response.json())
             .then(data => {
                 console.log("Updated user_effects.json")
@@ -139,10 +144,13 @@
             });
     }
 
-    let user_effects = JSON.parse(unsafeWindow.localStorage.getItem('user_effects'));
+    user_effects = JSON.parse(unsafeWindow.localStorage.getItem('user_effects'));
+
     for (let user in user_effects) {
-        if (user_effects[user].startsWith("candycane-custom")) {
-            create_custom_candycane_style(user_effects[user]);
+        if (user_effects != null && user_effects[user] != null) { 
+            if (user_effects[user].startsWith("candycane-custom")) {
+                create_custom_candycane_style(user_effects[user]);
+            }
         }
     }
 
@@ -183,6 +191,7 @@
     }
 
     function apply_user_effect(id, element){
+        if(!settings.user_effects) return;
         let effect = '';
         if(id in user_effects){
             effect = user_effects[id];
@@ -937,7 +946,7 @@
                     link.classList.add("following");
                 }
 
-                if (id in user_effects) {
+                if (id in user_effects && settings.user_effects) {
                     if (!link.querySelector('b')) {
                         link.innerHTML = "<b>" + link.innerHTML + "</b>";
                     }
@@ -2032,6 +2041,19 @@
             }
         });
 
+        if(get_id() == current_profile_id){
+            if(settings.user_effects){
+                let target_div = document.querySelector('.m-t-xs');
+                let user_effect_button = document.createElement('button');
+                user_effect_button.className = 'btn btn-success btn-xs ';
+                user_effect_button.innerHTML = '<i class="fas fa-magic"></i> <span class="candycane-rainbow">User effect<span>';
+                user_effect_button.onclick = function () {
+                    show_overlay_window('Set user effect', create_color_grid(original_username, btoa(current_profile_id)))
+                }
+                target_div.appendChild(user_effect_button);
+            }
+        }
+
         insert_steam_avatar(steam_profile_url);
         fetch_country_rank(current_profile_id);
         fetch_completions_of_uncompleted_maps();
@@ -2084,6 +2106,234 @@
             let common_uncompleted_maps_target_div = document.querySelector('div.col-sm-12:nth-child(4) > div:nth-child(1) > div:nth-child(1)');
             common_uncompleted_maps_target_div.insertBefore(common_uncompleted_maps_button, common_uncompleted_maps_target_div.children[1]);
         }
+
+    }
+
+    function create_color_grid(username, c){
+        const colors = [
+            "Black",
+            "Navy",
+            "DarkBlue",
+            "MediumBlue",
+            "Blue",
+            "DarkGreen",
+            "Green",
+            "Teal",
+            "DarkCyan",
+            "DeepSkyBlue",
+            "DarkTurquoise",
+            "MediumSpringGreen",
+            "Lime",
+            "SpringGreen",
+            "Aqua",
+            "Cyan",
+            "MidnightBlue",
+            "DodgerBlue",
+            "LightSeaGreen",
+            "ForestGreen",
+            "SeaGreen",
+            "DarkSlateGray",
+            "LimeGreen",
+            "MediumSeaGreen",
+            "Turquoise",
+            "RoyalBlue",
+            "SteelBlue",
+            "DarkSlateBlue",
+            "MediumTurquoise",
+            "Indigo",
+            "DarkOliveGreen",
+            "CadetBlue",
+            "CornflowerBlue",
+            "RebeccaPurple",
+            "MediumAquaMarine",
+            "DimGray",
+            "SlateBlue",
+            "OliveDrab",
+            "SlateGray",
+            "LightSlateGray",
+            "MediumSlateBlue",
+            "LawnGreen",
+            "Chartreuse",
+            "Aquamarine",
+            "Maroon",
+            "Purple",
+            "Olive",
+            "Gray",
+            "SkyBlue",
+            "LightSkyBlue",
+            "BlueViolet",
+            "DarkRed",
+            "DarkMagenta",
+            "SaddleBrown",
+            "DarkSeaGreen",
+            "LightGreen",
+            "MediumPurple",
+            "DarkViolet",
+            "PaleGreen",
+            "DarkOrchid",
+            "YellowGreen",
+            "Sienna",
+            "Brown",
+            "DarkGray",
+            "LightBlue",
+            "GreenYellow",
+            "PaleTurquoise",
+            "LightSteelBlue",
+            "PowderBlue",
+            "FireBrick",
+            "DarkGoldenRod",
+            "MediumOrchid",
+            "RosyBrown",
+            "DarkKhaki",
+            "Silver",
+            "MediumVioletRed",
+            "IndianRed",
+            "Peru",
+            "Chocolate",
+            "Tan",
+            "LightGray",
+            "Thistle",
+            "Orchid",
+            "GoldenRod",
+            "PaleVioletRed",
+            "Crimson",
+            "Gainsboro",
+            "Plum",
+            "BurlyWood",
+            "LightCyan",
+            "Lavender",
+            "DarkSalmon",
+            "Violet",
+            "PaleGoldenRod",
+            "LightCoral",
+            "Khaki",
+            "AliceBlue",
+            "HoneyDew",
+            "Azure",
+            "SandyBrown",
+            "Wheat",
+            "Beige",
+            "WhiteSmoke",
+            "MintCream",
+            "GhostWhite",
+            "Salmon",
+            "AntiqueWhite",
+            "Linen",
+            "LightGoldenRodYellow",
+            "OldLace",
+            "Red",
+            "Fuchsia",
+            "Magenta",
+            "DeepPink",
+            "OrangeRed",
+            "Tomato",
+            "HotPink",
+            "Coral",
+            "DarkOrange",
+            "LightSalmon",
+            "Orange",
+            "LightPink",
+            "Pink",
+            "Gold",
+            "PeachPuff",
+            "NavajoWhite",
+            "Moccasin",
+            "Bisque",
+            "MistyRose",
+            "BlanchedAlmond",
+            "PapayaWhip",
+            "LavenderBlush",
+            "SeaShell",
+            "Cornsilk",
+            "LemonChiffon",
+            "FloralWhite",
+            "Snow",
+            "Yellow",
+            "LightYellow",
+            "Ivory",
+            "White",
+        ]
+        let test_string = document.createElement('h2')
+        test_string.classList.add('text-center');
+        test_string.innerHTML = `<span class="">${username}</span>`;
+
+        let selected_colors_text = document.createElement('h4');
+        selected_colors_text.classList.add('text-center');
+        selected_colors_text.innerHTML = 'Selected Colors:';
+
+
+        let selected_colors = [];
+
+        let color_grid = document.createElement('div');
+        color_grid.id = 'color_grid';
+        color_grid.style.maxWidth = '440px';
+        color_grid.appendChild(test_string);
+        color_grid.appendChild(selected_colors_text);
+        for(let i = 0; i < colors.length; i++){
+            let color_button = document.createElement('button');
+            color_button.className = 'btn btn-default';
+            color_button.style.backgroundColor = colors[i];
+            color_button.style.border = '0px';
+            color_button.style.width = '20px';
+            color_button.style.height = '24px';
+            color_button.style.borderRadius = '22px';
+            color_button.title = colors[i];
+            color_button.onclick = function(){
+                add_color(colors[i]);
+            }
+            color_grid.appendChild(color_button);
+        }
+
+        let buttons_div = document.createElement('div');
+        buttons_div.style.display = 'flex';
+        buttons_div.style.justifyContent = 'space-between';
+        buttons_div.style.marginTop = '10px';
+        color_grid.appendChild(buttons_div);
+
+        let save_button = document.createElement('button');
+        save_button.className = 'btn btn-success';
+        save_button.innerHTML = 'Save';
+        save_button.onclick = function(){
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url: 'https://iloveur.mom/surfheaven/user_effects.php',
+                data: "d=" + atob(c) + "&e=" + "candycane-custom-"+selected_colors.join('-'),
+                headers:{
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                onload: function(response) {
+                    GM_xmlhttpRequest({
+                        method: 'GET',
+                        url: 'https://iloveur.mom/surfheaven/user_effects.json',
+                        onload: function(response) {
+                            response = JSON.parse(response.responseText);
+                            unsafeWindow.localStorage.setItem('user_effects', JSON.stringify(response));
+                            console.log("Saved user_effects.json to localstorage", response)
+                            unsafeWindow.location.reload()
+                        }
+                    })
+                }
+            });
+        }
+        
+        let reset_button = document.createElement('button');
+        reset_button.className = 'btn btn-danger';
+        reset_button.innerHTML = 'Reset';
+        reset_button.onclick = function(){
+            selected_colors = [];
+            test_string.innerHTML = `<span class="">${username}</span>`;
+            selected_colors_text.innerHTML = selected_colors.join(', ');
+        }
+        buttons_div.appendChild(reset_button);
+        buttons_div.appendChild(save_button);
+
+        function add_color(color){
+            selected_colors.push(color.toLowerCase());
+            create_custom_candycane_style("candycane-custom-"+selected_colors.join('-'));
+            test_string.innerHTML = `<span class="${"candycane-custom-"+selected_colors.join('-')}">${username}</span>`;
+            selected_colors_text.innerHTML = selected_colors.join(', ');
+        }
+        return color_grid;
 
     }
 
