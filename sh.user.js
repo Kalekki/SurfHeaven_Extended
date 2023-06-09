@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.16.2
+// @version      4.2.16.3
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -24,7 +24,9 @@
     Todo
     - Activity chart on profile page
     - (prettier) Rank threshold settings in servers page
-    - user effects seem to disable hover div???
+    - Favorite maps, highlight in server browser (Ancient request)
+    - Improved graph on map page, fullscreening?, need to look into chartist to see what can easily be done (Ancient request)
+    - Hover info on follow list server number, to see the server map same way as hovering over a map link
 */
 
 
@@ -138,6 +140,11 @@
         fetch("https://iloveur.mom/surfheaven/user_effects.json", {cache: "no-cache"})
             .then(response => response.json())
             .then(data => {
+                for (let user in data) {
+                    if (data[user] == "candycane-custom-") {
+                        delete data[user]; // remove empty custom styles
+                    }
+                }
                 console.log("Updated user_effects.json")
                 unsafeWindow.localStorage.setItem('user_effects', JSON.stringify(data));
                 user_effects = data;
@@ -148,7 +155,7 @@
 
     for (let user in user_effects) {
         if (user_effects != null && user_effects[user] != null) { 
-            if (user_effects[user].startsWith("candycane-custom")) {
+            if (user_effects[user].startsWith("candycane-custom") && user_effects[user] != "candycane-custom-") {
                 create_custom_candycane_style(user_effects[user]);
             }
         }
@@ -174,14 +181,16 @@
             }).join(' ');
         
         //console.log(`Creating custom style: ${colors.join(' ')}`);
+        //TODO: Fix this to make the looping perfect
         GM_addStyle(`.candycane-custom-${colors.join('-')} {
           background: repeating-linear-gradient(45deg, ${cssColors});
-          background-size: 1600%;
+          background-size: 4800%;
           color: transparent;
+          text-shadow: 0px 0px 0 rgba(0,0,0,0);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
-          -webkit-animation: 40s linear 0s infinite move;
-          animation: 40s linear 0s infinite move;
+          -webkit-animation: 120s linear 0s infinite move;
+          animation: 120s linear 0s infinite move;
           font-weight: bold;
         }`);
         //console.log(`.candycane-custom-${colors.join('-')} {
@@ -590,6 +599,18 @@
             function format_time(time){
                 return Math.floor(time/3600) + "." + Math.floor((time%3600)/60);
             }
+            function format_time_hhmmss(time){
+                let hours = Math.floor(time/3600);
+                let minutes = Math.floor((time%3600)/60);
+                let seconds = (time%60).toFixed(2);
+                if (hours > 0) {
+                    return hours + "h " + minutes + "m " + seconds + "s";
+                } else if (minutes > 0) {
+                    return minutes + "m " + seconds + "s";
+                } else {
+                    return seconds + "s";
+                }
+            }
             function format_points(points){
                 // 4300 -> 4.3k
                 if(points < 1000){
@@ -620,48 +641,73 @@
             `;
             }
             if(type == 1){
-                const img = new Image();
-                img.src = `https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/${data[0].map}.jpg`;
+                make_request(`https://api.surfheaven.eu/api/records/${data[0].map}/0`, (map_data) => {
+                    let own_rank = map_data.find((element) => element.steamid == get_id());
+                    if (own_rank === undefined) {
+                        own_rank = {
+                            rank: "N/A",
+                            time: "0",
+                        };
+                    }
+                    let wr = map_data.find((element) => element.rank == 1);
 
-                img.onload = function() {
-                    hover_div.style.backgroundImage = `url(${img.src})`;
-                    hover_div.style.backgroundSize = "cover";
-                    hover_div.style.backgroundPosition = "center";
+                    let diff = own_rank.time - wr.time;
+                    let diff_formatted = format_time_hhmmss(diff);
+                    let diff_string = "";
+                    if(diff > 0){
+                        diff_string = "( +" +diff_formatted+ " )";
+                    }
 
-                    hover_div.innerHTML = `
-                    <div class="row outlined text-center" style="min-width: 18vw; min-height: 18vh;">
-                        <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")} by ${data[0].author}</h5>
-                        <!--<h5>Added ${format_date(data[0].date_added)} / ${data[0].completions} completions</h5>-->
-                    </div>
-                `;
-                    hover_div.style.top = (e.target.getBoundingClientRect().top+ Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height/2))  + "px";
-                };
+                    const img = new Image();
+                    img.src = `https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/${data[0].map}.jpg`;
 
-                img.onerror = function() {
-                    hover_div.style.backgroundColor = "rgba(13,17,23,0.6)";
+                    img.onload = function() {
+                        hover_div.style.backgroundImage = `url(${img.src})`;
+                        hover_div.style.backgroundSize = "cover";
+                        hover_div.style.backgroundPosition = "center";
+
+                        hover_div.innerHTML = `
+                        <div class="row outlined text-center" style="min-width: 18vw; min-height: 18vh;">
+                            <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")} by ${data[0].author}</h5>
+                            <h5>WR by <a href="https://surfheaven.eu/player/${wr.steamid}">${wr.name}</a></h5>
+                            <h5>Your rank ${own_rank.rank} / ${data[0].completions} ${diff_string}</h5>
+
+                        </div>
+                    `;
+                        hover_div.style.top = (e.target.getBoundingClientRect().top+ Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height/2))  + "px";
+                        insert_flags_to_profiles();
+                    };
+
+                    img.onerror = function() {
+                        hover_div.style.backgroundColor = "rgba(13,17,23,0.6)";
+                        hover_div.style.backgroundImage = "none";
+                        hover_div.innerHTML = `<div class="row">
+                        <div class="col-sm-4">
+                            <h5>Type</h5>
+                            <h5>Author</h5>
+                            <h5>Added</h5>
+                            <h5>WR</h5>
+                            <h5>Rank</h5>
+
+                        </div>
+                        <div class="col-sm-8">
+                            <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")}</h5>
+                            <h5>${data[0].author}</h5>
+                            <h5>${format_date(data[0].date_added)}</h5>
+                            <h5><a href="https://surfheaven.eu/player/${wr.steamid}">${wr.name}</a></h5>
+                            <h5>${own_rank.rank} / ${data[0].completions}</h5>
+                        </div>
+                    </div>`;
+                    insert_flags_to_profiles();
+                    };
+
                     hover_div.style.backgroundImage = "none";
                     hover_div.innerHTML = `<div class="row">
-                    <div class="col-sm-4">
-                        <h5>Type</h5>
-                        <h5>Author</h5>
-                        <h5>Added</h5>
-                        <h5>Finishes</h5>
-                    </div>
-                    <div class="col-sm-8">
-                        <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")}</h5>
-                        <h5>${data[0].author}</h5>
-                        <h5>${format_date(data[0].date_added)}</h5>
-                        <h5>${data[0].completions}</h5>
-                    </div>
-                </div>`;
-                };
+                    <h5>Loading...</h5>
+                    </div>`;    
 
-                hover_div.style.backgroundImage = "none";
-                hover_div.innerHTML = `<div class="row">
-                <h5>Loading...</h5>
-                </div>`;    
-
-
+                });
+                
             }
             hover_div.style.top = (e.target.getBoundingClientRect().top + Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height/2) + (e.target.getBoundingClientRect().height/2)) + "px";
         }
@@ -947,9 +993,6 @@
                 }
 
                 if (id in user_effects && settings.user_effects) {
-                    if (!link.querySelector('b')) {
-                        link.innerHTML = "<b>" + link.innerHTML + "</b>";
-                    }
                     link.classList.add(user_effects[id]);
                     link.classList.remove("following")
                 }
@@ -995,9 +1038,9 @@
         titlediv.appendChild(rank_elem);
         make_request("https://api.surfheaven.eu/api/maprecord/" + map_name + "/" + _id, (data) => {
             if(!data) return;
-            var time = data[0].time;
+            let time = data[0].time;
             let date_completed = new Date(data[0].date);
-            var formatted_time = new Date(time * 1000).toISOString().substr(11, 12);
+            let formatted_time = new Date(time * 1000).toISOString().substr(11, 12);
             if (formatted_time[0] == "0") {
                 formatted_time = formatted_time.substr(3);
             }
@@ -2481,7 +2524,7 @@
         if(friends){
             table = document.querySelector('div.table-responsive.table-friends')
         }
-        console.log(table)
+        //console.log(table)
         records_table = table.querySelectorAll('a')
 
         insert_glyphs()
@@ -3838,6 +3881,7 @@
 
     function add_shadow_to_text_recursively(element) {
         if (!settings.map_cover_image) return;
+        if (element.href && element.href.includes("player")) return; // wr style fix
         if (element.nodeType === Node.TEXT_NODE) {
             const span = document.createElement('span');
             span.style.fontWeight = 'bold';
@@ -4655,36 +4699,15 @@ GM_addStyle(`
     }
     .candycane-rainbow{
         background: repeating-linear-gradient(45deg, red, red 10px, orange 10px, orange 20px, yellow 20px, yellow 30px, green 30px, green 40px, dodgerblue 40px, dodgerblue 50px, blueviolet 50px, blueviolet 60px);
-        background-size: 1600%;
+        background-size: 4800%;
         color: transparent;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        -webkit-animation: 40s linear 0s infinite move;
-        animation: 40s linear 0s infinite move;
-        font-weight: bold;
-    }
-    .candycane-fin {
-        background: repeating-linear-gradient(45deg, #ffffff, #ffffff 10px, #0066FF 10px, #0066FF 20px);
-        background-size: 1600%;
-        color: transparent;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        -webkit-animation: 40s linear 0s infinite move;
-        animation: 40s linear 0s infinite move;
+        -webkit-animation: 120s linear 0s infinite move;
+        animation: 120s linear 0s infinite move;
         font-weight: bold;
     }
 
-    .candycane-swe {
-        background: repeating-linear-gradient(45deg, #006aa7, #006aa7 10px, #fecc00 10px, #fecc00 20px);
-        background-size: 1600%;
-        color: transparent;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        -webkit-animation: 40s linear 0s infinite move;
-        animation: 40s linear 0s infinite move;
-        font-weight: bold;
-    }
-    
     @keyframes move {
         0% {
             background-position: 0 0;

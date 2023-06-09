@@ -1,3 +1,8 @@
+___4.2.16.3___
+🌴☀😎 Summer is here 😎☀🌴
+Fixed hover info for user effects
+Added your rank, and wr stats to map hover info
+
 ___4.2.16.2___
 User effect editor in profile
 Add setting to disable user effects
