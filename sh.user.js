@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.16.3
+// @version      4.2.16.4
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -27,6 +27,7 @@
     - Favorite maps, highlight in server browser (Ancient request)
     - Improved graph on map page, fullscreening?, need to look into chartist to see what can easily be done (Ancient request)
     - Hover info on follow list server number, to see the server map same way as hovering over a map link
+    - Notify when a friend joins a server
 */
 
 
@@ -1277,7 +1278,6 @@
         $('#DataTables_Table_1').empty();
         for(let i = 0; i < data.length; i++){
             let map_name = data[i][0].split(">")[1].split("<")[0];
-            data[i].push(map_completions[map_name]);
             data[i].push(map_dates[map_name].split("T")[0]);
         }
 
@@ -1313,12 +1313,7 @@
             let map_name = data[i][0].split(">")[1].split("<")[0];
             let bonus_number = data[i][1].split(" ")[1];
             let bonus_map = map_name + " " + bonus_number;
-            let completions = bonus_completions[bonus_map];
             let date_added = map_dates[map_name].split("T")[0];
-            if(completions == undefined) {
-                completions = "??";
-            }
-            data[i].push(completions);
             data[i].push(date_added);
         }
         $('#DataTables_Table_2').DataTable({

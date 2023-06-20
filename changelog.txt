@@ -1,3 +1,6 @@
+___4.2.16.4___
+Fix uncompleted maps table columns (Completions got added to the vanilla site, which broke it)
+
 ___4.2.16.3___
 🌴☀😎 Summer is here 😎☀🌴
 Fixed hover info for user effects
