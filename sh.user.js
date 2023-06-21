@@ -597,7 +597,7 @@
             hover_div.style.zIndex = "99999";
             fade_in(hover_div);
 
-            function format_time(time){
+            function format_time_hours(time){
                 return Math.floor(time/3600) + "." + Math.floor((time%3600)/60);
             }
             function format_time_hhmmss(time){
@@ -635,7 +635,7 @@
                 <div class="col-sm-7">
                     <h5>#${data[0].rank} (${create_flag(data[0].country_code)} #${data[0].country_rank})</h5>
                     <h5>${format_points(data[0].points)} [${(data[0].rankname == "Custom" ? "#"+ data[0].rank : '<span style="color:'+GROUP_COLORS[GROUP_NAMES.indexOf(data[0].rankname)]+';">'+data[0].rankname)+"</span>"}]</h5>
-                    <h5>${format_time(data[0].playtime)}h</h5>
+                    <h5>${format_time_hours(data[0].playtime)}h</h5>
                     <h5>${format_date(data[0].lastplay)}</h5>
                 </div>
             </div>
@@ -1039,13 +1039,8 @@
         titlediv.appendChild(rank_elem);
         make_request("https://api.surfheaven.eu/api/maprecord/" + map_name + "/" + _id, (data) => {
             if(!data) return;
-            let time = data[0].time;
             let date_completed = new Date(data[0].date);
-            let formatted_time = new Date(time * 1000).toISOString().substr(11, 12);
-            if (formatted_time[0] == "0") {
-                formatted_time = formatted_time.substr(3);
-            }
-            rank_elem.innerHTML = "Your rank: #" + data[0].rank + " (" + formatted_time + ") +" + data[0].points + " points";
+            rank_elem.innerHTML = "Your rank: #" + data[0].rank + " (" + format_seconds_to_time(data[0].time) + ") +" + data[0].points + " points";
             rank_elem.title = "Completed on " + date_completed.toLocaleDateString() + " at " + date_completed.toLocaleTimeString();
             add_shadow_to_text_recursively(rank_elem);
         });
@@ -2662,6 +2657,21 @@
         return minutes+':'+seconds;
     }
 
+    function format_seconds_to_time(seconds){
+        let time = new Date(seconds * 1000);
+        let hours = time.getUTCHours();
+        let minutes = time.getUTCMinutes();
+        let secs = time.getUTCSeconds().toString().padStart(2, "0");
+        let ms = time.getUTCMilliseconds().toString().padStart(3, "0");
+        let formatted_time = ""
+        if (hours > 0) {
+            formatted_time += hours + ":";
+        }
+        formatted_time += minutes.toString().padStart(2, '0') + ":";
+        formatted_time += secs + "." + ms;
+        return formatted_time;
+    }
+
     function insert_rating(map){
         if(!settings.user_ratings) return;
 
@@ -3136,7 +3146,7 @@
                 tr.appendChild(td);
                 // time
                 td = document.createElement('td');
-                td.innerHTML = format_time(friend_ranks[i][1]);
+                td.innerHTML = format_seconds_to_time(friend_ranks[i][1]);
                 tr.appendChild(td);
                 // date
                 td = document.createElement('td');
@@ -3172,20 +3182,6 @@
                 }
             }
 
-            function format_time(time){
-                let hours = Math.floor(time / 3600);
-                let minutes = Math.floor((time - (hours * 3600)) / 60);
-                let seconds = time - (hours * 3600) - (minutes * 60);
-                seconds = seconds.toFixed(3);
-                if (hours < 10) {hours = "0"+hours;}
-                if (minutes < 10) {minutes = "0"+minutes;}
-                if (seconds < 10) {seconds = "0"+seconds;}
-
-                if(hours > 0){
-                    return hours+':'+minutes+':'+seconds;
-                }
-                return minutes+':'+seconds;
-            }
         });
     }
 
