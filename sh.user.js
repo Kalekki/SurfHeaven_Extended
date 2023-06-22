@@ -47,6 +47,11 @@
     let map_dates = {};
     var bonus_completions = {};
 
+    const custom_css = document.createElement('link');
+    custom_css.rel = 'stylesheet';
+    custom_css.href = 'https://iloveur.mom/surfheaven/styles.css';
+    document.head.appendChild(custom_css);
+
     // colors are approximate and might be wrong, let me know
     const GROUP_THRESHOLDS =   [1,      2,      3,      10,        25,      50,        75,       100,       150,       250,       500,       750,            1000,     1500,      2000,      3000,     6000,       15000,     25000]
     const GROUP_NAMES =        ["#1",   "#2",   "#3",   "Master",  "Elite", "Veteran", "Expert", "Pro",     "TheSteve","Hotshot", "Skilled", "Intermediate", "Casual", "Amateur", "Regular", "Potato", "Beginner", "Burrito", "Calzone", "New"]
