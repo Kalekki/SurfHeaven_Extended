@@ -1,3 +1,9 @@
+___4.2.17___
+Added commenting to maps, this can be disabled from settings as always
+(uses Github discussions (star the repo👿))
+Confetti for top10 runs 🎉
+Loading custom css remotely to add styles without forcing a script update
+
 ___4.2.16.4___
 Fix uncompleted maps table columns (Completions got added to the vanilla site, which broke it)
 

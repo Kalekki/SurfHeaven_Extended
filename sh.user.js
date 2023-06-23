@@ -86,7 +86,8 @@
             completions_bar_chart: true,
             user_ratings_table: true,
             user_ratings: true,
-            user_effects: true
+            user_effects: true,
+            comments: true
         }
         unsafeWindow.localStorage.setItem('settings', JSON.stringify(settings));
     }else{
@@ -109,13 +110,14 @@
         toasts: "Show debug toasts",
         user_ratings_table: "Show user rated maps",
         user_ratings: "Show user ratings",
-        user_effects: "Show user effects"
+        user_effects: "Show user effects",
+        comments: "Show map comments"
     }
 
     const settings_categories = {
         "Global" : ["flags","follow_list", "hover_info", "update_check", "toasts", "user_effects"],
         "Dashboard" : ["country_top_100", "user_ratings_table"],
-        "Map page" : ["cp_chart","points_per_rank","map_cover_image","user_ratings"],
+        "Map page" : ["cp_chart","points_per_rank","map_cover_image","user_ratings","comments"],
         "Profile" : ["steam_avatar", "completions_by_tier", "completions_bar_chart"],
     }
 
@@ -135,6 +137,7 @@
         if (settings.user_ratings_table == null) settings.user_ratings_table = true;
         if (settings.user_ratings == null) settings.user_ratings = true;
         if (settings.user_effects == null) settings.user_effects = true;
+        if (settings.comments == null) settings.comments = true;
     }
 
     // USER EFFECTS
@@ -1048,6 +1051,9 @@
             rank_elem.innerHTML = "Your rank: #" + data[0].rank + " (" + format_seconds_to_time(data[0].time) + ") +" + data[0].points + " points";
             rank_elem.title = "Completed on " + date_completed.toLocaleDateString() + " at " + date_completed.toLocaleTimeString();
             add_shadow_to_text_recursively(rank_elem);
+            if(Number(data[0].rank) <= 10){
+                titlediv.parentElement.classList.add("confetti");
+            }
         });
     }
 
@@ -2085,6 +2091,7 @@
                 let user_effect_button = document.createElement('button');
                 user_effect_button.className = 'btn btn-success btn-xs ';
                 user_effect_button.innerHTML = '<i class="fas fa-magic"></i> <span class="candycane-rainbow">User effect<span>';
+                user_effect_button.style.marginRight = '5px';
                 user_effect_button.onclick = function () {
                     show_overlay_window('Set user effect', create_color_grid(original_username, btoa(current_profile_id)))
                 }
@@ -2505,20 +2512,68 @@
         insert_map_page_tag_list(current_map_name);
         insert_friend_rankings(current_map_name);
         insert_rating(current_map_name);
+        if(settings.comments) insert_comments();
         
+    }
+
+    function insert_comments(){
+        let target_div = document.querySelectorAll('.content > div:nth-child(1)')
+        let comment_root_div = document.createElement('div')
+        comment_root_div.className = "col xs-12 col-sm-12"
+        let comment_col_div = document.createElement('div')
+        comment_col_div.className = "col-sm-12"
+        let comment_panel_div = document.createElement('div')
+        comment_panel_div.className = "panel panel-filled"
+        let comment_panel_heading_div = document.createElement('div')
+        comment_panel_heading_div.className = "panel-heading"
+        let panel_title = document.createElement('span')
+        panel_title.innerText = "Comments"
+        comment_panel_heading_div.appendChild(panel_title)
+        comment_panel_div.appendChild(comment_panel_heading_div)
+        let comment_panel_body_div = document.createElement('div')
+        comment_panel_body_div.className = "panel-body giscus"
+
+        comment_panel_div.appendChild(comment_panel_body_div)
+        comment_col_div.appendChild(comment_panel_div)
+        comment_root_div.appendChild(comment_col_div)
+        target_div[0].appendChild(comment_root_div)
+
+        let script = document.createElement('script')
+        script.src = "https://giscus.app/client.js"
+        script.setAttribute("data-repo", "Kalekki/SurfHeaven_Extended")
+        script.setAttribute("data-repo-id", "R_kgDOI7U8Tg")
+        script.setAttribute("data-category", "Announcements")
+        script.setAttribute("data-category-id", "DIC_kwDOI7U8Ts4CXa8R")
+        script.setAttribute("data-mapping", "pathname")
+        script.setAttribute("data-strict", "0")
+        script.setAttribute("data-reactions-enabled", "0")
+        script.setAttribute("data-emit-metadata", "0")
+        script.setAttribute("data-input-position", "bottom")
+        script.setAttribute("data-theme", "transparent_dark")
+        script.setAttribute("data-lang", "en")
+        script.setAttribute("data-loading","lazy")
+        script.setAttribute("crossorigin", "anonymous")
+        script.async = true
+        comment_panel_body_div.appendChild(script)
+
     }
 
     function insert_dropdown_stats(map, friends = false){
         let records_table
-
         let target_div = document.querySelectorAll('div.col')
-        let correct_div = target_div[target_div.length -1]
-        let table_div = correct_div.querySelector('div.table-responsive.table-maps')
-        let table = table_div.childNodes[1]
+        let correct_div
+        let table_div
+        let table
 
         if(friends){
+            correct_div = target_div[target_div.length - 2]
             table = document.querySelector('div.table-responsive.table-friends')
+        } else {
+            correct_div = target_div[target_div.length - 1]
+            table_div = correct_div.querySelector('div.table-responsive.table-maps')
+            table = table_div.childNodes[1]
         }
+
         //console.log(table)
         records_table = table.querySelectorAll('a')
 
@@ -3961,7 +4016,7 @@
 
             let records_table
             let target_div = document.querySelectorAll('div.col')
-            let correct_div = target_div[target_div.length -1]
+            let correct_div = target_div[target_div.length -(settings.comments? 2 : 1)]
             let table_div = correct_div.querySelector('div.table-responsive.table-maps')
             let table = table_div.childNodes[1]
 
@@ -4703,7 +4758,6 @@ GM_addStyle(`
         animation: 120s linear 0s infinite move;
         font-weight: bold;
     }
-
     @keyframes move {
         0% {
             background-position: 0 0;
