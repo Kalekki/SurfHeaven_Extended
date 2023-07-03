@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.17
+// @version      4.2.17.1
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -46,6 +46,20 @@
     var map_tiers = {};
     let map_dates = {};
     var bonus_completions = {};
+
+    // season specific
+    let season_time_left = [];
+    const season_map_times = [30, 45, 60]
+    let servers_load_time
+    const now = new Date();
+    const cest = { timeZone: 'Europe/Paris' };
+    const cest_string = now.toLocaleString('en-US', cest);
+    const cest_time = new Date(cest_string);
+    const cest_season_end = new Date(Date.parse('2023-07-23T18:00:00+02:00'));
+    const is_season = cest_time < cest_season_end;
+    const easy_maps = ["surf_spaceracer","surf_aesthetic","surf_beyond2","surf_melatonin"]
+    const medium_maps = ["surf_eos","surf_kala","surf_nibiru2","surf_njv"]
+    const hard_maps = ["surf_salmari","surf_barbies_malibu_adventure","surf_korovamilkbar","surf_rebirth"]
 
     const custom_css = document.createElement('link');
     custom_css.rel = 'stylesheet';
@@ -1388,6 +1402,26 @@
                     "Germany": "EU",
                     "Australia": "AU"
                 }
+                const season_servers = [11,12,13,20,21,22];
+                let calculated_time_left = [];
+                let au_times;
+                let au_ids;
+                if(is_season) {
+                    let current_time = new Date().getTime();
+                    let difference = current_time - servers_load_time;
+                    let minutes_passed = Math.floor(difference / 60000) % 60;
+                    for(let i = 0; i < season_servers.length; i++) {
+                        for(let i = 0; i < season_time_left.length; i++) {
+                            calculated_time_left[i] = season_time_left[i] - minutes_passed;
+                            if(calculated_time_left[i] < 0) {
+                                calculated_time_left[i] = season_map_times[i % 3] + (calculated_time_left[i] % season_map_times[i % 3]); // why u so fucking ugly bro
+                            }
+                        }
+                        au_times = season_time_left.length > 3 ? calculated_time_left.slice(-3) : calculated_time_left;
+                        au_ids = [20, 21, 22];
+                    }
+                }
+
                 if (region_map[region] !== "ALL") {
                     servers = servers.filter(server => server.region === region_map[region]);
                 }
@@ -1505,6 +1539,25 @@
                 
                             const txt_2 = document.createTextNode("0 / " + server.mapinfo.bonus);
                             bonus_cells[i].appendChild(txt_2);   
+                        }
+                        if(is_season && season_servers.includes(server.id)){
+                            let next_map
+                            if(easy_maps.includes(server.map)){
+                                next_map = easy_maps[(easy_maps.indexOf(server.map) + 1) % easy_maps.length];
+                            }else if(medium_maps.includes(server.map)){
+                                next_map = medium_maps[(medium_maps.indexOf(server.map) + 1) % medium_maps.length];
+                            }else if(hard_maps.includes(server.map)){
+                                next_map = hard_maps[(hard_maps.indexOf(server.map) + 1) % hard_maps.length];
+                            }else{
+                                next_map = "Cannot determine next map, since the server is empty"
+                            }
+
+                            if(server.region != "AU"){
+                                server_row[2].innerHTML += `<small style="color: pink; padding-left: 4px;" title="${"Next map: "+next_map}"> (${calculated_time_left[server.id - 11]} min left)</small>`;
+                            }else{
+                                server_row[2].innerHTML += `<small style="color: pink; padding-left: 4px;" title="${"Next map: "+next_map}"> (${au_times[au_ids.indexOf(server.id)]} min left)</small>`;
+                            }
+                            
                         }
                     }
                 }catch(e){
@@ -1820,8 +1873,34 @@
         });
     }
 
+    function scrape_time_left(){
+        if(!is_season) return;
+        let server_table_body = document.querySelector('#logsTable > tbody:nth-child(2)');
+        for (let i = 0; i < server_table_body.children.length; i++){
+            let row = server_table_body.children[i];
+            for (let j = 0; j < row.children.length; j++){
+                let cell = row.children[j];
+                for (let k = 0; k < cell.children.length; k++){
+                    let small_element = cell.children[k];
+                    if (small_element.tagName === "SMALL"){
+                        if (small_element.innerHTML.includes("left")){
+                            let regex = /\d+/
+                            season_time_left.push(small_element.innerHTML.match(regex)[0]);
+                        }
+                        
+                    }
+                }
+            }
+
+        }
+        console.log(season_time_left)
+    }
+
     function servers_page() {
         make_navbar_compact();
+        scrape_time_left();
+        servers_load_time = new Date().getTime();
+
         var my_div = document.createElement('div');
         my_div.className = 'navbar-form custom-id-div';
         var my_list = document.createElement('ul');
