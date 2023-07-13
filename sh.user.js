@@ -2745,6 +2745,7 @@
         padding_fix.style = "padding-left: 10px; margin-top: 0px;";
         document.querySelector('.pe').remove(); // removing the map icon to free some vertical space
 
+        insert_mapper_link();
         map_youtube_link(current_map_name);
         fetch_map_rank(current_map_name);
         insert_dropdown_stats(current_map_name);
@@ -2755,7 +2756,22 @@
         insert_friend_rankings(current_map_name);
         insert_rating(current_map_name);
         if(settings.comments) insert_comments();
+
+    }
+    
+    function insert_mapper_link(){
+        let author_element = document.querySelector(".media > p:nth-child(2)");
+        let author_name = author_element.innerText.split("Author: ")[1];
+        let date_added = author_element.innerText.split("\n")[1];
+        author_name = author_name.split("\n")[0];
         
+        let author_link = document.createElement('a');
+        author_link.href = "https://surfheaven.eu/search/" + encodeURI(author_name);
+        author_link.innerText = author_name;
+
+        author_element.innerHTML = "Author: ";
+        author_element.appendChild(author_link);
+        author_element.innerHTML += "<br>" + date_added;
     }
 
     function insert_comments(){
