@@ -2758,20 +2758,45 @@
         if(settings.comments) insert_comments();
 
     }
-    
+
     function insert_mapper_link(){
         let author_element = document.querySelector(".media > p:nth-child(2)");
         let author_name = author_element.innerText.split("Author: ")[1];
         let date_added = author_element.innerText.split("\n")[1];
         author_name = author_name.split("\n")[0];
-        
-        let author_link = document.createElement('a');
-        author_link.href = "https://surfheaven.eu/search/" + encodeURI(author_name);
-        author_link.innerText = author_name;
 
-        author_element.innerHTML = "Author: ";
-        author_element.appendChild(author_link);
+        if(author_name.includes('&')){
+            author_name = author_name
+            .split('&')
+            .flatMap(name => name.split(',')
+            .map(n => n.trim()));
+        }else if(author_name.includes(',')){
+            author_name = author_name
+            .split(',')
+            .map(n => n.trim());
+        }
+        if(typeof author_name == 'string' && !author_name.isArray){
+            let author_link = document.createElement('a');
+            author_link.href = "https://surfheaven.eu/search/" + encodeURI(author_name);
+            author_link.innerText = author_name;
+            author_element.innerHTML = "Author: ";
+            author_element.appendChild(author_link);
+        }else{
+            for(let i = 0; i < author_name.length; i++){
+                let author_link = document.createElement('a');
+                author_link.href = "https://surfheaven.eu/search/" + encodeURI(author_name[i]);
+                author_link.innerText = author_name[i];
+                if(i == 0){
+                    author_element.innerHTML = "Authors: ";
+                }
+                author_element.appendChild(author_link);
+                if(author_name.length > 1 && i < author_name.length - 1){
+                    author_element.innerHTML += " & ";
+                }
+            }
+        }
         author_element.innerHTML += "<br>" + date_added;
+
     }
 
     function insert_comments(){
