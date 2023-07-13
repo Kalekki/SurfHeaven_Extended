@@ -12,6 +12,8 @@ Highlight followed players
 Tag maps with custom tags  
 [See and filter maps based on tags](https://iloveur.mom/i/D0FFgSdGbw.png)  
 Select a tag, then press export, to quickly share the tag with other people
+Search map by author
+Cool username effects
 
 [Dashboard](https://iloveur.mom/i/fu6KwGrh8k.png):
  - Country Top 100 list
@@ -38,9 +40,11 @@ Select a tag, then press export, to quickly share the tag with other people
  - Friend ranking table
  - User submitted ratings (Difficulty, Fun, Unit, Tech)
  - [!pr stats on records](https://iloveur.mom/i/Y6TaPzVxHS.gif)
+ - Comments
 
 [Server page](https://iloveur.mom/i/i7z86IDGMw.png):
  - Ranks from the [original SH ranks by Link](https://greasyfork.org/en/scripts/438271-surfheaven-ranks)
+ - Rank highlighting based on thresholds (e.g highlight ranks that are in the top 20% as green)
  - Queue for an empty server as soon as one is available
  - Automatic refreshing
 

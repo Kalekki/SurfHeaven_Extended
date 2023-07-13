@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.17.1
+// @version      4.2.17.2
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -22,6 +22,7 @@
 
 /*  
     Todo
+    - Clean up old table creation to create_table, same with certain divs
     - Activity chart on profile page
     - (prettier) Rank threshold settings in servers page
     - Favorite maps, highlight in server browser (Ancient request)
@@ -253,6 +254,20 @@
     logo_text.style.left = "95px"
     logo.appendChild(logo_text);
 
+    // Replace "My Profile" link with custom id
+    if(use_custom){
+        let profile_link = document.querySelector(".nav > li:nth-child(1) > a:nth-child(1)")
+        if(profile_link.text == "MY PROFILE"){
+            console.log("Replacing profile link with custom id")
+            profile_link.href = "/player/" + custom_id;
+        }else{
+            console.log("Creating profile link with custom id")
+            let new_profile_link = document.createElement("li");
+            new_profile_link.innerHTML = "<a href='/player/" + custom_id + "'>MY PROFILE</a>";
+            document.querySelector(".nav").insertBefore(new_profile_link, document.querySelector(".nav > li:nth-child(1)"));
+        }
+    }
+
 
     // SERVERS PAGE
     if (window.location.pathname.endsWith("/servers/")) {
@@ -275,6 +290,12 @@
         current_page = "dashboard";
         dashboard_page();
     }
+    else if(url_path[url_path.length - 2] == "search"){
+        current_page = "search";
+        let search_term = url_path[url_path.length - 1];
+        search_term = decodeURIComponent(search_term);
+        search_page(search_term);
+    }
     else{
         current_page = url_path[url_path.length - 2];
         if(current_page == "donate"){
@@ -285,6 +306,105 @@
                 unsafeWindow.checker();
             }
         }
+    }
+
+    function search_page(search_term){
+        // Maps by author
+        make_request("https://api.surfheaven.eu/api/maps", (data) => {
+            let search_results = [];
+            data.forEach((map) => {
+                if(map.author.toLowerCase().includes(search_term.toLowerCase())){
+                    search_results.push(map);
+                }
+            });
+            console.log(search_results)
+            let table_data = [];
+            search_results.forEach((map) => {
+                table_data.push([
+                    `<a href="https://surfheaven.eu/map/${map.map}">${map.map}</a>`,
+                    map.author,
+                    map.tier,
+                    map.type == 0 ? "Linear" : "Staged",
+                    map.bonus,
+                    map.date_added.split("T")[0]
+                ]);
+            });
+
+            let table = create_table(["Map name", "Author", "Tier", "Type", "Bonuses", "Date Added"], table_data,"author_maps");
+
+            let div = create_div('Maps by "'+search_term+'"', table, 12, true);
+            let target_div = document.querySelector(".content > div:nth-child(1)")
+            target_div.appendChild(div);
+            $("#author_maps").DataTable({
+                "paging": "true",
+                "pagingType": "simple",
+                "lengthChange": false,
+                "info": true,
+                "searching": true,
+                "oLanguage": {
+                    "sSearch": '<i class="fas fa-search"></i>',
+                    "sInfo": "<small>Note: Maps with multiple authors are usually listed as 'collab' and might not show up in this list.</small>",
+                },
+                "order": [[ 5, "asc" ]]
+            });
+
+        })
+    }
+    /**
+     * Creates a table with the given columns and data, id is used for (manually) initializing datatable after the table is created
+     * @param {Array} columns, column names
+     * @param {Array} data 
+     * @param {string} id, table id for initializing datatable
+     * @returns {HTMLElement} table
+     */
+    function create_table(columns, data, id){
+        let table = document.createElement('table');
+        table.id = id;
+        table.className = "table table-striped table-hover";
+        let thead = document.createElement('thead');
+        let tbody = document.createElement('tbody');
+        let thead_tr = document.createElement('tr');
+        columns.forEach((column) => {
+            let th = document.createElement('th');
+            th.innerHTML = column;
+            thead_tr.appendChild(th);
+        });
+        thead.appendChild(thead_tr);
+        table.appendChild(thead);
+        data.forEach((row) => {
+            let tr = document.createElement('tr');
+            row.forEach((cell) => {
+                let td = document.createElement('td');
+                td.innerHTML = cell;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        return table;
+    }
+    /**
+     * Creates a div with a title, content, and size x/12
+     * @param {string} title
+     * @param {HTMLElement} content, Element to be added to the div
+     * @param {number} size, bootstrap column size
+     * @returns {HTMLElement} div
+     */
+    function create_div(title, content, size = 12){
+        let div = document.createElement('div');
+        div.className = "col-md-"+size;
+        let panel = document.createElement('div');
+        panel.className = "panel panel-filled";
+        let panel_heading = document.createElement('div');
+        panel_heading.className = "panel-heading";
+        panel_heading.innerHTML = "<span>"+title+"</span>";
+        let panel_body = document.createElement('div');
+        panel_body.className = "panel-body";
+        panel_body.appendChild(content);
+        panel.appendChild(panel_heading);
+        panel.appendChild(panel_body);
+        div.appendChild(panel);
+        return div;
     }
 
     // Navbar crowded fix
@@ -1519,10 +1639,18 @@
                                 let element_with_color = document.createElement('span');
                                 element_with_color.textContent = map_record.rank
                                 let complete_rank = document.createTextNode(" / " + server.mapinfo.completions);
-                                if (map_record.rank <= top_x) {
-                                    element_with_color.className = 'text-success';
-                                } else {
-                                    element_with_color.className = 'text-danger';
+                                if(unsafeWindow.localStorage.getItem('rank_threshold_type') == "percentage"){
+                                    if (map_record.rank <= top_x) {
+                                        element_with_color.className = 'text-success';
+                                    } else {
+                                        element_with_color.className = 'text-danger';
+                                    }
+                                }else{
+                                    if (map_record.rank <= unsafeWindow.localStorage.getItem('rank_threshold')) {
+                                        element_with_color.className = 'text-success';
+                                    } else {
+                                        element_with_color.className = 'text-danger';
+                                    }
                                 }
                                 rank_cells[i].appendChild(element_with_color);
                                 rank_cells[i].appendChild(complete_rank);
@@ -1621,12 +1749,19 @@
                         if (!records || !records[completion.track]) {
                             rank_text = `0 / ${completion.completions}`
                         } else {
-                            const top_percent = unsafeWindow.localStorage.getItem('rank_threshold') / 100;
-
-                            if ((records[completion.track].rank / completion.completions) <= top_percent ) {
-                                rank_text = `<span class="text-success">${records[completion.track].rank}  </span>`;
-                            } else {
-                                rank_text = `<span class="text-danger">${records[completion.track].rank}  </span>`;
+                            if(unsafeWindow.localStorage.getItem('rank_threshold_type') == "percentage"){
+                                const top_percent = unsafeWindow.localStorage.getItem('rank_threshold') / 100;
+                                if ((records[completion.track].rank / completion.completions) <= top_percent ) {
+                                    rank_text = `<span class="text-success">${records[completion.track].rank}  </span>`;
+                                } else {
+                                    rank_text = `<span class="text-danger">${records[completion.track].rank}  </span>`;
+                                }
+                            }else{
+                                if (records[completion.track].rank <= unsafeWindow.localStorage.getItem('rank_threshold') ) {
+                                    rank_text = `<span class="text-success">${records[completion.track].rank}  </span>`;
+                                } else {
+                                    rank_text = `<span class="text-danger">${records[completion.track].rank}  </span>`;
+                                }
                             }
 
                             rank_text += `/ ${completion.completions}`
@@ -1925,27 +2060,58 @@
             document.getElementById("region_select").value = "Global";
         }
 
-    //    let rank_threshold_toggle = document.createElement('input');
-    //    rank_threshold_toggle.type = 'checkbox';
-    //    if(unsafeWindow.localStorage.getItem('rank_threshold_toggle') === null){
-    //        unsafeWindow.localStorage.setItem('rank_threshold_toggle', true);
-    //        rank_threshold_toggle.checked = true;
-    //    }else{
-    //        rank_threshold_toggle.checked = unsafeWindow.localStorage.getItem('rank_threshold_toggle') === 'true';
-    //    }
-    //    rank_threshold_toggle.onchange = function(){
-    //        unsafeWindow.localStorage.setItem('rank_threshold_toggle', rank_threshold_toggle.checked);
-    //    };
 
+        let threshold_type = unsafeWindow.localStorage.getItem('rank_threshold_type');
+        if(threshold_type === null){
+            unsafeWindow.localStorage.setItem('rank_threshold_type', 'percentage');
+            threshold_type = 'percentage';
+        }
 
-    //    let rank_threshold_toggle_label = document.createElement('label');
-    //    rank_threshold_toggle_label.htmlFor = 'rank_threshold_toggle';
-    //    rank_threshold_toggle_label.innerHTML = 'Enable rank threshold coloring ';
+        let rank_threshold_radio_percentage = document.createElement('input');
+        rank_threshold_radio_percentage.type = 'radio';
+        rank_threshold_radio_percentage.name = 'rank_threshold_percentage';
+        rank_threshold_radio_percentage.id = 'rank_threshold_percentage';
+        rank_threshold_radio_percentage.style = 'margin-left: 4px;';
+        if(threshold_type === 'percentage'){
+            rank_threshold_radio_percentage.checked = true;
+        }
+        rank_threshold_radio_percentage.addEventListener('change', function(){
+            if(rank_threshold_radio_percentage.checked){
+                unsafeWindow.localStorage.setItem('rank_threshold_type', 'percentage');
+                rank_threshold_radio_raw.checked = false;
+                refresh_servers();
+            }
+        });
+
+        let rank_threshold_radio_raw = document.createElement('input');
+        rank_threshold_radio_raw.type = 'radio';
+        rank_threshold_radio_raw.name = 'rank_threshold_raw';
+        rank_threshold_radio_raw.id = 'rank_threshold_raw';
+        rank_threshold_radio_raw.style = 'margin-left: 4px;';
+        if(threshold_type === 'raw'){
+            rank_threshold_radio_raw.checked = true;
+        }
+        rank_threshold_radio_raw.addEventListener('change', function(){
+            if(rank_threshold_radio_raw.checked){
+                unsafeWindow.localStorage.setItem('rank_threshold_type', 'raw');
+                rank_threshold_radio_percentage.checked = false;
+                refresh_servers();
+            } 
+        });
+
+        let rank_threshold_radio_percentage_label = document.createElement('label');
+        rank_threshold_radio_percentage_label.htmlFor = 'rank_threshold_percentage';
+        rank_threshold_radio_percentage_label.innerHTML = ' Percentage ';
+
+        let rank_threshold_radio_raw_label = document.createElement('label');
+        rank_threshold_radio_raw_label.htmlFor = 'rank_threshold_raw';
+        rank_threshold_radio_raw_label.innerHTML = ' Number ';
+
 
         let rank_threshold_input = document.createElement('input');
         rank_threshold_input.type = 'number';
         rank_threshold_input.min = 0;
-        rank_threshold_input.max = 100;
+        rank_threshold_input.max = unsafeWindow.localStorage.getItem('rank_threshold_type') === 'percentage' ? 100 : 100000;
         let rank_threshold = 50;
         if(unsafeWindow.localStorage.getItem('rank_threshold') === null){
             unsafeWindow.localStorage.setItem('rank_threshold', rank_threshold);
@@ -1955,24 +2121,21 @@
         rank_threshold_input.value = rank_threshold;
         rank_threshold_input.id = 'rank_threshold_input';
         rank_threshold_input.className = 'form-control';
-        rank_threshold_input.style = 'width: 80px; display: inline-block;';
+        rank_threshold_input.style = 'width: 80px; display: inline-block; margin-left: 4px;';
         rank_threshold_input.value = rank_threshold;
         let rank_threshold_label = document.createElement('label');
         rank_threshold_label.htmlFor = 'rank_threshold_input';
-        rank_threshold_label.innerHTML = 'Highlight your rank based on completion % : ';
+        rank_threshold_label.innerHTML = 'Highlight your rank based on : ';
         let rank_threshold_container = document.createElement('div');
         rank_threshold_container.className = 'form-group';
         
-        //rank_threshold_container.appendChild(rank_threshold_toggle);
-        //rank_threshold_container.appendChild(rank_threshold_toggle_label);
-        //rank_threshold_container.appendChild(document.createElement("br"));
         rank_threshold_container.appendChild(rank_threshold_label);
+        rank_threshold_container.appendChild(rank_threshold_radio_percentage);
+        rank_threshold_container.appendChild(rank_threshold_radio_percentage_label);
+        rank_threshold_container.appendChild(rank_threshold_radio_raw);
+        rank_threshold_container.appendChild(rank_threshold_radio_raw_label);
         rank_threshold_container.appendChild(rank_threshold_input);
-        
-        //rank_threshold_container.style.border = '1px solid white';
-        //rank_threshold_container.style.borderRadius = '1rem';
-        //rank_threshold_container.style.display = 'inline-block';
-        //rank_threshold_container.style.padding = '10px';
+
 
         rank_threshold_input.addEventListener('change', function(){
             unsafeWindow.localStorage.setItem('rank_threshold', rank_threshold_input.value);
