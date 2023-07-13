@@ -1,4 +1,4 @@
-__4.2.17.2___
+___4.2.17.2___
 Added searching maps by author (thanks lil_fowoxy)
 Show profile link in navbar if using custom id even if api doesnt return a profile (thanks house)
 You can now highlight your rank in servers page based on a number instead of percentage, e.g set it to your average rank 
