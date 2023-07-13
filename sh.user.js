@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.17.2
+// @version      4.2.17.3
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -316,6 +316,18 @@
                 if(map.author.toLowerCase().includes(search_term.toLowerCase())){
                     search_results.push(map);
                 }
+                // the_ancient_one patch
+                if(search_term.includes("_")){
+                    if(map.author.toLowerCase().includes(search_term.replace(/_/g, " ").toLowerCase())){
+                        search_results.push(map);
+                    }
+                }
+                // vice versa
+                if(search_term.includes(" ")){
+                    if(map.author.toLowerCase().includes(search_term.replace(/ /g, "_").toLowerCase())){
+                        search_results.push(map);
+                    }
+                }
             });
             console.log(search_results)
             let table_data = [];
@@ -343,7 +355,7 @@
                 "searching": true,
                 "oLanguage": {
                     "sSearch": '<i class="fas fa-search"></i>',
-                    "sInfo": "<small>Note: Maps with multiple authors are usually listed as 'collab' and might not show up in this list.</small>",
+                    "sInfo": "<small>Note: Maps with multiple authors are sometimes listed as 'collab' and might not show up in this list.</small>",
                 },
                 "order": [[ 5, "asc" ]]
             });
@@ -2763,6 +2775,7 @@
         let author_element = document.querySelector(".media > p:nth-child(2)");
         let author_name = author_element.innerText.split("Author: ")[1];
         let date_added = author_element.innerText.split("\n")[1];
+        let regex = /[^\p{L}\p{N}\s_]/gu; // surely not caused by author of surf_barbies_malibu_adventure
         author_name = author_name.split("\n")[0];
 
         if(author_name.includes('&')){
@@ -2775,22 +2788,25 @@
             .split(',')
             .map(n => n.trim());
         }
-        if(typeof author_name == 'string' && !author_name.isArray){
+
+        if(typeof author_name == 'string'){ // single mapper
             let author_link = document.createElement('a');
-            author_link.href = "https://surfheaven.eu/search/" + encodeURI(author_name);
             author_link.innerText = author_name;
+            author_name = author_name.replace(regex, '');
+            author_link.href = "https://surfheaven.eu/search/" + encodeURI(author_name);
             author_element.innerHTML = "Author: ";
             author_element.appendChild(author_link);
-        }else{
+        }else{ // multiple mappers
             for(let i = 0; i < author_name.length; i++){
                 let author_link = document.createElement('a');
-                author_link.href = "https://surfheaven.eu/search/" + encodeURI(author_name[i]);
                 author_link.innerText = author_name[i];
+                author_name[i] = author_name[i].replace(regex, '');
+                author_link.href = "https://surfheaven.eu/search/" + encodeURI(author_name[i]);
                 if(i == 0){
                     author_element.innerHTML = "Authors: ";
                 }
                 author_element.appendChild(author_link);
-                if(author_name.length > 1 && i < author_name.length - 1){
+                if(i < author_name.length - 1){
                     author_element.innerHTML += " & ";
                 }
             }
