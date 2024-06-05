@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.17.3
+// @version      4.2.18
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -22,13 +22,9 @@
 
 /*  
     Todo
-    - Clean up old table creation to create_table, same with certain divs
     - Activity chart on profile page
-    - (prettier) Rank threshold settings in servers page
     - Favorite maps, highlight in server browser (Ancient request)
     - Improved graph on map page, fullscreening?, need to look into chartist to see what can easily be done (Ancient request)
-    - Hover info on follow list server number, to see the server map same way as hovering over a map link
-    - Notify when a friend joins a server
 */
 
 
@@ -64,7 +60,7 @@
 
     const custom_css = document.createElement('link');
     custom_css.rel = 'stylesheet';
-    custom_css.href = 'https://iloveur.mom/surfheaven/styles.css';
+    custom_css.href = 'https://iloveur.mom/surfheaven/styles.css?d=' + now.getHours();
     document.head.appendChild(custom_css);
 
     // colors are approximate and might be wrong, let me know
@@ -73,14 +69,14 @@
     const GROUP_COLORS =       ["gold", "gold", "gold", "#b57fe5", "red",   "#d731eb", "#6297d1","#6297d1", "#E94A4B", "#55ff4b", "#aef25d", "#ad8adc",      "#ebe58d","#b4c5d9", "#6297d1", "#dfa746","#ccccd4",  "#649ad8", "#ccccd4", "#FFFFFF"]
 
     const AU_SERVERS = {
-        14 : "51.161.199.33:27015",
-        15 : "51.161.199.33:27016",
-        16 : "51.161.199.33:27017",
-        17 : "51.161.199.33:27018",
-        18 : "51.161.199.33:27019",
-        19 : "51.161.199.33:27020",
-        20 : "51.161.199.33:27021",
-        21 : "51.161.199.33:27022",
+        12 : "51.161.199.33:27015", //#1
+        13 : "51.161.199.33:27016", //#2
+        14 : "51.161.199.33:27017", //#3
+        15 : "51.161.199.33:27018", //#4
+        16 : "51.161.199.33:27019", //#5
+        17 : "51.161.199.33:27020", //#6
+        18 : "51.161.199.33:27021", //#7
+        19 : "51.161.199.33:27022", //#8
     }
 
     // SETTINGS
@@ -102,7 +98,9 @@
             user_ratings_table: true,
             user_ratings: true,
             user_effects: true,
-            comments: true
+            comments: true,
+            map_recommendations: true,
+            record_diffs: true
         }
         unsafeWindow.localStorage.setItem('settings', JSON.stringify(settings));
     }else{
@@ -126,14 +124,16 @@
         user_ratings_table: "Show user rated maps",
         user_ratings: "Show user ratings",
         user_effects: "Show user effects",
-        comments: "Show map comments"
+        comments: "Show map comments",
+        map_recommendations: "Show map recommendations",
+        record_diffs: "Show record time difference in recents"
     }
 
     const settings_categories = {
-        "Global" : ["flags","follow_list", "hover_info", "update_check", "toasts", "user_effects"],
+        "Global" : ["flags","follow_list", "hover_info", "update_check", "toasts", "user_effects", "record_diffs"],
         "Dashboard" : ["country_top_100", "user_ratings_table"],
         "Map page" : ["cp_chart","points_per_rank","map_cover_image","user_ratings","comments"],
-        "Profile" : ["steam_avatar", "completions_by_tier", "completions_bar_chart"],
+        "Profile" : ["steam_avatar", "completions_by_tier", "completions_bar_chart", "map_recommendations"]
     }
 
     function validate_settings(){
@@ -153,6 +153,8 @@
         if (settings.user_ratings == null) settings.user_ratings = true;
         if (settings.user_effects == null) settings.user_effects = true;
         if (settings.comments == null) settings.comments = true;
+        if (settings.map_recommendations == null) settings.map_recommendations = true;
+        if (settings.record_diffs == null) settings.record_diffs = true;
     }
 
     // USER EFFECTS
@@ -304,6 +306,71 @@
                 document.getElementById("authid").value = "http://steamcommunity.com/profiles/"+unsafeWindow.localStorage.getItem('gift_vip_steamid');
                 unsafeWindow.localStorage.removeItem('gift_vip_steamid');
                 unsafeWindow.checker();
+            }
+        }
+    }
+
+    recent_activity_times()
+
+    function recent_activity_times(){
+        if(!settings.record_diffs) return;
+        let recs = [];
+        let comparison_recs = [];
+        let recents = document.getElementsByClassName("row-recentactivity");
+
+        for(let i = 0; i < recents.length; i++){
+            recents[i].id = "rec_" + i
+            //console.log(recents[i].textContent);
+            let rec_string = recents[i].textContent;
+            let id = recents[i].querySelectorAll("a")[0].href.split("/").pop();
+            let map = recents[i].querySelectorAll("a")[1].href.split("/").pop();
+            let track = 0;
+
+            rec_string = rec_string.substring(rec_string.indexOf("set a new"));
+
+            if(recents[i].textContent.includes("new Map WR")){
+                track = 0;
+            }else if(recents[i].textContent.includes("new Bonus ")){
+                let _regex = /\d+/g;
+                track = rec_string.match(_regex)[0];
+            }else{
+                track = null
+            }
+            recs.push([id, map, track]);
+
+            //console.log(id, map, track);
+        }
+        //console.log(recs);
+        for (let i = 0; i < recs.length; i++) {
+            let map = recs[i][1]
+            let track = recs[i][2]
+            if (track != null) {
+                make_request("https://api.surfheaven.eu/api/records/"+map+"/" + track, (data) => {
+                    if (data) {
+                        data.sort((a, b) => a.time - b.time);
+                        let diff = (data[0].time - data[1].time).toFixed(3);
+                        comparison_recs.push([i,diff]);
+                        //console.log("difference in time = ",data[0].time - data[1].time);
+                        check_if_ready();
+                    }
+                })
+            }else{
+                comparison_recs.push([i, null]);
+                check_if_ready();
+            }
+
+        }
+        function check_if_ready(){
+            if(comparison_recs.length == recs.length){
+                comparison_recs.sort((a, b) => a[0] - b[0]);
+                //console.log(comparison_recs);
+                for(let i = 0; i < comparison_recs.length; i++){
+                    if(comparison_recs[i][1] != null){
+                        let target_div = document.getElementById("rec_" + i);
+                        let target_node = target_div.querySelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3)")
+                        target_node.innerHTML +=  " <span style='color:lightgreen'><small>" + comparison_recs[i][1] + "</small></span>";
+                    }
+                }
             }
         }
     }
@@ -530,9 +597,9 @@
             followed_players.forEach((player) => {
                 let follow_list_item = document.createElement('h5');
                 if(player[4] == "AU"){
-                    follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/${AU_SERVERS[player[2]]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]-13} (AU)</a>`
+                    follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="https://surfheaven.eu/map/${player[3]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]-13} (AU)</a>`
                 } else {
-                    follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/surf${player[2]}.surfheaven.eu" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
+                    follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="https://surfheaven.eu/map/${player[3]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
                 }
                 follow_list_panel_body_div.appendChild(follow_list_item);
             });
@@ -557,7 +624,7 @@
         let follow_list = get_follow_list();
         const follow_list_root = document.createElement('div');
         follow_list_root.style.overflowY = "scroll";
-        follow_list_root.style.maxHeight = "600px";
+        follow_list_root.style.height = "600px";
 
         for(let i = 0; i < follow_list.length; i++){
             make_request(`https://api.surfheaven.eu/api/playerinfo/${follow_list[i]}`, (data) => {
@@ -650,9 +717,9 @@
                         if (follow_list.includes(player[0])) {
                             let follow_list_item = document.createElement('h5');
                             if(player[4] == "AU"){
-                                follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/${AU_SERVERS[player[2]]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]-13} (AU)</a>`
+                                follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="https://surfheaven.eu/map/${player[3]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]-13} (AU)</a>`
                             } else {
-                                follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="steam://connect/surf${player[2]}.surfheaven.eu" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
+                                follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="https://surfheaven.eu/map/${player[3]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
                             }
                             follow_list_panel_body_div.appendChild(follow_list_item);
                         }
@@ -1525,185 +1592,227 @@
 
     function fetch_ranks(id) {
         make_request("https://api.surfheaven.eu/api/records/" + id + "/", (records) => {
-          make_request("https://api.surfheaven.eu/api/servers", (servers) => {
-            if(Array.isArray(servers)) {
-                // filter irrelevant servers
-                const region = document.getElementById("region_select").value;
-                const region_map = {
-                    "Global": "ALL",
-                    "Germany": "EU",
-                    "Australia": "AU"
-                }
-                const season_servers = [11,12,13,20,21,22];
-                let calculated_time_left = [];
-                let au_times;
-                let au_ids;
-                if(is_season) {
-                    let current_time = new Date().getTime();
-                    let difference = current_time - servers_load_time;
-                    let minutes_passed = Math.floor(difference / 60000) % 60;
-                    for(let i = 0; i < season_servers.length; i++) {
-                        for(let i = 0; i < season_time_left.length; i++) {
-                            calculated_time_left[i] = season_time_left[i] - minutes_passed;
-                            if(calculated_time_left[i] < 0) {
-                                calculated_time_left[i] = season_map_times[i % 3] + (calculated_time_left[i] % season_map_times[i % 3]); // why u so fucking ugly bro
+            make_request("https://api.surfheaven.eu/api/servers", (servers) => {
+                if (Array.isArray(servers)) {
+                    // filter irrelevant servers
+                    const region = document.getElementById("region_select").value;
+                    const region_map = {
+                        "Global": "ALL",
+                        "Germany": "EU",
+                        "Australia": "AU"
+                    }
+                    const season_servers = [11, 12, 13, 20, 21, 22];
+                    let calculated_time_left = [];
+                    let au_times;
+                    let au_ids;
+                    if (is_season) {
+                        let current_time = new Date().getTime();
+                        let difference = current_time - servers_load_time;
+                        let minutes_passed = Math.floor(difference / 60000) % 60;
+                        for (let i = 0; i < season_servers.length; i++) {
+                            for (let i = 0; i < season_time_left.length; i++) {
+                                calculated_time_left[i] = season_time_left[i] - minutes_passed;
+                                if (calculated_time_left[i] < 0) {
+                                    calculated_time_left[i] = season_map_times[i % 3] + (calculated_time_left[i] % season_map_times[i % 3]); // why u so fucking ugly bro
+                                }
                             }
+                            au_times = season_time_left.length > 3 ? calculated_time_left.slice(-3) : calculated_time_left;
+                            au_ids = [20, 21, 22];
                         }
-                        au_times = season_time_left.length > 3 ? calculated_time_left.slice(-3) : calculated_time_left;
-                        au_ids = [20, 21, 22];
                     }
-                }
-
-                if (region_map[region] !== "ALL") {
-                    servers = servers.filter(server => server.region === region_map[region]);
-                }
-
-                servers = servers.filter(server => server.id !== 14); // Remove mayhem server
-                const table = document.querySelector('.table');
-                table.removeAttribute('title');
-
-                table.rows[0].insertCell(3).outerHTML = "<th>Rank</th>";
-                table.rows[0].insertCell(4).outerHTML = "<th>Bonus</th>";
-
-                const rowsCount = Math.max(servers.length, table.rows.length - 1); 
-
-                const rank_cells = Array(rowsCount).fill().map((_, i) => {
-                if (table.rows[i + 1]) {
-                    return table.rows[i + 1].insertCell(3);
-                }
-                });
-        
-                const bonus_cells = Array(rowsCount).fill().map((_, i) => {
-                if (table.rows[i + 1]) {
-                    return table.rows[i + 1].insertCell(4);
-                }
-                });
-
-                let table_rows = table.querySelectorAll('tbody > tr');
-                let follow_list = get_follow_list();
-        
-                const server_records = {};
-                records.forEach((record) => {
-                const record_found = servers.findIndex(server => server.map === record.map) >= 0;
-                if (record_found) {
-                    if (server_records[record.map] === undefined) {
-                        server_records[record.map] = new Array(13);
+    
+                    if (region_map[region] !== "ALL") {
+                        servers = servers.filter(server => server.region === region_map[region]);
                     }
-                    server_records[record.map][record.track] = record;
-                }
-                });
-        
-                servers.forEach((server, i) => {
-                try{
-                    let server_row = table_rows[i].querySelectorAll('td');
-                    let has_friends = false;
-
-                    let child_nodes = server_row[0].childNodes[2].childNodes;
-                    for (let i = child_nodes.length - 1; i > 0; i--) {
-                        child_nodes[i].remove();
-                    }
-                    // update player count
-                    server_row[5].textContent = server.playercount+ ' / ' + server.maxplayers;
-                    // add updated players list
-                    server.players.forEach((player) => {
-                        let player_element = document.createElement('div');
-                        player_element.className = 'row';
-                        let col_elem = document.createElement('div');
-                        col_elem.className = 'col-sm-12';
-                        let player_link = document.createElement('a');
-                        player_link.href = `https://surfheaven.eu/player/${player.steamid}`;
-                        player_link.textContent = player.name;
-                        col_elem.appendChild(player_link);
-                        player_element.appendChild(col_elem);
-                        server_row[0].childNodes[2].appendChild(player_element);
-                        let no_margin_hr = document.createElement('hr');
-                        no_margin_hr.className = 'nomargin';
-                        server_row[0].childNodes[2].appendChild(no_margin_hr);
-
-                        if (follow_list.includes(player.steamid)) {
-                            has_friends = true;
+    
+                    const table = document.querySelector('.table');
+                    table.removeAttribute('title');
+    
+                    table.rows[0].insertCell(3).outerHTML = "<th>Rank</th>";
+                    table.rows[0].insertCell(4).outerHTML = "<th>Bonus</th>";
+    
+                    const rowsCount = Math.max(servers.length, table.rows.length - 1);
+    
+                    const rank_cells = Array(rowsCount).fill().map((_, i) => {
+                        if (table.rows[i + 1]) {
+                            return table.rows[i + 1].insertCell(3);
                         }
                     });
-                    if (has_friends) {
-                        server_row[0].classList.add('following');
-                        server_row[0].setAttribute('title', 'Friend(s) here');
-                    }else{
-                        server_row[0].classList.remove('following');
-                    }
-
-                    server_row[0].onclick = function(e) {
-                        if (e.target.tagName !== 'DIV' && e.target.tagName !== 'A') {
-                            $(this).closest("tr").find(".hidden-row").slideToggle();
+    
+                    const bonus_cells = Array(rowsCount).fill().map((_, i) => {
+                        if (table.rows[i + 1]) {
+                            return table.rows[i + 1].insertCell(4);
                         }
-                    }
-                    server_row[0].style.cursor = 'pointer';
+                    });
+    
+                    let table_rows = table.querySelectorAll('tbody > tr');
+                    let follow_list = get_follow_list();
+    
+                    const server_records = {};
+                    records.forEach((record) => {
+                        const record_found = servers.findIndex(server => server.map === record.map) >= 0;
+                        if (record_found) {
+                            if (server_records[record.map] === undefined) {
+                                server_records[record.map] = new Array(13);
+                            }
+                            server_records[record.map][record.track] = record;
+                        }
+                    });
+    
+                    servers.forEach((server, i) => {
+                        try {
+                            let server_row = table_rows[i].querySelectorAll('td');
+                            let has_friends = false;
+    
+                            let reveal_glyph = document.createElement('span');
+                            reveal_glyph.className = "glyphicon glyphicon-menu-down";
+                            reveal_glyph.style = 'float: right; margin-right: 10px; cursor: pointer;color: rgb(198, 140, 41);';
+                            if (!server_row[0].querySelector('.glyphicon')) {
+                                server_row[0].appendChild(reveal_glyph);
+                            }
+    
+                            let stats_button = document.createElement('button');
+                            stats_button.className = 'btn btn-default btn-xs';
+                            stats_button.style = 'margin-left: 10px; cursor: pointer;';
+                            stats_button.textContent = 'Fetch ranks';
+                            stats_button.onclick = function() {
+                                stats_button.textContent = 'Fetching...';
+                                fetch_server_player_ranks(server_row[0], server.map);
+                            };
 
-                    if(server.mapinfo){
-                        server_row[2].innerHTML = `<a href="https://surfheaven.eu/map/${server.map}">${server.map}</a> <small>(T${server.mapinfo.tier}) ${server.mapinfo.type == 0 ? "Linear" : "Staged"} </small>`;
-                        var rec = server_records[server.map];
-                        if (rec) { 
-                            const map_record = rec[0];
-                            if (map_record) { 
-                                server_row[2].innerHTML += `<i title="You have completed this map!" class="fas fa-check text-success"></i>`;
-
-                                const top_percent = unsafeWindow.localStorage.getItem('rank_threshold') / 100;
-                                const top_x = Math.ceil(server.mapinfo.completions * top_percent);
-                                let element_with_color = document.createElement('span');
-                                element_with_color.textContent = map_record.rank
-                                let complete_rank = document.createTextNode(" / " + server.mapinfo.completions);
-                                if(unsafeWindow.localStorage.getItem('rank_threshold_type') == "percentage"){
-                                    if (map_record.rank <= top_x) {
-                                        element_with_color.className = 'text-success';
+                            if (!server_row[0].querySelector('.btn')) {
+                                server_row[0].childNodes[2].childNodes[0].appendChild(stats_button);
+                            }else{
+                                server_row[0].querySelector('.btn').remove();
+                                server_row[0].childNodes[2].childNodes[0].appendChild(stats_button);
+                            }
+    
+                            let child_nodes = server_row[0].childNodes[2].childNodes;
+                            for (let i = child_nodes.length - 1; i > 0; i--) {
+                                child_nodes[i].remove();
+                            }
+                            // update player count
+                            server_row[5].textContent = server.playercount+ ' / ' + server.maxplayers;
+                            // add updated players list
+                            server.players.forEach((player) => {
+                                let player_element = document.createElement('div');
+                                player_element.className = 'row';
+                                let col_elem = document.createElement('div');
+                                col_elem.className = 'col-sm-12';
+                                let player_link = document.createElement('a');
+                                player_link.href = `https://surfheaven.eu/player/${player.steamid}`;
+                                player_link.textContent = player.name;
+                                col_elem.appendChild(player_link);
+                                player_element.appendChild(col_elem);
+                                server_row[0].childNodes[2].appendChild(player_element);
+                                let no_margin_hr = document.createElement('hr');
+                                no_margin_hr.className = 'nomargin';
+                                server_row[0].childNodes[2].appendChild(no_margin_hr);
+    
+                                if (follow_list.includes(player.steamid)) {
+                                    has_friends = true;
+                                }
+                            });
+                            if (has_friends) {
+                                server_row[0].classList.add('following');
+                                server_row[0].setAttribute('title', 'Friend(s) here');
+                            }else{
+                                server_row[0].classList.remove('following');
+                            }
+    
+                            server_row[0].onclick = function(e) {
+                                if (e.target.tagName !== 'DIV' && e.target.tagName !== 'A' && !e.target.classList.contains('btn')) {
+                                    $(this).find(".glyphicon").toggleClass("glyphicon-menu-down glyphicon-menu-up");
+                                    $(this).closest("tr").find(".hidden-row").slideToggle();
+                                }
+                            }
+                            server_row[0].style.cursor = 'pointer';
+                            server_row[0].childNodes[2].style.cursor = 'default';
+    
+                            if (server.mapinfo) {
+                                server_row[2].innerHTML = `<a href="https://surfheaven.eu/map/${server.map}">${server.map}</a> <small>(T${server.mapinfo.tier}) ${server.mapinfo.type == 0 ? "Linear" : "Staged"} </small>`;
+                                var rec = server_records[server.map];
+                                if (rec) {
+                                    const map_record = rec[0];
+                                    if (map_record) {
+                                        server_row[2].innerHTML += `<i title="You have completed this map!" class="fas fa-check text-success"></i>`;
+    
+                                        const top_percent = unsafeWindow.localStorage.getItem('rank_threshold') / 100;
+                                        const top_x = Math.ceil(server.mapinfo.completions * top_percent);
+                                        let element_with_color = document.createElement('span');
+                                        element_with_color.textContent = map_record.rank
+                                        let complete_rank = document.createTextNode(" / " + server.mapinfo.completions);
+                                        if(unsafeWindow.localStorage.getItem('rank_threshold_type') == "percentage"){
+                                            if (map_record.rank <= top_x) {
+                                                element_with_color.className = 'text-success';
+                                            } else {
+                                                element_with_color.className = 'text-danger';
+                                            }
+                                        }else{
+                                            if (map_record.rank <= unsafeWindow.localStorage.getItem('rank_threshold')) {
+                                                element_with_color.className = 'text-success';
+                                            } else {
+                                                element_with_color.className = 'text-danger';
+                                            }
+                                        }
+                                        rank_cells[i].appendChild(element_with_color);
+                                        rank_cells[i].appendChild(complete_rank);
                                     } else {
-                                        element_with_color.className = 'text-danger';
+                                        const txt = document.createTextNode("0 / " + server.mapinfo.completions);
+                                        rank_cells[i].appendChild(txt);
                                     }
-                                }else{
-                                    if (map_record.rank <= unsafeWindow.localStorage.getItem('rank_threshold')) {
-                                        element_with_color.className = 'text-success';
-                                    } else {
-                                        element_with_color.className = 'text-danger';
+                                    const bonus_completes = rec.reduce((value, record) => record && record.track > 0 ? value + 1 : value, 0);
+                                    const txt2 = document.createTextNode(bonus_completes + " / " + server.mapinfo.bonus);
+                                    bonus_cells[i].appendChild(txt2);
+                                } else {
+                                    const txt = document.createTextNode("0 / " + server.mapinfo.completions);
+                                    rank_cells[i].appendChild(txt);
+    
+                                    const txt_2 = document.createTextNode("0 / " + server.mapinfo.bonus);
+                                    bonus_cells[i].appendChild(txt_2);
+                                }
+                                if(is_season && season_servers.includes(server.id)){
+                                    let next_map
+                                    if(easy_maps.includes(server.map)){
+                                        next_map = easy_maps[(easy_maps.indexOf(server.map) + 1) % easy_maps.length];
+                                    }else if(medium_maps.includes(server.map)){
+                                        next_map = medium_maps[(medium_maps.indexOf(server.map) + 1) % medium_maps.length];
+                                    }else if(hard_maps.includes(server.map)){
+                                        next_map = hard_maps[(hard_maps.indexOf(server.map) + 1) % hard_maps.length];
+                                    }else{
+                                        next_map = "Cannot determine next map, since the server is empty"
+                                    }
+    
+                                    if(server.region != "AU") {
+                                        server_row[2].innerHTML += `<small style="color: pink; padding-left: 4px;" title="${"Next map: " + next_map}"> (${calculated_time_left[server.id - 11]} min left)</small>`;
+                                    }else{
+                                        server_row[2].innerHTML += `<small style="color: pink; padding-left: 4px;" title="${"Next map: " + next_map}"> (${au_times[au_ids.indexOf(server.id)]} min left)</small>`;
                                     }
                                 }
-                                rank_cells[i].appendChild(element_with_color);
-                                rank_cells[i].appendChild(complete_rank);
-                            } else { 
-                                const txt = document.createTextNode("0 / " + server.mapinfo.completions);
-                                rank_cells[i].appendChild(txt);
                             }
-                            const bonus_completes = rec.reduce((value, record) => record && record.track > 0 ? value + 1 : value, 0);
-                            const txt2 = document.createTextNode(bonus_completes + " / " + server.mapinfo.bonus);
-                            bonus_cells[i].appendChild(txt2);          
-                        } else {
-                            const txt = document.createTextNode("0 / " + server.mapinfo.completions);
-                            rank_cells[i].appendChild(txt);
-                
-                            const txt_2 = document.createTextNode("0 / " + server.mapinfo.bonus);
-                            bonus_cells[i].appendChild(txt_2);   
+                        }catch(e){
+                            console.log(e);
                         }
-                        if(is_season && season_servers.includes(server.id)){
-                            let next_map
-                            if(easy_maps.includes(server.map)){
-                                next_map = easy_maps[(easy_maps.indexOf(server.map) + 1) % easy_maps.length];
-                            }else if(medium_maps.includes(server.map)){
-                                next_map = medium_maps[(medium_maps.indexOf(server.map) + 1) % medium_maps.length];
-                            }else if(hard_maps.includes(server.map)){
-                                next_map = hard_maps[(hard_maps.indexOf(server.map) + 1) % hard_maps.length];
-                            }else{
-                                next_map = "Cannot determine next map, since the server is empty"
-                            }
+                    });
 
-                            if(server.region != "AU"){
-                                server_row[2].innerHTML += `<small style="color: pink; padding-left: 4px;" title="${"Next map: "+next_map}"> (${calculated_time_left[server.id - 11]} min left)</small>`;
-                            }else{
-                                server_row[2].innerHTML += `<small style="color: pink; padding-left: 4px;" title="${"Next map: "+next_map}"> (${au_times[au_ids.indexOf(server.id)]} min left)</small>`;
-                            }
-                            
-                        }
+                    function fetch_server_player_ranks(server_row, map) {
+                        let stats_button = server_row.querySelector('.btn');
+                        stats_button.disabled = true;
+                        make_request(`https://api.surfheaven.eu/api/records/${map}/0`, (player_records) => {
+                            console.log("fetching ranks for ", map);
+                            player_records.forEach(record => {
+                                let player_elems = server_row.querySelectorAll(`a[href="https://surfheaven.eu/player/${record.steamid}"]`);
+                                player_elems.forEach(elem => {
+                                    let rank_span = document.createElement('span');
+                                    rank_span.style.marginLeft = '10px';
+                                    rank_span.innerHTML = `<span class="badge badge-pill badge-primary"># ${record.rank}</span>`;
+                                    elem.parentNode.appendChild(rank_span);
+                                });
+
+                            });
+                            stats_button.remove();
+                        });
                     }
-                }catch(e){
-                    console.log(e);
-                    }
-                });
         
                 document.querySelector('.my-checkbox').disabled = false;
         
@@ -1934,6 +2043,355 @@
         });
     }
 
+    function map_recommendations_panel(maps){
+        if(!settings.map_recommendations) return;
+        if (localStorage.getItem("hide_recs") == null) localStorage.setItem("hide_recs", "false");
+        let hide_recs = localStorage.getItem("hide_recs") === 'true';
+        console.log("hide_recs", hide_recs)
+
+        let recommendations_column = document.createElement('div');
+        recommendations_column.className = "col xs-12 col-sm-12";
+
+        let col1 = document.createElement('div');
+        col1.className = "col lg-12 md-12 xs-12 sm-12";
+
+        let col2 = document.createElement('div');
+        col2.className = "col-sm-12";
+
+        let panel_row = document.createElement('div');
+        panel_row.className = "row panel panel-filled";
+
+        let panel_body = document.createElement('div');
+        panel_body.className = "panel-body";
+
+        console.log("panel_body", panel_body.style)
+
+        let panel_heading = document.createElement('div');
+        panel_heading.className = "panel-heading";
+        let panel_title = document.createElement('span');
+        panel_title.innerHTML = "MAP RECOMMENDATIONS";
+        let title_explainer = document.createElement('a');
+        title_explainer.href = "#";
+        title_explainer.innerHTML = " (?)";
+        title_explainer.title = "Recommendations are based on maps you have rated, rate more maps to improve the recommendations!"
+        title_explainer.onclick = function(){
+            let explainer_content = document.createElement('div');
+            let own_top = localStorage.getItem("own_top");
+            own_top = JSON.parse(own_top);
+
+            explainer_content.style = "margin: 0px 10px 10px 10px;";
+            explainer_content.innerHTML += "The script calculates the average of "+ own_top.length +" of your top rated maps in terms of fun factor<br>";
+            explainer_content.innerHTML += "It then calculates the _weighted_ distance from every other map to the average of your top ratings. <br>";
+            explainer_content.innerHTML += "Finally, it shows the 10 closest maps in terms of distance.<br>";
+            explainer_content.innerHTML += "It doesn't recommend maps you've rated, nor does it consider whether you've completed them or their tier.<br>";
+            explainer_content.innerHTML += "You can also remove maps from recommendations by pressing the 'x' button<br>";
+            explainer_content.innerHTML += "The current recommendations are based your following ratings:<br><br>";
+
+            for(let i = 0; i < own_top.length; i++){
+
+                let map = own_top[i][0];
+                let mr = own_top[i][1];
+                explainer_content.innerHTML += "<a href='https://surfheaven.eu/map/" + map + "'>" + map + "</a>" + "&nbsp;&nbsp;&nbsp;&nbsp;<p> Diff: <b>" + mr[0] + "</b>, Fun: <b>" + mr[1] + "</b>, Tech: <b>" + mr[2] + "</b>, Unit: <b>" + mr[3] + "</b></p>";
+            }
+            show_overlay_window("Map Recommendations", explainer_content);
+        }
+        panel_title.appendChild(title_explainer);
+
+        let hide_glyph = document.createElement('a');
+        hide_glyph.paddingLeft = "5px";
+        
+        hide_glyph.href = "#";
+        hide_recs ? hide_glyph.innerHTML = '<i class="glyphicon glyphicon-menu-down"></i>' : hide_glyph.innerHTML = '<i class="glyphicon glyphicon-menu-up"></i>';
+        hide_glyph.onclick = function(){
+            console.log("setting hide_recs", !hide_recs)
+            hide_recs = !hide_recs;
+            localStorage.setItem("hide_recs", hide_recs);
+            $(panel_body).slideToggle();
+            hide_glyph.innerHTML = hide_recs ? '<i class="glyphicon glyphicon-menu-down"></i>' : '<i class="glyphicon glyphicon-menu-up"></i>';
+        }
+        hide_glyph.style = "padding-left: 5px;";
+
+        let panel_tools = document.createElement('div');
+        panel_tools.className = "panel-tools";
+        let settings_button = document.createElement('a');
+        settings_button.href = "#";
+        settings_button.innerHTML = '<i class="fas fa-cog"></i>';
+        settings_button.onclick = function(){
+
+            let difficulty_bias = localStorage.getItem("difficulty_bias") ? localStorage.getItem("difficulty_bias") : 0.0;
+            let fun_factor_bias = localStorage.getItem("fun_factor_bias") ? localStorage.getItem("fun_factor_bias") : 0.6;
+            let tech_bias = localStorage.getItem("tech_bias") ? localStorage.getItem("tech_bias") : 0.2;
+            let unit_bias = localStorage.getItem("unit_bias") ? localStorage.getItem("unit_bias") : 0.2;
+
+            if(!document.querySelector("#bias_modal")){
+
+
+                let modal_fade = document.createElement('div');
+                modal_fade.className = "modal fade";
+                modal_fade.id = "bias_modal";
+                modal_fade.style = "display: flex;"
+                modal_fade.setAttribute("tabindex", "-1");
+                modal_fade.setAttribute("role", "dialog");
+                
+                let modal = document.createElement('div');
+                modal.className = "modal";
+                modal.id = "bias_modal";
+                modal.style = "display: flex;";
+                modal.setAttribute("role", "dialog");
+                modal_fade.appendChild(modal);
+
+                let modal_dialog = document.createElement('div');
+                modal_dialog.className = "modal-dialog";
+                modal.appendChild(modal_dialog);
+
+                let modal_content = document.createElement('div');
+                modal_content.className = "modal-content";
+                modal_dialog.appendChild(modal_content);
+
+
+                let modal_body = document.createElement('div');
+                modal_body.className = "modal-body";
+                modal_body.style.paddingTop = "0px";
+                modal_body.style.paddingBottom = "1rem";
+                modal_content.appendChild(modal_body);
+
+                let modal_title = document.createElement('h2');
+                modal_title.className = "text-center";
+                modal_title.innerHTML = "Change weights for recommendations";
+                modal_body.appendChild(modal_title);
+
+                let diff = document.createElement('div');
+                diff.className = "form-group";
+                let diff_label = document.createElement('label');
+                diff_label.innerHTML = 'Difficulty weight: ' + difficulty_bias;
+                diff.appendChild(diff_label);
+                let diff_slider = document.createElement('input');
+                diff_slider.type = "range";
+                diff_slider.min = "0";
+                diff_slider.max = "0.99";
+                diff_slider.step = "0.01";
+                diff_slider.value = difficulty_bias;
+                diff_slider.id = "difficulty_bias";
+                diff_slider.addEventListener("input", function(){
+                    diff_label.innerHTML = "Difficulty weight: " + diff_slider.value;
+                    update_sliders();
+                })
+                diff.appendChild(diff_slider);
+
+                let fun = document.createElement('div');
+                fun.className = "form-group";
+                let fun_label = document.createElement('label');
+                fun_label.innerHTML = "Fun factor weight: " + fun_factor_bias;
+                fun.appendChild(fun_label);
+                let fun_slider = document.createElement('input');
+                fun_slider.type = "range";
+                fun_slider.min = "0";
+                fun_slider.max = "0.99";
+                fun_slider.step = "0.01";
+                fun_slider.value = fun_factor_bias;
+                fun_slider.id = "fun_factor_bias";
+                fun_slider.addEventListener("input", function(){
+                    fun_label.innerHTML = "Fun factor weight: " + fun_slider.value;
+                    update_sliders();
+                })
+                fun.appendChild(fun_slider);
+
+                let tech = document.createElement('div');
+                tech.className = "form-group";
+                let tech_label = document.createElement('label');
+                tech_label.innerHTML = "Tech bias: " + tech_bias;
+                tech.appendChild(tech_label);
+                let tech_slider = document.createElement('input');
+                tech_slider.type = "range";
+                tech_slider.min = "0";
+                tech_slider.max = "0.99";
+                tech_slider.step = "0.01";
+                tech_slider.value = tech_bias;
+                tech_slider.id = "tech_bias";
+                tech_slider.addEventListener("input", function(){
+                    tech_label.innerHTML = "Tech bias: " + tech_slider.value;
+                    update_sliders();
+                })
+                tech.appendChild(tech_slider);
+
+                let unit = document.createElement('div');
+                unit.className = "form-group";
+                let unit_label = document.createElement('label');
+                unit_label.innerHTML = "Unit weight: " + unit_bias;
+                unit.appendChild(unit_label);
+                let unit_slider = document.createElement('input');
+                unit_slider.type = "range";
+                unit_slider.min = "0";
+                unit_slider.max = "0.99";
+                unit_slider.step = "0.01";
+                unit_slider.value = unit_bias;
+                unit_slider.id = "unit_bias";
+                unit_slider.addEventListener("input", function(){
+                    unit_label.innerHTML = "Unit bias: " + unit_slider.value;
+                    update_sliders();
+                })
+                unit.appendChild(unit_slider);
+
+                modal_body.appendChild(diff);
+                modal_body.appendChild(fun);
+                modal_body.appendChild(tech);
+                modal_body.appendChild(unit);
+
+                let save = document.createElement('button');
+                save.className = "btn btn-primary";
+                save.innerHTML = "Save";
+                save.onclick = save_biases;
+
+                let cancel = document.createElement('button');
+                cancel.className = "btn btn-secondary";
+                cancel.innerHTML = "Cancel";
+                cancel.onclick = function(){
+                    $("#bias_modal").modal('hide');
+                }
+
+                let modal_footer = document.createElement('div');
+                modal_footer.className = "modal-footer";
+                modal_content.appendChild(modal_footer);
+
+                let disclaimer = document.createElement('p');
+                disclaimer.innerText = "You can disable map recommendations from settings";
+                disclaimer.style = "display:inline; font-size:small;";
+                modal_body.appendChild(disclaimer);
+
+                modal_footer.appendChild(cancel);
+                modal_footer.appendChild(save);
+
+                document.body.appendChild(modal_fade);
+                $("#bias_modal").modal('show');
+
+                function update_sliders() {
+                    const difficulty_slider = document.getElementById('difficulty_bias');
+                    const fun_slider = document.getElementById('fun_factor_bias');
+                    const tech_slider = document.getElementById('tech_bias');
+                    const unit_slider = document.getElementById('unit_bias');
+                  
+                    const difficulty_label = difficulty_slider.parentNode.querySelector('label');
+                    const fun_label = fun_slider.parentNode.querySelector('label');
+                    const tech_label = tech_slider.parentNode.querySelector('label');
+                    const unit_label = unit_slider.parentNode.querySelector('label');
+                  
+                    const total_value = parseFloat(difficulty_slider.value) + parseFloat(fun_slider.value) + parseFloat(tech_slider.value) + parseFloat(unit_slider.value);
+                  
+                    if (total_value > 1) {
+                      const reduction_factor = total_value - 1;
+                      [difficulty_slider, fun_slider, tech_slider, unit_slider].forEach(slider => {
+                        const current_value = parseFloat(slider.value);
+                        slider.value = (current_value - reduction_factor * current_value).toFixed(2);
+                      });
+                    } else if (total_value < 1) {
+                      const remaining_value = 1 - total_value;
+                      const non_zero_sliders = [difficulty_slider, fun_slider, tech_slider, unit_slider].filter(slider => slider.value > 0);
+                      const distribution_value = remaining_value / non_zero_sliders.length;
+                      non_zero_sliders.forEach(slider => {
+                        const current_value = parseFloat(slider.value);
+                        slider.value = (current_value + distribution_value).toFixed(2);
+                      });
+                    }
+                    difficulty_label.innerHTML = `Difficulty bias: ${difficulty_slider.value}`;
+                    fun_label.innerHTML = `Fun factor bias: ${fun_slider.value}`;
+                    tech_label.innerHTML = `Tech bias: ${tech_slider.value}`;
+                    unit_label.innerHTML = `Unit bias: ${unit_slider.value}`;
+                  }
+                
+            }else{
+                $("#bias_modal").modal('show');
+            }
+
+            function save_biases(){
+                difficulty_bias = document.getElementById("difficulty_bias").value;
+                fun_factor_bias = document.getElementById("fun_factor_bias").value;
+                tech_bias = document.getElementById("tech_bias").value;
+                unit_bias = document.getElementById("unit_bias").value;
+
+                if ((difficulty_bias + fun_factor_bias + tech_bias + unit_bias) <= 0.02) {
+                    difficulty_bias = 0.0;
+                    fun_factor_bias = 0.6;
+                    tech_bias = 0.2;
+                    unit_bias = 0.2;
+                }
+
+                localStorage.setItem("difficulty_bias", difficulty_bias);
+                localStorage.setItem("fun_factor_bias", fun_factor_bias);
+                localStorage.setItem("tech_bias", tech_bias);
+                localStorage.setItem("unit_bias", unit_bias);
+                console.log("Saved biases: ", difficulty_bias, fun_factor_bias, tech_bias, unit_bias);
+                $("#bias_modal").modal('hide');
+                window.location.reload();
+            }
+
+
+        }
+        panel_tools.appendChild(settings_button);
+        panel_heading.appendChild(panel_tools);
+        panel_heading.appendChild(panel_title);
+        panel_heading.appendChild(hide_glyph);
+        panel_row.appendChild(panel_heading);
+        panel_row.appendChild(panel_body);
+
+        if(hide_recs == true){ 
+            console.log("Hiding recommendations");
+            panel_body.style = "display: none;";
+        }else if(hide_recs == false){
+            console.log("Showing recommendations");
+            panel_body.style = "display: block;";
+        }
+
+        col2.append(panel_row);
+        col2.append(recommendations_column);
+        col1.append(col2);
+
+        let row = document.createElement('div');
+        row.className = "row";
+        row.append(col1);
+
+        let rec_content = document.createElement('div');
+        rec_content.className = "row";
+
+        if (maps == null || maps.length == 0) {
+            return
+        }
+        for(let i = 0; i < maps.length; i++){
+            let map = maps[i];
+            let rec = document.createElement('a');
+            rec.className = "col-sm-1 outlined text-white text-center";
+
+            rec.style = "color: white; width: auto; border-radius: 5px;position: relative; display: flex; justify-content: center; padding-left:0px;";
+            rec.href = "https://surfheaven.eu/map/" + map;
+            rec.innerHTML = map;
+            let remove_button = document.createElement("span")
+            remove_button.onclick = function(){
+                let blacklisted_maps;
+                blacklisted_maps = localStorage.getItem("blacklisted_maps") || "[]";
+                blacklisted_maps = JSON.parse(blacklisted_maps);
+
+                blacklisted_maps.push(map);
+                localStorage.setItem("blacklisted_maps", JSON.stringify(blacklisted_maps));
+                rec.parentElement.style.display = "none";
+            }
+            remove_button.innerHTML = '<i class="fas fa-times"></i>';
+            remove_button.style = "position: absolute; top: 0; right: 3px; cursor: pointer; color: white;";
+
+
+            let map_col = document.createElement('div');
+            map_col.className = "col-sm-1";
+            map_col.style = "height:8vh;border-radius: 5px; background-image: url('https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+map+".jpg'); background-size: 100% 100% ;margin-left:1.5%; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6)";
+            map_col.append(rec);
+            map_col.append(remove_button);
+            rec_content.append(map_col);
+        }
+
+        panel_body.append(rec_content);
+        
+        let target = document.querySelector('.content > div:nth-child(1)')
+
+        target.insertBefore(row, target.children[2]);
+    };
+
     function insert_user_rated_maps_table(){
         if(!settings.user_ratings_table) return;
         GM_xmlhttpRequest({
@@ -2048,6 +2506,11 @@
         scrape_time_left();
         servers_load_time = new Date().getTime();
 
+        document.querySelector(".panel-heading > h4:nth-child(1)").innerHTML = "";; 
+        document.querySelector(".panel-heading > p:nth-child(3)").innerHTML = "";   
+        document.querySelector(".panel-heading > p:nth-child(4)").innerHTML = "";;  
+
+
         var my_div = document.createElement('div');
         my_div.className = 'navbar-form custom-id-div';
         var my_list = document.createElement('ul');
@@ -2158,13 +2621,6 @@
         queue_button.className = 'btn btn-success btn-lg';
         queue_button.innerHTML = 'Queue for empty server';
         queue_button.style = 'margin-top: 10px;';
-        let auto_join_checkbox = document.createElement('input');
-        auto_join_checkbox.type = 'checkbox';
-        auto_join_checkbox.id = 'auto_join_checkbox';
-        auto_join_checkbox.checked = true;
-        let auto_join_label = document.createElement('label');
-        auto_join_label.htmlFor = 'auto_join_checkbox';
-        auto_join_label.innerHTML = 'Auto-join';
 
         let refresh_servers_button = document.createElement('button');
         refresh_servers_button.className = 'btn btn-primary btn-xs';
@@ -2191,8 +2647,6 @@
         document.querySelector('.panel-heading').appendChild(document.createElement('br'));
         document.querySelector('.panel-heading').appendChild(queue_button);
         document.querySelector('.panel-heading').appendChild(document.createElement('br'));
-        document.querySelector('.panel-heading').appendChild(auto_join_checkbox);
-        document.querySelector('.panel-heading').appendChild(auto_join_label);
         document.querySelector('.panel-heading').appendChild(document.createElement('br'));
         document.querySelector('.panel-heading').appendChild(rank_threshold_container);
 
@@ -2216,14 +2670,7 @@
                             queue_button.classList = 'btn btn-success btn-lg';
                             found = true;
                             console.log('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')');
-                            if(auto_join_checkbox.checked){
-                                window.location.href = 'steam://connect/' + data[i].ip;
-                                alert('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')');
-                            }else{
-                                if(window.confirm('Found empty server: ' + data[i].name + ' (' + data[i].ip + ')\nPress OK to join')){
-                                    window.location.href = 'steam://connect/' + data[i].ip;
-                                }
-                            }
+                            alert("Found empty server: " + data[i].name + " \nCopy the IP to your clipboard: " + data[i].ip);
                             window.location.reload();
                             break;
                         }
@@ -2405,8 +2852,306 @@
             let common_uncompleted_maps_target_div = document.querySelector('div.col-sm-12:nth-child(4) > div:nth-child(1) > div:nth-child(1)');
             common_uncompleted_maps_target_div.insertBefore(common_uncompleted_maps_button, common_uncompleted_maps_target_div.children[1]);
         }
-
+        if(settings.map_recommendations && get_id() == current_profile_id){
+            GM_xmlhttpRequest({
+                method: "GET",
+                url: "https://iloveur.mom/surfheaven/get_raw_ratings.php",
+                onload: function (response) {
+                    if (response.status == 200) {
+                        let data = JSON.parse(response.response);
+                        let diff_bias = localStorage.getItem("difficulty_bias") || 0.1;
+                        let fun_bias = localStorage.getItem("fun_factor_bias") || 0.04;
+                        let tech_bias = localStorage.getItem("tech_bias") || 0.25;
+                        let unit_bias = localStorage.getItem("unit_bias") || 0.25;
+                        let recommended_maps
+                        // recommended_maps = recommend_maps(current_profile_id, data, 10, diff_bias, fun_bias, tech_bias, unit_bias);
+                        recommended_maps = recommend_maps_new(current_profile_id,data,10,diff_bias,fun_bias,tech_bias,unit_bias);
+                        console.log(recommended_maps);
+                        recommended_maps = recommended_maps.map(map => map[0]);
+                        map_recommendations_panel(recommended_maps)
+                    }
+                }
+            });
+        }
     }
+
+    // function pearson_correlation(user1, user2, data, rating_type) {
+    //     const common_maps = Object.keys(data).filter(map =>
+    //       data[map].some(rating => rating.id === user1) &&
+    //       data[map].some(rating => rating.id === user2)
+    //     );
+      
+    //     if (common_maps.length === 0) {
+    //       return 0;
+    //     }
+      
+    //     const user1_ratings = [];
+    //     const user2_ratings = [];
+      
+    //     for (const map of common_maps) {
+    //       const user1_rating = data[map].find(rating => rating.id === user1)[rating_type];
+    //       const user2_rating = data[map].find(rating => rating.id === user2)[rating_type];
+    //       user1_ratings.push(parseInt(user1_rating));
+    //       user2_ratings.push(parseInt(user2_rating));
+    //     }
+      
+    //     const n = user1_ratings.length;
+    //     const sum1 = user1_ratings.reduce((a, b) => a + b, 0);
+    //     const sum2 = user2_ratings.reduce((a, b) => a + b, 0);
+    //     const sum1_sq = user1_ratings.reduce((a, b) => a + Math.pow(b, 2), 0);
+    //     const sum2_sq = user2_ratings.reduce((a, b) => a + Math.pow(b, 2), 0);
+    //     const p_sum = user1_ratings.reduce((a, b, i) => a + b * user2_ratings[i], 0);
+      
+    //     const num = p_sum - (sum1 * sum2 / n);
+    //     const den = Math.sqrt((sum1_sq - Math.pow(sum1, 2) / n) * (sum2_sq - Math.pow(sum2, 2) / n));
+    //     if (den === 0) {
+    //       return 0;
+    //     }
+      
+    //     return num / den;
+    // }
+      
+
+    function recommend_maps_new(user_id, data, top_n = 10, weight_difficulty = 0.1, weight_fun_factor = 0.4, weight_tech = 0.25, weight_unit = 0.25) {
+        // get the highest rated map by user, then calculate the closest maps by distance to it
+        let own_ratings = {};
+        let other_maps = {};
+        for (const map in data) {
+            for (const rating of data[map]) {
+                if (rating.id == user_id) {
+                    own_ratings[map] = [
+                        parseFloat(rating.difficulty_rating),
+                        parseFloat(rating.fun_factor_rating), 
+                        parseFloat(rating.tech_rating), 
+                        parseFloat(rating.unit_rating)
+                    ];
+                } else {
+                    if (!other_maps[map]) {
+                        other_maps[map] = [];
+                    }
+                    other_maps[map].push([
+                        parseFloat(rating.difficulty_rating),
+                        parseFloat(rating.fun_factor_rating),
+                        parseFloat(rating.tech_rating), 
+                        parseFloat(rating.unit_rating)
+                    ]);
+                }
+            }
+        }
+    
+        if (Object.keys(own_ratings).length === 0) {
+            return [];
+        }
+    
+        for (const map in other_maps) {
+            //the average for each rating for each map
+            other_maps[map] = other_maps[map].reduce((a, b) => a.map((x, i) => x + b[i] / other_maps[map].length), [0, 0, 0, 0]);
+        }
+    
+        other_maps = Object.fromEntries(Object.entries(other_maps).filter(([key]) => !own_ratings.hasOwnProperty(key)));
+        own_ratings = Object.fromEntries(Object.entries(own_ratings).sort((a, b) => b[1][1] - a[1][1]));
+        own_ratings = Object.fromEntries(Object.entries(own_ratings).filter(([key]) => own_ratings[key][1] >= 3));
+        
+        // the top maps based on your fun_factor rating
+        let own_top = Object.entries(own_ratings).slice(0, Math.min(10, Object.keys(own_ratings).length));
+        localStorage.setItem("own_top", JSON.stringify(own_top));
+        // the average of your top maps
+        let own_map = own_top.map(x => x[1]).reduce((a, b) => a.map((x, i) => x + b[i] / own_top.length), [0, 0, 0, 0]);
+    
+    
+        let distances = {};
+        for (const map in other_maps) {
+            let dist = weighted_euclidean_distance(own_map, other_maps[map], [weight_difficulty, weight_fun_factor, weight_tech, weight_unit]);
+            distances[map] = dist;
+            other_maps[map] = [map, dist];
+        }
+        distances = Object.fromEntries(Object.entries(distances).sort((a, b) => a[1] - b[1]));
+
+        let blacklisted_maps = JSON.parse(localStorage.getItem("blacklisted_maps") || "[]");
+        distances = Object.fromEntries(Object.entries(distances).filter(([key]) => !blacklisted_maps.includes(key)));
+    
+        let recommended_maps = Object.entries(distances).slice(0, top_n);
+        
+        return recommended_maps;
+    }
+    
+    function weighted_euclidean_distance(a, b, weights) {
+        return Math.sqrt(a.reduce((acc, val, i) => acc + weights[i] * Math.pow(val - b[i], 2), 0));
+    }
+
+    // Originally i tried finding correlations between users, and just recommending the similar users liked maps, but the results were often shit
+    // function recommend_maps(user_id, data, top_n = 10, diff_bias = 0, fun_bias = 0.6, tech_bias = 0.2, unit_bias = 0.2) {
+    //     const user_ids = new Set();
+    //     for (const map in data) {
+    //         for (const rating of data[map]) {
+    //             user_ids.add(rating.id);
+    //         }
+    //     }
+    //     const user_similarities_difficulty = Array.from(user_ids)
+    //         .filter(other_user => other_user !== user_id)
+    //         .map(other_user => [other_user, pearson_correlation(user_id, other_user, data, 'difficulty_rating')]);
+    //     const user_similarities_fun = Array.from(user_ids)
+    //         .filter(other_user => other_user !== user_id)
+    //         .map(other_user => [other_user, pearson_correlation(user_id, other_user, data, 'fun_factor_rating')]);
+    //     const user_similarities_tech = Array.from(user_ids)
+    //         .filter(other_user => other_user !== user_id)
+    //         .map(other_user => [other_user, pearson_correlation(user_id, other_user, data, 'tech_rating')]);
+    //     const user_similarities_unit = Array.from(user_ids)
+    //         .filter(other_user => other_user !== user_id)
+    //         .map(other_user => [other_user, pearson_correlation(user_id, other_user, data, 'unit_rating')]);
+    //     const user_similarities = user_similarities_fun.map(([user_id, fun_similarity], i) => {
+    //         const [, difficulty_similarity] = user_similarities_difficulty[i];
+    //         const [, tech_similarity] = user_similarities_tech[i];
+    //         const [, unit_similarity] = user_similarities_unit[i];
+    //         const combined_similarity = difficulty_similarity * diff_bias + fun_similarity * fun_bias + tech_similarity * tech_bias + unit_similarity * unit_bias;
+    //         return [user_id, combined_similarity];
+    //     });
+    //     const filtered_user_similarities = user_similarities.filter(([, similarity]) => similarity > 0);
+    //     filtered_user_similarities.sort((a, b) => b[1] - a[1]);
+    //     const rated_maps = new Set(Object.keys(data).filter(map =>
+    //         data[map].some(rating => rating.id === user_id)
+    //     ));
+    //     const recommended_maps = [];
+    //     if (filtered_user_similarities.length > 0) {
+    //     console.log("Similar users:");
+    //     for (let i = 0; i < Math.min(filtered_user_similarities.length, 5); i++) {
+    //         console.log(filtered_user_similarities[i]);
+    //     }
+    //     for (const [similar_user] of filtered_user_similarities) {
+    //         const similar_user_maps = Object.keys(data)
+    //             .filter(map => data[map].some(rating => rating.id === similar_user))
+    //             .map(map => [
+    //                 map,
+    //                 data[map].find(rating => rating.id === similar_user).difficulty_rating,
+    //                 data[map].find(rating => rating.id === similar_user).fun_factor_rating,
+    //                 data[map].find(rating => rating.id === similar_user).tech_rating,
+    //                 data[map].find(rating => rating.id === similar_user).unit_rating
+    //             ])
+    //             .sort((a, b) => {
+    //                 const rating_a = parseInt(a[1]) * diff_bias + parseInt(a[2]) * fun_bias + parseInt(a[3]) * tech_bias + parseInt(a[4]) * unit_bias;
+    //                 const rating_b = parseInt(b[1]) * diff_bias + parseInt(b[2]) * fun_bias + parseInt(b[3]) * tech_bias + parseInt(b[4]) * unit_bias;
+    //                 return rating_b - rating_a;
+    //             });
+    //             for (const [map] of similar_user_maps) {
+    //                 if (!rated_maps.has(map) && !recommended_maps.includes(map)) {
+    //                     recommended_maps.push(map);
+    //                 }
+    //                     if (recommended_maps.length >= top_n) {
+    //                     break;
+    //                 }
+    //             }
+    //             if (recommended_maps.length >= top_n) {
+    //                 break;
+    //             }
+    //       }
+    //     } else {
+    //       console.log("No similar users found.");
+    //     }
+    //     console.log("Recommended maps with biases:" ,"Diff: ",diff_bias, "Fun: ", fun_bias, "Tech: ", tech_bias, "Unit: ", unit_bias);
+    //     return recommended_maps;
+    // }
+    
+    // function pearson_correlation_map(map1, map2, data, rating_type) {
+    //     const users1 = data[map1].map(rating => rating.id);
+    //     const users2 = data[map2].map(rating => rating.id);
+    //     const common_users = users1.filter(user => users2.includes(user));
+      
+    //     if (common_users.length === 0) {
+    //         return 0;
+    //     }
+    
+    //     const map1_ratings = [];
+    //     const map2_ratings = [];
+    
+    //     for (const user of common_users) {
+    //         const map1_rating = data[map1].find(rating => rating.id === user)[rating_type];
+    //         const map2_rating = data[map2].find(rating => rating.id === user)[rating_type];
+    //         map1_ratings.push(parseInt(map1_rating));
+    //         map2_ratings.push(parseInt(map2_rating));
+    //     }
+    
+    //     const n = map1_ratings.length;
+    //     const sum1 = map1_ratings.reduce((a, b) => a + b, 0);
+    //     const sum2 = map2_ratings.reduce((a, b) => a + b, 0);
+    //     const sum1_sq = map1_ratings.reduce((a, b) => a + Math.pow(b, 2), 0);
+    //     const sum2_sq = map2_ratings.reduce((a, b) => a + Math.pow(b, 2), 0);
+    //     const p_sum = map1_ratings.reduce((a, b, i) => a + b * map2_ratings[i], 0);
+    
+    //     const num = p_sum - (sum1 * sum2 / n);
+    //     const den = Math.sqrt((sum1_sq - Math.pow(sum1, 2) / n) * (sum2_sq - Math.pow(sum2, 2) / n));
+    //     if (den === 0) {
+    //         return 0;
+    //     }
+    
+    //     return num / den;
+    // }
+    
+    // function recommend_similar_maps(map_id, data, top_n = 5, diff_bias = 0.25, fun_bias = 0.25, tech_bias = 0.25, unit_bias = 0.25) {
+    //     const map_ids = Object.keys(data);
+    //     const map_similarities_difficulty = map_ids
+    //         .filter(other_map => other_map !== map_id)
+    //         .map(other_map => [other_map, pearson_correlation_map(map_id, other_map, data, 'difficulty_rating')]);
+    //     const map_similarities_fun = map_ids
+    //         .filter(other_map => other_map !== map_id)
+    //         .map(other_map => [other_map, pearson_correlation_map(map_id, other_map, data, 'fun_factor_rating')]);
+    //     const map_similarities_tech = map_ids
+    //         .filter(other_map => other_map !== map_id)
+    //         .map(other_map => [other_map, pearson_correlation_map(map_id, other_map, data, 'tech_rating')]);
+    //     const map_similarities_unit = map_ids
+    //         .filter(other_map => other_map !== map_id)
+    //         .map(other_map => [other_map, pearson_correlation_map(map_id, other_map, data, 'unit_rating')]);
+    //     const map_similarities = map_similarities_fun.map(([other_map, fun_similarity], i) => {
+    //         const [, difficulty_similarity] = map_similarities_difficulty[i];
+    //         const [, tech_similarity] = map_similarities_tech[i];
+    //         const [, unit_similarity] = map_similarities_unit[i];
+    //         const combined_similarity = difficulty_similarity * diff_bias + fun_similarity * fun_bias + tech_similarity * tech_bias + unit_similarity * unit_bias;
+    //         return [other_map, combined_similarity];
+    //     });
+    
+    //     map_similarities.sort((a, b) => b[1] - a[1]);
+    //     const recommended_maps = map_similarities.slice(0, top_n).map(([map]) => map);
+        
+    //     console.log("Recommended maps similar to:", map_id, "with biases - Diff:", diff_bias, "Fun:", fun_bias, "Tech:", tech_bias, "Unit:", unit_bias);
+    //     console.log(recommended_maps);
+    //     return recommended_maps;
+    // }
+
+    function calculate_closest_maps(map_name, maps, top_n = 5) {
+        const map_ratings = {};
+        for (const map in maps) {
+            const ratings = maps[map];
+
+            const difficulty_rating = parseFloat(ratings.difficulty_rating);
+            const fun_factor_rating = parseFloat(ratings.fun_factor_rating);
+            const unit_rating = parseFloat(ratings.unit_rating);
+            const tech_rating = parseFloat(ratings.tech_rating);
+    
+            map_ratings[map] = [difficulty_rating, fun_factor_rating, unit_rating, tech_rating];
+        }
+    
+        if (!map_ratings.hasOwnProperty(map_name)) {
+            throw new Error(`Map "${map_name}" not found in the provided map data.`);
+        }
+
+        const target_map_ratings = map_ratings[map_name];
+    
+        const distances = {};
+        for (const map in map_ratings) {
+            if (map === map_name) continue;
+            const ratings = map_ratings[map];
+            const distance = euclidean_distance(target_map_ratings, ratings);
+            //console.log(`Distance between ${map} and ${map_name}: ${distance}`);
+            distances[map] = distance;
+        }
+    
+        const sorted_distances = Object.keys(distances).sort((a, b) => distances[a] - distances[b]);
+        return sorted_distances.slice(0, top_n);
+    }
+    
+    function euclidean_distance(a, b) {
+        return Math.sqrt(a.reduce((acc, val, i) => acc + Math.pow(val - b[i], 2), 0));
+    }
+
 
     function create_color_grid(username, c){
         const colors = [
@@ -2756,6 +3501,9 @@
         let padding_fix = document.querySelector('.media');
         padding_fix.style = "padding-left: 10px; margin-top: 0px;";
         document.querySelector('.pe').remove(); // removing the map icon to free some vertical space
+        let bonus_buttons = []
+        let button_div = document.getElementsByClassName("links")[0];
+        let map_button = button_div.children[0];
 
         insert_mapper_link();
         map_youtube_link(current_map_name);
@@ -2768,6 +3516,30 @@
         insert_friend_rankings(current_map_name);
         insert_rating(current_map_name);
         if(settings.comments) insert_comments();
+
+        if(settings.map_cover_image){
+            for (let i = 0; i < button_div.children.length; i++) {
+                let button = button_div.children[i];
+    
+                if(button.classList.contains("btn-success")){
+                    bonus_buttons.push(button);
+                }
+            }
+            for(let i = 0; i < bonus_buttons.length; i++){
+                bonus_buttons[i].addEventListener("click", function() {
+                    //console.log("set_image "+current_map_name+"_b" + Number(i+1));
+                    let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+current_map_name+"_b" + Number(i+1)+".jpg";
+                    let target_div = document.querySelector('.panel-c-warning');
+                    target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
+                    insert_bonus_dropdown_stats(current_map_name, Number(i));
+                })
+            }
+            map_button.addEventListener("click", function() {
+                let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+current_map_name+".jpg";
+                let target_div = document.querySelector('.panel-c-warning');
+                target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
+            })
+        }
 
     }
 
@@ -2857,6 +3629,60 @@
 
     }
 
+    function insert_bonus_dropdown_stats(map_name,bonus){
+        let _b = bonus == 0 ? "" : bonus+1
+        let table = document.querySelector('div.table-responsive.table-bonuses'+_b)
+
+        let records_table = table.querySelectorAll('a')
+
+        insert_glyphs_local()
+
+        function insert_glyphs_local(){
+            records_table.forEach((record) => {
+                let toggle_glyph = document.createElement('A')
+                toggle_glyph.className = "glyphicon glyphicon-menu-down"
+                toggle_glyph.style = "float: right; margin-right: 10px;margin-left: 20px; cursor: pointer;"
+                toggle_glyph.href = "#"
+    
+                let link = record.href.split('/')
+                let id = link[link.length - 1]
+    
+                if(!record.href.includes('#')){
+                    if(!record.parentElement.querySelector('.glyphicon')){
+                        record.insertAdjacentElement('afterend', toggle_glyph);
+                    }
+                } 
+                toggle_glyph.onclick = function(e){
+                    e.preventDefault()
+                    toggle_glyph.className = toggle_glyph.className == "glyphicon glyphicon-menu-down" ? "glyphicon glyphicon-menu-up" : "glyphicon glyphicon-menu-down"
+                    let hidden_row = document.createElement('div')
+                    hidden_row.className = "hidden-row"
+                    hidden_row.style = "display: none;"
+                    hidden_row.innerHTML = "<p>Loading... <i class='fa fa-spinner fa-spin'></i></p>"
+    
+                    if(!$(this).closest("td").find(".hidden-row").length){
+                        hidden_row.setAttribute("fetched", "false")
+                        $(this).closest("td").append(hidden_row);
+                    } 
+                    $(this).closest("td").find(".hidden-row").slideToggle();
+    
+                    if(hidden_row.getAttribute("fetched") == "false"){
+                        
+                        insert_dropdown_stats_div(map_name,id,hidden_row, bonus+1)
+                    }
+                }
+    
+            })
+        }
+
+
+        $(table).on('draw.dt', function () {
+            records_table = table.querySelectorAll('a')
+            insert_glyphs_local();
+        });
+
+    }
+
     function insert_dropdown_stats(map, friends = false){
         let records_table
         let target_div = document.querySelectorAll('div.col')
@@ -2873,18 +3699,17 @@
             table = table_div.childNodes[1]
         }
 
-        //console.log(table)
         records_table = table.querySelectorAll('a')
 
-        insert_glyphs()
+        insert_glyphs_local()
 
-        function insert_glyphs(){ // local variation of the same function, i'll fix this later
+        function insert_glyphs_local(track = 0){ // local variation of the same function, i'll fix this later
             records_table.forEach((record) => {
                 let toggle_glyph = document.createElement('A')
                 toggle_glyph.className = "glyphicon glyphicon-menu-down"
                 toggle_glyph.style = "float: right; margin-right: 10px;margin-left: 20px; cursor: pointer;"
                 toggle_glyph.href = "#"
-    
+
                 let link = record.href.split('/')
                 let id = link[link.length - 1]
     
@@ -2908,7 +3733,7 @@
                     $(this).closest("td").find(".hidden-row").slideToggle();
 
                     if(hidden_row.getAttribute("fetched") == "false"){
-                        insert_dropdown_stats_div(map,id,hidden_row)
+                        insert_dropdown_stats_div(map,id,hidden_row, track)
                     }
                 }
     
@@ -2917,7 +3742,7 @@
 
         $(table).on('draw.dt', function () {
             records_table = table.querySelectorAll('a')
-            insert_glyphs(records_table);
+            insert_glyphs_local();
         });
 
     }
@@ -2969,9 +3794,10 @@
         })
     }
 
-    function insert_dropdown_stats_div(map,id,hidden_row){
+    function insert_dropdown_stats_div(map,id,hidden_row, track = 0){
+        //console.log("map", map, "id", id, "track", track)
         make_request("https://api.surfheaven.eu/api/records/"+map+"/"+id, function(data){
-            let index = data.findIndex(x => x.map == map && x.track == 0)
+            let index = data.findIndex(x => x.map == map && x.track == track)
             hidden_row.setAttribute("fetched", "true")
             if(data){
                 console.log(data[index])
@@ -3034,6 +3860,27 @@
     function insert_rating(map){
         if(!settings.user_ratings) return;
 
+        GM_xmlhttpRequest({
+            method: "GET",
+            url: "https://iloveur.mom/surfheaven/get_ratings.php",
+            onload: function (response) {
+                if (response.status == 200) {
+                    let data = JSON.parse(response.responseText);
+
+                    const maps = calculate_closest_maps(map, data, 5);
+                    //console.log("closest maps", maps)
+
+                    let target = document.getElementById("similar_maps")
+                    target.display = "block";
+                    target.innerHTML = "<b>Similarly rated maps</b>: &nbsp;";
+                    for (let i = 0; i < maps.length; i++) {
+                        target.innerHTML += " <a href='https://surfheaven.eu/map/" + maps[i] +"' style='padding-left:5px; padding-right:5px'>" + maps[i] + " </a>&nbsp; <p class='small'> | </p> &nbsp;";
+                    }
+                    target.innerHTML = target.innerHTML.slice(0, -27);
+                }
+            }
+        })
+        
         function toggle_rating_modal(){
             if(!document.querySelector('#rating_modal')){
                 let modal_fade = document.createElement('div');
@@ -3250,6 +4097,13 @@
         let map_ratings_row = document.createElement('div');
         map_ratings_row.className = "row panel panel-filled";
 
+        let ratings_content_row = document.createElement('div');
+        ratings_content_row.className = "row";
+        ratings_content_row.style = "margin-left:10px;";
+
+        let similar_maps_div = document.createElement('div');
+        similar_maps_div.id = "similar_maps";
+        similar_maps_div.style = "margin-left:10px; justify-content: center; display: flex; flex-wrap: wrap;";
 
         map_ratings_row.appendChild(panel_heading);
         panel_heading.appendChild(panel_tools);
@@ -3265,7 +4119,7 @@
         let difficulty_column = document.createElement('div');
         difficulty_column.className = "col-md-3";
         let difficulty_panel = document.createElement('div');
-        difficulty_panel.className = "panel panel-c-danger";
+        difficulty_panel.className = "panel panel-c-danger m-b-none";
 
 
         let difficulty_panel_body = document.createElement('div');
@@ -3280,7 +4134,7 @@
         difficulty_panel_body.appendChild(difficulty_panel_text_description);
         difficulty_panel.appendChild(difficulty_panel_body);
         difficulty_column.appendChild(difficulty_panel);
-        map_ratings_row.appendChild(difficulty_column);
+        ratings_content_row.appendChild(difficulty_column);
 
         let fun_column = document.createElement('div');
         fun_column.className = "col-md-3 ";
@@ -3298,7 +4152,7 @@
         fun_panel_body.appendChild(fun_panel_text_description);
         fun_panel.appendChild(fun_panel_body);
         fun_column.appendChild(fun_panel);
-        map_ratings_row.appendChild(fun_column);
+        ratings_content_row.appendChild(fun_column);
 
         let unit_column = document.createElement('div');
         unit_column.className = "col-md-3";
@@ -3316,7 +4170,7 @@
         unit_panel_body.appendChild(unit_panel_text_description);
         unit_panel.appendChild(unit_panel_body);
         unit_column.appendChild(unit_panel);
-        map_ratings_row.appendChild(unit_column);
+        ratings_content_row.appendChild(unit_column);
 
         let tech_column = document.createElement('div');
         tech_column.className = "col-md-3";
@@ -3334,7 +4188,9 @@
         tech_panel_body.appendChild(tech_panel_text_description);
         tech_panel.appendChild(tech_panel_body);
         tech_column.appendChild(tech_panel);
-        map_ratings_row.appendChild(tech_column);
+        ratings_content_row.appendChild(tech_column);
+        map_ratings_row.appendChild(ratings_content_row);
+        map_ratings_row.appendChild(similar_maps_div);
 
 
         let map_ratings = [];

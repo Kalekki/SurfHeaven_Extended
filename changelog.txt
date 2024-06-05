@@ -1,3 +1,15 @@
+___4.2.18___
+🌊🏄‍♂️🌴⛱ Another summer another update ⛱🌴🏄‍♂️🌊
+- Added a map recommendation system,  if you do not see recommendations in your profile, you need to rate more maps!
+- Added similarly rated maps to maps with ratings, would appreciate ratings on no/low rating maps for more accuracy
+- Added button to fetch the ranks of everyone in the server
+- Added bonus dropdown stats to map page (better late than never)
+- The map picture now changes to corresponding bonus picture when looking at bonus records
+- Added record time differences in recent records panel for WR and bonus WR (thank you bonus daavid)
+- Added dropdown glyph to servers for doof and sadfrown
+- Cleaned servers page 
+- Changed friend list server link to go to map page since direct connecting from browser is no longer possible
+
 ___4.2.17.3___
 Added links to mappers in map page (thanks the_ancient_one)
 Sorry for double update, but i feel like the added quality of life is worth releasing now instead of waiting for the next update.
