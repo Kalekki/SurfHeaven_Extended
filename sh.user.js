@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.18
+// @version      4.2.18.1
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -3534,11 +3534,13 @@
                     insert_bonus_dropdown_stats(current_map_name, Number(i));
                 })
             }
-            map_button.addEventListener("click", function() {
-                let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+current_map_name+".jpg";
-                let target_div = document.querySelector('.panel-c-warning');
-                target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
-            })
+            if(map_button){
+                map_button.addEventListener("click", function() {
+                    let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+current_map_name+".jpg";
+                    let target_div = document.querySelector('.panel-c-warning');
+                    target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
+                })
+            }
         }
 
     }
