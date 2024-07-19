@@ -1,3 +1,8 @@
+___4.2.18.2___
+Showing the actual map an empty server has instead of the sweet little lie of surf_epic that the api tells
+You can now filter servers 1-4 and 12 from the empty server queue (thanks Snowhill)
+Map recommendations no longer recommends maps you've already completed by default
+
 ___4.2.18.1___
 bugfix
 
