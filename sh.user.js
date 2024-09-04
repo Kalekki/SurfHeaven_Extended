@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.18.2
+// @version      4.2.19
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -44,6 +44,7 @@
     var map_tiers = {};
     let map_dates = {};
     var bonus_completions = {};
+    let fastest_time = -1;
 
     // season specific
     let season_time_left = [];
@@ -2946,18 +2947,23 @@
         let compare_target_div = document.querySelector('div.col-sm-12:nth-child(3) > div:nth-child(1) > div:nth-child(1)');
         compare_target_div.insertBefore(compare_button, compare_target_div.children[1]);
 
-        // avg bonus rank
+        // avg bonus rank and map rank with higher precision
         let bonus_ranks = [];
+        let map_ranks = [];
         make_request("https://api.surfheaven.eu/api/records/"+current_profile_id, function (data) {
             for(let i = 0; i < data.length; i++){
                 if(data[i].track != 0)
                 bonus_ranks.push(data[i].rank);
+                else
+                map_ranks.push(data[i].rank);
             }
-            let avg_brank = Math.ceil(bonus_ranks.reduce((a, b) => a + b, 0) / bonus_ranks.length);
+            let avg_rank = map_ranks.reduce((a, b) => a + b, 0) / map_ranks.length;
+            let avg_brank = bonus_ranks.reduce((a, b) => a + b, 0) / bonus_ranks.length;
             var stats_table = document.querySelector('.medium > tbody:nth-child(1)');
             var stats_table_rows = stats_table.children;
             var points_td = document.createElement('td');
-            points_td.innerHTML = '<strong class="c-white">'+avg_brank+'</strong> Avg Bonus Rank';
+            points_td.innerHTML = '<strong class="c-white">'+avg_brank.toFixed(2)+'</strong> Avg Bonus Rank';
+            stats_table_rows[4].innerHTML = '<td><strong class="c-white">'+avg_rank.toFixed(2)+'</strong> Avg Map Rank</td>';
             stats_table_rows[4].appendChild(points_td);
 
         });
@@ -3662,15 +3668,17 @@
             }
             for(let i = 0; i < bonus_buttons.length; i++){
                 bonus_buttons[i].addEventListener("click", function() {
-                    //console.log("set_image "+current_map_name+"_b" + Number(i+1));
+                    try{document.getElementById("fetch_friends_bonus_ranks").remove()}catch(e){}
                     let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+current_map_name+"_b" + Number(i+1)+".jpg";
                     let target_div = document.querySelector('.panel-c-warning');
                     target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
                     insert_bonus_dropdown_stats(current_map_name, Number(i));
+                    insert_friend_bonus_rankings(document.getElementById("DataTables_Table_"+Number(i+1)+"_filter"),current_map_name, Number(i+1));
                 })
             }
             if(map_button){
                 map_button.addEventListener("click", function() {
+                    try{document.getElementById("fetch_friends_bonus_ranks").remove()}catch(e){}
                     let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+current_map_name+".jpg";
                     let target_div = document.querySelector('.panel-c-warning');
                     target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
@@ -3766,13 +3774,115 @@
 
     }
 
+    function insert_friend_bonus_rankings(el,map_name,bonus){
+        let friends_button = document.createElement('button')
+        friends_button.classList = "btn btn-default btn-sm"
+        friends_button.id = "fetch_friends_bonus_ranks"
+        friends_button.textContent = "Get friend ranks"
+        friends_button.style = "margin-right: 10px;"
+
+        el.insertBefore(friends_button, el.firstChild)
+        friends_button.onclick = function() {
+            console.log("Showing friends ranks for "+map_name+" b"+bonus)
+            make_request(`https://api.surfheaven.eu/api/records/${map_name}`, (data) => {
+                console.log("friends rank data")
+                let friends = get_follow_list()
+                console.log("friends", friends)
+    
+                data = data.filter((record) => record.track == bonus)
+    
+                let friend_bonus_ranks = []
+                for (let record of data) {
+                    if (friends.includes(record.steamid) || record.steamid == get_id()) {
+                        let ds = record.date
+                        let date = new Date(ds)
+                        let formatted_date = date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour12: false })
+
+                        friend_bonus_ranks.push([record.name, record.rank,record.time.toFixed(3),formatted_date,record.finishcount])
+                    }
+                }
+
+                friend_bonus_ranks.sort((a, b) => a[1] - b[1])
+                let table = create_table(["Name", "Rank", "Time", "Date", "Finish count"], friend_bonus_ranks, "friend-rank-table")
+                let table_container = document.createElement('div')
+
+                table_container.style.maxHeight = "800px"
+                table_container.style.width = "600px"
+                table_container.style.overflowY = "auto"
+                table_container.appendChild(table)
+                show_overlay_window(map_name +" bonus "+bonus+" friend ranks", table_container)
+                friends_button.remove()
+                console.log(data)
+    
+            })
+        }
+    }
+
+    function timestring_to_seconds(timestring){
+        let hours = 0
+        let minutes = 0
+        let seconds = 0
+        let milliseconds = 0
+        let split = timestring.split(':')
+
+        if(split.length == 3){
+            hours = parseInt(split[0])
+            minutes = parseInt(split[1])
+            seconds = parseInt(split[2].split('.')[0])
+            milliseconds = parseInt(split[2].split('.')[1])
+        } else if(split.length == 2){
+            minutes = parseInt(split[0])
+            seconds = parseInt(split[1].split('.')[0])
+            milliseconds = parseInt(split[1].split('.')[1])
+        } else if(split.length == 1){
+            seconds = parseInt(split[0].split('.')[0])
+            milliseconds = parseInt(split[0].split('.')[1])
+        }
+        return hours*3600 + minutes*60 + seconds + milliseconds/1000
+    }
+
     function insert_bonus_dropdown_stats(map_name,bonus){
         let _b = bonus == 0 ? "" : bonus+1
         let table = document.querySelector('div.table-responsive.table-bonuses'+_b)
-
+        let table_offset = 4
+        let table_text_nodes
+        table_text_nodes = table.querySelectorAll('td')
         let records_table = table.querySelectorAll('a')
+        let fastest_b_time = table_text_nodes[2].textContent
+        console.log("fastest_b_time ", fastest_b_time)
 
+        insert_timediffs_b()
         insert_glyphs_local()
+
+        function insert_timediffs_b(){
+            let all_times = []
+            let time_diffs = []
+            for (let i = 2; i < table_text_nodes.length; i+=table_offset) {
+                let curr_time = table_text_nodes[i].textContent
+                //console.log(timestring_to_seconds(curr_time))
+
+                let diff = timestring_to_seconds(curr_time) - timestring_to_seconds(fastest_b_time)
+                if (diff > 0){
+                    time_diffs.push(diff.toFixed(3))
+                }else{
+                    time_diffs.push(0)
+                }
+
+                all_times.push(table_text_nodes[i].textContent)
+            }
+            //console.log("all_times ", all_times)
+            //console.log("time_diffs ", time_diffs)
+    
+            for(let i = 2; i < table_text_nodes.length; i+=table_offset){
+                let curr_diff = time_diffs.shift()
+                if (curr_diff == 0){
+                    continue
+                }
+                if(!table_text_nodes[i].querySelector("span")){
+                    table_text_nodes[i].innerHTML += " <span style='color:lightcoral'><small>+" + curr_diff + "</small></span>"
+                }
+            }
+        }
 
         function insert_glyphs_local(){
             records_table.forEach((record) => {
@@ -3815,6 +3925,8 @@
 
         $(table).on('draw.dt', function () {
             records_table = table.querySelectorAll('a')
+            table_text_nodes = table.querySelectorAll('td')
+            insert_timediffs_b();
             insert_glyphs_local();
         });
 
@@ -3822,14 +3934,17 @@
 
     function insert_dropdown_stats(map, friends = false){
         let records_table
+        let table_text_nodes
         let target_div = document.querySelectorAll('div.col')
         let correct_div
         let table_div
         let table
+        let table_offset = 4
 
         if(friends){
             correct_div = target_div[target_div.length - 2]
             table = document.querySelector('div.table-responsive.table-friends')
+            table_offset = 5
         } else {
             correct_div = target_div[target_div.length - 1]
             table_div = correct_div.querySelector('div.table-responsive.table-maps')
@@ -3837,8 +3952,44 @@
         }
 
         records_table = table.querySelectorAll('a')
-
+        table_text_nodes = table.querySelectorAll('td')
+        if(fastest_time == -1){
+            fastest_time = table_text_nodes[2].textContent
+        }
+        console.log("fastest_time ", fastest_time)
+        
+        insert_timediffs()
         insert_glyphs_local()
+
+        function insert_timediffs(){
+            let all_times = []
+            let time_diffs = []
+            for (let i = 2; i < table_text_nodes.length; i+=table_offset) {
+                let curr_time = table_text_nodes[i].textContent
+                console.log(timestring_to_seconds(curr_time))
+
+                let diff = timestring_to_seconds(curr_time) - timestring_to_seconds(fastest_time)
+                if (diff > 0){
+                    time_diffs.push(diff.toFixed(3))
+                }else{
+                    time_diffs.push(0)
+                }
+
+                all_times.push(table_text_nodes[i].textContent)
+            }
+            console.log("all_times ", all_times)
+            console.log("time_diffs ", time_diffs)
+    
+            for(let i = 2; i < table_text_nodes.length; i+=table_offset){
+                let curr_diff = time_diffs.shift()
+                if (curr_diff == 0){
+                    continue
+                }
+                if(!table_text_nodes[i].querySelector("span")){
+                    table_text_nodes[i].innerHTML += " <span style='color:lightcoral'><small>+" + curr_diff + "</small></span>"
+                }
+            }
+        }
 
         function insert_glyphs_local(track = 0){ // local variation of the same function, i'll fix this later
             records_table.forEach((record) => {
@@ -3879,6 +4030,10 @@
 
         $(table).on('draw.dt', function () {
             records_table = table.querySelectorAll('a')
+            table_text_nodes = table.querySelectorAll('td')
+            //console.log("table_text_nodes ", table_text_nodes)
+            //console.log("fastest_time ", fastest_time)
+            insert_timediffs()
             insert_glyphs_local();
         });
 
@@ -4454,6 +4609,7 @@
             friends_ranking_button.href = "#";
             friends_ranking_button.setAttribute("for", "table-friends");
             friends_ranking_button.onclick = function(e) {
+                try{document.getElementById("fetch_friends_bonus_ranks").remove()}catch(e){}
                 insert_dropdown_stats(map, true);
                 if(children.length > 1){
                     // Has bonuses
@@ -5702,48 +5858,76 @@
     }
 
     function show_all_map_raters(){
-
         let rater_list = [];
         let raters_div = document.createElement("div");
         raters_div.style.minWidth = "300px";
         raters_div.style.maxHeight = "500px";
         raters_div.style.overflowY = "scroll";
-
+    
         let raters_list = document.createElement("ul");
         raters_list.style.listStyleType = "none";
         raters_list.style.paddingLeft = "0px";
         raters_list.style.marginLeft = "0px";
+    
+        GM_xmlhttpRequest({
+            method: "GET",
+            url: "https://iloveur.mom/surfheaven/get_raw_ratings.php",
+            onload: function (response) {
+                if (response.status == 200) {
+                    let response_data = JSON.parse(response.responseText);
+                    let rater_count = 0;
+                    let rater_counts = {};
 
-        make_request('https://iloveur.mom/surfheaven/get_all_ids.php', function(response){
-            let rater_count  = response.length;
-            show_overlay_window(rater_count + " lovely raters",raters_div);
-            let loading_element = document.createElement("h3");
-
-            raters_div.appendChild(loading_element);
-            response.forEach(rater => {
-                make_request('https://api.surfheaven.eu/api/playerinfo/'+rater, function(player){
-                    const rater_info = player[0].name;
-                    console.log(rater_info);
-                    rater_list.push([rater, rater_info]);
-                    loading_element.innerHTML = "Loading raters... ("+rater_list.length+"/"+rater_count+") <i class='fas fa-spinner fa-spin'></i>";
-
-                    if(rater_list.length == rater_count){
-                        console.log("got all raters, displaying rater list");
-                        raters_div.innerHTML = "";
-                        for(let i = 0; i < rater_list.length; i++){
-                            let rater_li = document.createElement("li");
-                            rater_li.innerHTML = `<a href="https://surfheaven.eu/player/${rater_list[i][0]}" target="_blank">${rater_list[i][1]}</a>`;
-                            raters_list.appendChild(rater_li);
+                    for (const key in response_data) {
+                        if (response_data.hasOwnProperty(key)) {
+                            const ratings = response_data[key];
+                            ratings.forEach(item => {
+                                const id = item.id;
+                                if (rater_counts[id]) {
+                                    rater_counts[id]++;
+                                } else {
+                                    rater_counts[id] = 1;
+                                    rater_count++;
+                                }
+                            });
                         }
-                        raters_div.appendChild(raters_list);
-
-                        insert_flags_to_profiles();
                     }
-
-                });
-            });
+    
+                    show_overlay_window(rater_count + " lovely raters", raters_div);
+                    let loading_element = document.createElement("h3");
+                    raters_div.appendChild(loading_element);
+                    let processed_count = 0;
+                    for (const id in rater_counts) {
+                        GM_xmlhttpRequest({
+                            method: "GET",
+                            url: "https://api.surfheaven.eu/api/playerinfo/" + id,
+                            onload: function (player_response) {
+                                if (player_response.status == 200) {
+                                    let player = JSON.parse(player_response.responseText);
+                                    const rater_info = player[0].name;
+                                    rater_list.push([id, rater_info, rater_counts[id]]);
+                                    loading_element.innerHTML = "Loading raters... (" + (++processed_count) + "/" + rater_count + ") <i class='fas fa-spinner fa-spin'></i>";
+    
+                                    if (processed_count === rater_count) {
+                                        console.log("got all raters, displaying rater list");
+                                        raters_div.innerHTML = "";
+                                        rater_list.sort((a, b) => b[2] - a[2]);
+                                        for (let i = 0; i < rater_list.length; i++) {
+                                            let rater_li = document.createElement("li");
+                                            rater_li.innerHTML = `<a href="https://surfheaven.eu/player/${rater_list[i][0]}" target="_blank">${rater_list[i][1]}</a> <span>(${rater_list[i][2]})</span>`;
+                                            raters_list.appendChild(rater_li);
+                                        }
+                                        raters_div.appendChild(raters_list);
+    
+                                        insert_flags_to_profiles();
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            }
         });
-
     }
 
 })();

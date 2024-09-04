@@ -1,3 +1,9 @@
+___4.2.19___
+Added time differences to leaderboards
+Added button to show scuffed friend ranks on bonuses
+Added rating count "highscores" in rater list (can be found in settings -> map raters)
+Added decimals to avg map and bonus ranks (thanks Juve)
+
 ___4.2.18.2___
 Showing the actual map an empty server has instead of the sweet little lie of surf_epic that the api tells
 You can now filter servers 1-4 and 12 from the empty server queue (thanks Snowhill)
