@@ -1,7 +1,8 @@
 ## SurfHeaven.eu userscript that adds extra features to the page.
 
 ### Installation
-Make sure you have [Tampermonkey](https://www.tampermonkey.net/) installed, then press [Here](https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js)
+Make sure you have [Tampermonkey](https://www.tampermonkey.net/) installed, then press [Here](https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js)  
+Chrome users need to [enable developer mode](https://www.tampermonkey.net/faq.php?locale=en#Q209)
 
 ### Extra features
 
