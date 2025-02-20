@@ -1,3 +1,12 @@
+___4.2.20___
+Points history to profiles (credit to BIRD for providing the data)
+Session stats in server page
+Map tiers in rating list
+You can check your own map ratings from settings
+Button to display bonus comps on map page
+bugfixes
+new bugs
+
 ___4.2.19___
 Added time differences to leaderboards
 Added button to show scuffed friend ranks on bonuses

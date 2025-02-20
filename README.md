@@ -2,8 +2,9 @@
 
 ### Installation
 Make sure you have [Tampermonkey](https://www.tampermonkey.net/) installed, then press [Here](https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js)
+Chrome users need to [enable developer mode](https://www.tampermonkey.net/faq.php?locale=en#Q209)
 
-### Extra features
+### Extra features (Outdated, more features added just cant remember them all)
 
 Player flags everywhere  
 Follow list to quickly see who's online and in which server (click [Followed Players](https://iloveur.mom/i/QowRGHW1Dv.png) to see all followed players)  
@@ -29,6 +30,7 @@ Cool username effects
  - Points to rank up
  - Compare map completions (compare with yourself for pseudo !pt)
  - Find mutual uncompleted maps
+ - Points history
  - [!pr stats on records](https://iloveur.mom/i/Y6TaPzVxHS.gif)
 
 [Map page](https://iloveur.mom/i/rv8t.png):
@@ -46,6 +48,7 @@ Cool username effects
  - Ranks from the [original SH ranks by Link](https://greasyfork.org/en/scripts/438271-surfheaven-ranks)
  - Rank highlighting based on thresholds (e.g highlight ranks that are in the top 20% as green)
  - Queue for an empty server as soon as one is available
+ - Session tracking
  - Automatic refreshing
 
 ### Issues
@@ -54,10 +57,8 @@ Cool username effects
    - Example: https://surfheaven.eu/player/21889731  
    - ID is 21889731  
 
- - for other shit, let me know
-
-#### Stuff i'll probably add in the future:
- - Stuff that comes to my mind, or that people request
+ - If the script isn't working, and youre on Chrome, make sure you have developer mode enabled
+ - Otherwise check browser console for errors and dm me or make an issue
 
  ## Compatibility
- Tested with Tampermonkey on Firefox. Should work fine on all major browsers.
+ Tested with Tampermonkey on Firefox. 
