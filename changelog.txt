@@ -1,3 +1,7 @@
+___4.2.21___
+Fix servers page
+Added fallback map pics from ksf.surf
+
 ___4.2.20___
 Points history to profiles (credit to BIRD for providing the data)
 Session stats in server page

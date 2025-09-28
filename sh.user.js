@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.20
+// @version      4.2.21
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -1281,26 +1281,45 @@
                     };
 
                     img.onerror = function() {
-                        hover_div.style.backgroundColor = "rgba(13,17,23,0.6)";
-                        hover_div.style.backgroundImage = "none";
-                        hover_div.innerHTML = `<div class="row">
-                        <div class="col-sm-4">
-                            <h5>Type</h5>
-                            <h5>Author</h5>
-                            <h5>Added</h5>
-                            <h5>WR</h5>
-                            <h5>Rank</h5>
+                        console.log("Image not found, trying backup url");
+                        img.src = img_fallback(data[0].map);
+                        img.onload = function() {
+                            hover_div.style.backgroundImage = `url(${img.src})`;
+                            hover_div.style.backgroundSize = "cover";
+                            hover_div.style.backgroundPosition = "center";
+                            hover_div.innerHTML = `
+                            <div class="row outlined text-center" style="min-width: 18vw; min-height: 18vh;">
+                                <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")} by ${data[0].author}</h5>
+                                <h5>WR by <a href="https://surfheaven.eu/player/${wr.steamid}">${wr.name}</a></h5>
+                                <h5>Your rank ${own_rank.rank} / ${data[0].completions} ${diff_string}</h5>
+                            </div>
+                        `;
+                            hover_div.style.top = (e.target.getBoundingClientRect().top+ Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height/2)) + "px";
+                            insert_flags_to_profiles();
+                        };
+                        img.onerror = function() {
 
-                        </div>
-                        <div class="col-sm-8">
-                            <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")}</h5>
-                            <h5>${data[0].author}</h5>
-                            <h5>${format_date(data[0].date_added)}</h5>
-                            <h5><a href="https://surfheaven.eu/player/${wr.steamid}">${wr.name}</a></h5>
-                            <h5>${own_rank.rank} / ${data[0].completions}</h5>
-                        </div>
-                    </div>`;
-                    insert_flags_to_profiles();
+                            hover_div.style.backgroundColor = "rgba(13,17,23,0.6)";
+                            hover_div.style.backgroundImage = "none";
+                            hover_div.innerHTML = `<div class="row">
+                            <div class="col-sm-4">
+                                <h5>Type</h5>
+                                <h5>Author</h5>
+                                <h5>Added</h5>
+                                <h5>WR</h5>
+                                <h5>Rank</h5>
+
+                            </div>
+                            <div class="col-sm-8">
+                                <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")}</h5>
+                                <h5>${data[0].author}</h5>
+                                <h5>${format_date(data[0].date_added)}</h5>
+                                <h5><a href="https://surfheaven.eu/player/${wr.steamid}">${wr.name}</a></h5>
+                                <h5>${own_rank.rank} / ${data[0].completions}</h5>
+                            </div>
+                        </div>`;
+                        insert_flags_to_profiles();
+                        }
                     };
 
                     hover_div.style.backgroundImage = "none";
@@ -2013,7 +2032,7 @@
             make_request("https://api.surfheaven.eu/api/servers", (servers) => {
                 if (Array.isArray(servers)) {
                     // filter irrelevant servers
-                    const region = document.getElementById("region_select").value;
+                    //const region = document.getElementById("region_select").value;
                     const region_map = {
                         "Global": "ALL",
                         "Germany": "EU",
@@ -2039,9 +2058,9 @@
                         }
                     }
     
-                    if (region_map[region] !== "ALL") {
-                        servers = servers.filter(server => server.region === region_map[region]);
-                    }
+                    //if (region_map[region] !== "ALL") {
+                    //    servers = servers.filter(server => server.region === region_map[region]);
+                    //}
 
                     const server_promises = servers.map((server, i) => {
                         if (server.playercount == 0) {
@@ -2839,9 +2858,18 @@
             remove_button.style = "position: absolute; top: 0; right: 3px; cursor: pointer; color: white;";
 
 
+            let map_img = new Image();
+            map_img.src = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+map+".jpg"
+
             let map_col = document.createElement('div');
             map_col.className = "col-sm-1";
+
             map_col.style = "height:8vh;border-radius: 5px; background-image: url('https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+map+".jpg'); background-size: 100% 100% ;margin-left:1.5%; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6)";
+
+            map_img.onerror = function() {
+                map_col.style = "height:8vh;border-radius: 5px; background-image: url('"+img_fallback(map)+"'); background-size: 100% 100% ;margin-left:1.5%; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6)";
+            }
+
             map_col.append(rec);
             map_col.append(remove_button);
             rec_content.append(map_col);
@@ -2853,6 +2881,18 @@
 
         target.insertBefore(row, target.children[2]);
     };
+
+    function img_fallback(map_name){
+        if(map_name.endsWith("_csgo")){
+            map_name = map_name.slice(0, -5);
+        }else if(map_name.endsWith("_go")){
+            map_name = map_name.slice(0, -3);
+        }else if(map_name.endsWith("_go_fix")){
+            map_name = map_name.slice(0, -7);
+        }
+
+        return "https://ksf.surf/maps/"+map_name+".jpg";
+    }
 
     function insert_user_rated_maps_table(){
         if(!settings.user_ratings_table) return;
@@ -4114,6 +4154,13 @@
                 map_button.addEventListener("click", function() {
                     try{document.getElementById("fetch_friends_bonus_ranks").remove()}catch(e){}
                     let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+current_map_name+".jpg";
+                    let img = new Image();
+                    img.src = map_link;
+                    img.onerror = function() {
+                       map_link = "https://ksf.surf/maps/" + current_map_name + ".jpg"; 
+                       let target_div = document.querySelector('.panel-c-warning');
+                       target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
+                    }
                     let target_div = document.querySelector('.panel-c-warning');
                     target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
                 })
@@ -5816,10 +5863,23 @@
 
     function insert_map_picture(map_name){
         if(!settings.map_cover_image) return;
+        let attempt = 0
         let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+map_name+".jpg"
 
         let target_div = document.querySelector('.panel-c-warning');
         target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
+        
+        let img = new Image();
+
+        img.src = map_link;
+        img.onerror = function() {
+            attempt++;
+            if(attempt > 1) return;
+            console.log("Image from sayt123 failed, trying ksf");
+            img.src = img_fallback(map_name);
+            target_div.style = "background: url('"+img.src+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
+        }
+
         if(target_div.style.backgroundImage != "none"){
             add_shadow_to_text_recursively(target_div);
         }
