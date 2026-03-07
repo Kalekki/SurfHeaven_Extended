@@ -1,3 +1,6 @@
+___4.2.21.1___
+Fix servers page (again) (thanks toasti)
+
 ___4.2.21___
 Fix servers page
 Added fallback map pics from ksf.surf

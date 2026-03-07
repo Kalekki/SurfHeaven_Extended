@@ -52,9 +52,9 @@
     const cest_time = new Date(cest_string);
     const cest_season_end = new Date(Date.parse('2023-07-23T18:00:00+02:00'));
     const is_season = cest_time < cest_season_end;
-    const easy_maps = ["surf_spaceracer","surf_aesthetic","surf_beyond2","surf_melatonin"]
-    const medium_maps = ["surf_eos","surf_kala","surf_nibiru2","surf_njv"]
-    const hard_maps = ["surf_salmari","surf_barbies_malibu_adventure","surf_korovamilkbar","surf_rebirth"]
+    const easy_maps = ["surf_spaceracer", "surf_aesthetic", "surf_beyond2", "surf_melatonin"]
+    const medium_maps = ["surf_eos", "surf_kala", "surf_nibiru2", "surf_njv"]
+    const hard_maps = ["surf_salmari", "surf_barbies_malibu_adventure", "surf_korovamilkbar", "surf_rebirth"]
 
     const custom_css = document.createElement('link');
     custom_css.rel = 'stylesheet';
@@ -62,19 +62,19 @@
     document.head.appendChild(custom_css);
 
     // colors are approximate and might be wrong, let me know
-    const GROUP_THRESHOLDS =   [1,      2,      3,      10,        25,      50,        75,       100,       150,       250,       500,       750,            1000,     1500,      2000,      3000,     6000,       15000,     25000]
-    const GROUP_NAMES =        ["#1",   "#2",   "#3",   "Master",  "Elite", "Veteran", "Expert", "Pro",     "TheSteve","Hotshot", "Skilled", "Intermediate", "Casual", "Amateur", "Regular", "Potato", "Beginner", "Burrito", "Calzone", "New"]
-    const GROUP_COLORS =       ["gold", "gold", "gold", "#b57fe5", "red",   "#d731eb", "#6297d1","#6297d1", "#E94A4B", "#55ff4b", "#aef25d", "#ad8adc",      "#ebe58d","#b4c5d9", "#6297d1", "#dfa746","#ccccd4",  "#649ad8", "#ccccd4", "#FFFFFF"]
+    const GROUP_THRESHOLDS = [1, 2, 3, 10, 25, 50, 75, 100, 150, 250, 500, 750, 1000, 1500, 2000, 3000, 6000, 15000, 25000]
+    const GROUP_NAMES = ["#1", "#2", "#3", "Master", "Elite", "Veteran", "Expert", "Pro", "TheSteve", "Hotshot", "Skilled", "Intermediate", "Casual", "Amateur", "Regular", "Potato", "Beginner", "Burrito", "Calzone", "New"]
+    const GROUP_COLORS = ["gold", "gold", "gold", "#b57fe5", "red", "#d731eb", "#6297d1", "#6297d1", "#E94A4B", "#55ff4b", "#aef25d", "#ad8adc", "#ebe58d", "#b4c5d9", "#6297d1", "#dfa746", "#ccccd4", "#649ad8", "#ccccd4", "#FFFFFF"]
 
     const AU_SERVERS = {
-        12 : "51.161.199.33:27015", //#1
-        13 : "51.161.199.33:27016", //#2
-        14 : "51.161.199.33:27017", //#3
-        15 : "51.161.199.33:27018", //#4
-        16 : "51.161.199.33:27019", //#5
-        17 : "51.161.199.33:27020", //#6
-        18 : "51.161.199.33:27021", //#7
-        19 : "51.161.199.33:27022", //#8
+        12: "51.161.199.33:27015", //#1
+        13: "51.161.199.33:27016", //#2
+        14: "51.161.199.33:27017", //#3
+        15: "51.161.199.33:27018", //#4
+        16: "51.161.199.33:27019", //#5
+        17: "51.161.199.33:27020", //#6
+        18: "51.161.199.33:27021", //#7
+        19: "51.161.199.33:27022", //#8
     }
 
     // SETTINGS
@@ -101,7 +101,7 @@
             record_diffs: true
         }
         unsafeWindow.localStorage.setItem('settings', JSON.stringify(settings));
-    }else{
+    } else {
         settings = JSON.parse(unsafeWindow.localStorage.getItem('settings'));
         validate_settings();
     }
@@ -128,13 +128,13 @@
     }
 
     const settings_categories = {
-        "Global" : ["flags","follow_list", "hover_info", "update_check", "toasts", "user_effects", "record_diffs"],
-        "Dashboard" : ["country_top_100", "user_ratings_table"],
-        "Map page" : ["cp_chart","points_per_rank","map_cover_image","user_ratings","comments"],
-        "Profile" : ["steam_avatar", "completions_by_tier", "completions_bar_chart", "map_recommendations"]
+        "Global": ["flags", "follow_list", "hover_info", "update_check", "toasts", "user_effects", "record_diffs"],
+        "Dashboard": ["country_top_100", "user_ratings_table"],
+        "Map page": ["cp_chart", "points_per_rank", "map_cover_image", "user_ratings", "comments"],
+        "Profile": ["steam_avatar", "completions_by_tier", "completions_bar_chart", "map_recommendations"]
     }
 
-    function validate_settings(){
+    function validate_settings() {
         if (settings.flags == null) settings.flags = true;
         if (settings.follow_list == null) settings.follow_list = true;
         if (settings.update_check == null) settings.update_check = true;
@@ -158,10 +158,10 @@
     // USER EFFECTS
     let user_effects = {};
     let last_updated_effects = unsafeWindow.localStorage.getItem('user_effects_last_updated');
-    if (last_updated_effects == null || Date.now() - Number(last_updated_effects) > 1000 * 60 * 5 ) {
+    if (last_updated_effects == null || Date.now() - Number(last_updated_effects) > 1000 * 60 * 5) {
         console.log("Updating user_effects.json")
         unsafeWindow.localStorage.setItem('user_effects_last_updated', Date.now());
-        fetch("https://iloveur.mom/surfheaven/user_effects.json", {cache: "no-cache"})
+        fetch("https://iloveur.mom/surfheaven/user_effects.json", { cache: "no-cache" })
             .then(response => response.json())
             .then(data => {
                 for (let user in data) {
@@ -178,16 +178,16 @@
     user_effects = JSON.parse(unsafeWindow.localStorage.getItem('user_effects'));
 
     for (let user in user_effects) {
-        if (user_effects != null && user_effects[user] != null) { 
+        if (user_effects != null && user_effects[user] != null) {
             if (user_effects[user].startsWith("candycane-custom") && user_effects[user] != "candycane-custom-") {
                 create_custom_candycane_style(user_effects[user]);
             }
         }
     }
 
-    function create_custom_candycane_style(style_name){
+    function create_custom_candycane_style(style_name) {
         let colors = style_name.split("-").slice(2);
-        if (colors.length == 1){
+        if (colors.length == 1) {
             // single color
             //console.log(`Creating custom style: ${colors[0]}`);
             GM_addStyle(`.candycane-custom-${colors[0]} {
@@ -198,12 +198,12 @@
         let cssColors = colors.map((color, index) => {
             if (index === 0) {
                 return `${color}, ${color} 10px,`;
-              } else if (index === colors.length - 1) {
+            } else if (index === colors.length - 1) {
                 return `${color} ${index * 10}px, ${color} ${(index + 1) * 10}px`;
-              }
-              return `${color} ${index * 10}px, ${color} ${(index + 1) * 10}px,`;
-            }).join(' ');
-        
+            }
+            return `${color} ${index * 10}px, ${color} ${(index + 1) * 10}px,`;
+        }).join(' ');
+
         //console.log(`Creating custom style: ${colors.join(' ')}`);
         //TODO: Fix this to make the looping perfect
         GM_addStyle(`.candycane-custom-${colors.join('-')} {
@@ -223,10 +223,10 @@
 
     }
 
-    function apply_user_effect(id, element){
-        if(!settings.user_effects) return;
+    function apply_user_effect(id, element) {
+        if (!settings.user_effects) return;
         let effect = '';
-        if(id in user_effects){
+        if (id in user_effects) {
             effect = user_effects[id];
             element.classList.remove('vip-name')
         }
@@ -235,7 +235,7 @@
         let steam_link = element.childNodes[2];
         element.innerHTML = '';
         element.appendChild(flag_img);
-        element.innerHTML += '<span class='+effect+'> ' + text + ' </span>';
+        element.innerHTML += '<span class=' + effect + '> ' + text + ' </span>';
         element.appendChild(steam_link);
     }
 
@@ -255,12 +255,12 @@
     logo.appendChild(logo_text);
 
     // Replace "My Profile" link with custom id
-    if(use_custom){
+    if (use_custom) {
         let profile_link = document.querySelector(".nav > li:nth-child(1) > a:nth-child(1)")
-        if(profile_link.text == "MY PROFILE"){
+        if (profile_link.text == "MY PROFILE") {
             console.log("Replacing profile link with custom id")
             profile_link.href = "/player/" + custom_id;
-        }else{
+        } else {
             console.log("Creating profile link with custom id")
             let new_profile_link = document.createElement("li");
             new_profile_link.innerHTML = "<a href='/player/" + custom_id + "'>MY PROFILE</a>";
@@ -269,9 +269,9 @@
     }
 
     // Surf map tier cache
-    function cache_map_tiers(){
+    function cache_map_tiers() {
         let last_updated_map_tiers = unsafeWindow.localStorage.getItem('map_tiers_last_updated')
-        if(!last_updated_map_tiers || Date.now() - Number(last_updated_map_tiers) > 1000 * 60 * 60 * 6){
+        if (!last_updated_map_tiers || Date.now() - Number(last_updated_map_tiers) > 1000 * 60 * 60 * 6) {
             unsafeWindow.localStorage.setItem('map_tiers_last_updated', String(Date.now()))
             make_request("https://api.surfheaven.eu/api/maps", (data) => {
                 let map_tiers = {};
@@ -306,18 +306,18 @@
         current_page = "dashboard";
         dashboard_page();
     }
-    else if(url_path[url_path.length - 2] == "search"){
+    else if (url_path[url_path.length - 2] == "search") {
         current_page = "search";
         let search_term = url_path[url_path.length - 1];
         search_term = decodeURIComponent(search_term);
         search_page(search_term);
     }
-    else{
+    else {
         current_page = url_path[url_path.length - 2];
-        if(current_page == "donate"){
+        if (current_page == "donate") {
             // Gift vip
             if (unsafeWindow.localStorage.getItem('gift_vip_steamid') != null) {
-                document.getElementById("authid").value = "http://steamcommunity.com/profiles/"+unsafeWindow.localStorage.getItem('gift_vip_steamid');
+                document.getElementById("authid").value = "http://steamcommunity.com/profiles/" + unsafeWindow.localStorage.getItem('gift_vip_steamid');
                 unsafeWindow.localStorage.removeItem('gift_vip_steamid');
                 unsafeWindow.checker();
             }
@@ -326,13 +326,13 @@
 
     recent_activity_times()
 
-    function recent_activity_times(){
-        if(!settings.record_diffs) return;
+    function recent_activity_times() {
+        if (!settings.record_diffs) return;
         let recs = [];
         let comparison_recs = [];
         let recents = document.getElementsByClassName("row-recentactivity");
 
-        for(let i = 0; i < recents.length; i++){
+        for (let i = 0; i < recents.length; i++) {
             recents[i].id = "rec_" + i
             //console.log(recents[i].textContent);
             let rec_string = recents[i].textContent;
@@ -342,12 +342,12 @@
 
             rec_string = rec_string.substring(rec_string.indexOf("set a new"));
 
-            if(recents[i].textContent.includes("new Map WR")){
+            if (recents[i].textContent.includes("new Map WR")) {
                 track = 0;
-            }else if(recents[i].textContent.includes("new Bonus ")){
+            } else if (recents[i].textContent.includes("new Bonus ")) {
                 let _regex = /\d+/g;
                 track = rec_string.match(_regex)[0];
-            }else{
+            } else {
                 track = null
             }
             recs.push([id, map, track]);
@@ -359,58 +359,58 @@
             let map = recs[i][1]
             let track = recs[i][2]
             if (track != null) {
-                make_request("https://api.surfheaven.eu/api/records/"+map+"/" + track, (data) => {
+                make_request("https://api.surfheaven.eu/api/records/" + map + "/" + track, (data) => {
                     if (data) {
                         let diff
-                        if(data.length <=1){
+                        if (data.length <= 1) {
                             diff = "👑"
-                            comparison_recs.push([i,diff]);
-                        }else{
+                            comparison_recs.push([i, diff]);
+                        } else {
                             data.sort((a, b) => a.time - b.time);
                             diff = (data[0].time - data[1].time).toFixed(3);
-                            comparison_recs.push([i,diff]);
+                            comparison_recs.push([i, diff]);
                         }
                         check_if_ready();
                     }
                 })
-            }else{
+            } else {
                 comparison_recs.push([i, null]);
                 check_if_ready();
             }
 
         }
-        function check_if_ready(){
-            if(comparison_recs.length == recs.length){
+        function check_if_ready() {
+            if (comparison_recs.length == recs.length) {
                 comparison_recs.sort((a, b) => a[0] - b[0]);
                 //console.log(comparison_recs);
-                for(let i = 0; i < comparison_recs.length; i++){
-                    if(comparison_recs[i][1] != null){
+                for (let i = 0; i < comparison_recs.length; i++) {
+                    if (comparison_recs[i][1] != null) {
                         let target_div = document.getElementById("rec_" + i);
                         let target_node = target_div.querySelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3)")
-                        target_node.innerHTML +=  " <span style='color:lightgreen'><small>" + comparison_recs[i][1] + "</small></span>";
+                        target_node.innerHTML += " <span style='color:lightgreen'><small>" + comparison_recs[i][1] + "</small></span>";
                     }
                 }
             }
         }
     }
 
-    function search_page(search_term){
+    function search_page(search_term) {
         // Maps by author
         make_request("https://api.surfheaven.eu/api/maps", (data) => {
             let search_results = [];
             data.forEach((map) => {
-                if(map.author.toLowerCase().includes(search_term.toLowerCase())){
+                if (map.author.toLowerCase().includes(search_term.toLowerCase())) {
                     search_results.push(map);
                 }
                 // the_ancient_one patch
-                if(search_term.includes("_")){
-                    if(map.author.toLowerCase().includes(search_term.replace(/_/g, " ").toLowerCase())){
+                if (search_term.includes("_")) {
+                    if (map.author.toLowerCase().includes(search_term.replace(/_/g, " ").toLowerCase())) {
                         search_results.push(map);
                     }
                 }
                 // vice versa
-                if(search_term.includes(" ")){
-                    if(map.author.toLowerCase().includes(search_term.replace(/ /g, "_").toLowerCase())){
+                if (search_term.includes(" ")) {
+                    if (map.author.toLowerCase().includes(search_term.replace(/ /g, "_").toLowerCase())) {
                         search_results.push(map);
                     }
                 }
@@ -428,9 +428,9 @@
                 ]);
             });
 
-            let table = create_table(["Map name", "Author", "Tier", "Type", "Bonuses", "Date Added"], table_data,"author_maps");
+            let table = create_table(["Map name", "Author", "Tier", "Type", "Bonuses", "Date Added"], table_data, "author_maps");
 
-            let div = create_div('Maps by "'+search_term+'"', table, 12, true);
+            let div = create_div('Maps by "' + search_term + '"', table, 12, true);
             let target_div = document.querySelector(".content > div:nth-child(1)")
             target_div.appendChild(div);
             $("#author_maps").DataTable({
@@ -443,13 +443,13 @@
                     "sSearch": '<i class="fas fa-search"></i>',
                     "sInfo": "<small>Note: Maps with multiple authors are sometimes listed as 'collab' and might not show up in this list.</small>",
                 },
-                "order": [[ 5, "asc" ]]
+                "order": [[5, "asc"]]
             });
 
         })
     }
 
-    function create_table(columns, data, id){
+    function create_table(columns, data, id) {
         let table = document.createElement('table');
         table.id = id;
         table.className = "table table-striped table-hover";
@@ -476,14 +476,14 @@
         return table;
     }
 
-    function create_div(title, content, size = 12){
+    function create_div(title, content, size = 12) {
         let div = document.createElement('div');
-        div.className = "col-md-"+size;
+        div.className = "col-md-" + size;
         let panel = document.createElement('div');
         panel.className = "panel panel-filled";
         let panel_heading = document.createElement('div');
         panel_heading.className = "panel-heading";
-        panel_heading.innerHTML = "<span>"+title+"</span>";
+        panel_heading.innerHTML = "<span>" + title + "</span>";
         let panel_body = document.createElement('div');
         panel_body.className = "panel-body";
         panel_body.appendChild(content);
@@ -504,22 +504,22 @@
     });
 
     // Update check
-    if(settings.update_check){
+    if (settings.update_check) {
         if (unsafeWindow.localStorage.getItem('update_last_checked') == null) {
             unsafeWindow.localStorage.setItem('update_last_checked', Date.now());
         }
-        else if (Date.now() - unsafeWindow.localStorage.getItem('update_last_checked') > 1000*60*5) {
+        else if (Date.now() - unsafeWindow.localStorage.getItem('update_last_checked') > 1000 * 60 * 5) {
             unsafeWindow.localStorage.setItem('update_last_checked', Date.now());
             check_for_updates();
         }
     }
 
-    function check_for_updates(){
+    function check_for_updates() {
         GM_xmlhttpRequest({
             method: "GET",
             url: "https://raw.githubusercontent.com/Kalekki/SurfHeaven_Extended/main/changelog.txt",
             onload: function (response) {
-                if(response.status != 200) return;
+                if (response.status != 200) return;
                 var latest_version = response.responseText.split("___")[1];
                 console.log("Current version: " + VERSION + " | Latest version: " + latest_version)
                 if (latest_version != VERSION) {
@@ -582,21 +582,21 @@
         refresh_follow_list();
 
         // refresh follow list
-        const follow_list_refresh_interval = 60*1000;
+        const follow_list_refresh_interval = 60 * 1000;
         setInterval(() => {
             refresh_follow_list();
         }, follow_list_refresh_interval);
-    }else{
+    } else {
         insert_flags_to_profiles();
     }
 
-    function follow_list_manager(){
+    function follow_list_manager() {
         let follow_list = get_follow_list();
         const follow_list_root = document.createElement('div');
         follow_list_root.style.overflowY = "scroll";
         follow_list_root.style.height = "600px";
 
-        for(let i = 0; i < follow_list.length; i++){
+        for (let i = 0; i < follow_list.length; i++) {
             make_request(`https://api.surfheaven.eu/api/playerinfo/${follow_list[i]}`, (data) => {
                 let follow_list_item = document.createElement('div');
                 follow_list_item.style = "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
@@ -631,10 +631,10 @@
                 follow_list_root.appendChild(follow_list_item);
 
                 insert_flags_to_profiles();
-                if(follow_list_root.querySelectorAll('div').length == follow_list.length){
+                if (follow_list_root.querySelectorAll('div').length == follow_list.length) {
                     let follow_list_items = follow_list_root.children;
                     let follow_list_items_array = [];
-                    for(let j = 0; j < follow_list_items.length; j++){
+                    for (let j = 0; j < follow_list_items.length; j++) {
                         follow_list_items_array.push(follow_list_items[j]);
                     }
                     follow_list_items_array.sort((a, b) => {
@@ -652,16 +652,16 @@
                         }
                     });
                     insert_flags_to_profiles();
-                    
+
                 }
             });
-            
+
         }
         show_overlay_window("Followed players", follow_list_root);
     }
 
 
-    function refresh_follow_list(){
+    function refresh_follow_list() {
         console.log("Refreshing follow list")
         let follow_list = get_follow_list();
         let follow_list_panel_body_div = document.querySelector('div.row-recentactivity:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)');
@@ -678,13 +678,13 @@
                     if (follow_list.includes(player[0])) {
                         friends_online = true;
                     }
-                    if(player[0] == get_id()){
+                    if (player[0] == get_id()) {
                         self_in_server = true;
                         self_stats = player
                     }
                 });
                 // session shit
-                if(current_page == "servers"){
+                if (current_page == "servers") {
                     if (self_in_server) {
                         console.log("self in server");
                         if (!in_session) {
@@ -699,32 +699,32 @@
                                 starting_bonus_points: [],
                                 starting_account_points: 0
                             };
-                    
+
                             get_rank_in_map(self_stats[3], get_id(), 0, true, (stats) => {
                                 current_session.starting_ranks.push(stats.rank);
                                 current_session.starting_points.push(stats.points);
                             });
-                    
+
                             get_mapinfo(self_stats[3], (map_data) => {
-                            
+
                                 if (!map_data || typeof map_data !== "object" || !map_data.bonus) {
                                     console.log("no bonus tracks found for", self_stats[3]);
                                     current_session.starting_bonus_ranks.push([]);
                                     current_session.starting_bonus_points.push([]);
                                     return;
                                 }
-                            
-                                const bonus_count = map_data.bonus; 
+
+                                const bonus_count = map_data.bonus;
                                 console.log("bonus count for", self_stats[3], ":", bonus_count);
-                            
+
                                 let bonus_ranks = [];
                                 let bonus_points = [];
-                            
+
                                 for (let b = 1; b <= bonus_count; b++) {
                                     get_rank_in_map(self_stats[3], get_id(), b, true, (bonus_stats) => {
                                         bonus_ranks.push(bonus_stats.rank ?? 0);
                                         bonus_points.push(bonus_stats.points ?? 0);
-                            
+
                                         if (bonus_ranks.length === bonus_count) {
                                             current_session.starting_bonus_ranks.push(bonus_ranks);
                                             current_session.starting_bonus_points.push(bonus_points);
@@ -732,11 +732,11 @@
                                     });
                                 }
                             });
-                    
+
                             get_playerinfo(get_id(), (data) => {
                                 current_session.starting_account_points = data.points;
                             });
-                    
+
                             if (current_page == "servers") {
                                 const session_overlay = create_session_overlay();
                                 session_overlay.stats_button.addEventListener('click', () => {
@@ -751,24 +751,24 @@
                                 current_session.starting_points.push(0);
                                 current_session.starting_bonus_ranks.push([]);
                                 current_session.starting_bonus_points.push([]);
-                    
+
                                 get_rank_in_map(self_stats[3], get_id(), 0, true, (stats) => {
                                     current_session.starting_ranks[current_session.starting_ranks.length - 1] = stats.rank;
                                     current_session.starting_points[current_session.starting_points.length - 1] = stats.points;
                                 });
-                    
+
                                 get_mapinfo(self_stats[3], (map_data) => {
                                     if (!map_data || typeof map_data !== "object" || !map_data.bonus) return;
-                    
+
                                     const bonus_count = map_data.bonus;
                                     let bonus_ranks = [];
                                     let bonus_points = [];
-                    
+
                                     for (let b = 1; b <= bonus_count; b++) {
                                         get_rank_in_map(self_stats[3], get_id(), b, true, (bonus_stats) => {
                                             bonus_ranks.push(bonus_stats.rank ?? 0);
                                             bonus_points.push(bonus_stats.points ?? 0);
-                    
+
                                             if (bonus_ranks.length === bonus_count) {
                                                 current_session.starting_bonus_ranks[current_session.starting_bonus_ranks.length - 1] = bonus_ranks;
                                                 current_session.starting_bonus_points[current_session.starting_bonus_points.length - 1] = bonus_points;
@@ -778,7 +778,7 @@
                                 });
                             }
                         }
-                    
+
                         in_session = true;
                         session_check_count = 0;
                     } else {
@@ -793,7 +793,7 @@
                         }
                     }
                 }
-                
+
                 online_players.sort((a, b) => {
                     return a[2] - b[2];
                 });
@@ -802,8 +802,8 @@
                     online_players.forEach((player) => {
                         if (follow_list.includes(player[0])) {
                             let follow_list_item = document.createElement('h5');
-                            if(player[4] == "AU"){
-                                follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="https://surfheaven.eu/map/${player[3]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]-13} (AU)</a>`
+                            if (player[4] == "AU") {
+                                follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="https://surfheaven.eu/map/${player[3]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2] - 13} (AU)</a>`
                             } else {
                                 follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="https://surfheaven.eu/map/${player[3]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
                             }
@@ -812,14 +812,14 @@
                     });
                     insert_flags_to_profiles();
                 }
-                else{
+                else {
                     follow_list_panel_body_div.innerHTML = "";
                     let follow_list_item = document.createElement('h5');
                     follow_list_item.innerHTML = "No friends online :(";
                     follow_list_panel_body_div.appendChild(follow_list_item);
                 }
             });
-            
+
         }
     }
 
@@ -836,14 +836,14 @@
         overlay.style.left = "50%";
         overlay.style.transform = "translateX(-50%)";
         overlay.style.zIndex = "9999";
-        overlay.style.backgroundColor = "#2d3748"; 
-        overlay.style.border = "1px solid #4a5568"; 
+        overlay.style.backgroundColor = "#2d3748";
+        overlay.style.border = "1px solid #4a5568";
         overlay.style.borderRadius = "0.5rem";
         overlay.style.boxShadow = "0px 2px 15px rgba(0,0,0,0.3)";
         overlay.style.padding = "0.5rem";
         overlay.style.minWidth = "300px";
-        overlay.style.color = "#e2e8f0"; 
-    
+        overlay.style.color = "#e2e8f0";
+
         const title_bar = document.createElement('div');
         title_bar.style.display = "flex";
         title_bar.style.justifyContent = "space-between";
@@ -851,21 +851,21 @@
         title_bar.style.padding = "0.5rem";
         title_bar.style.cursor = "move";
         //title_bar.style.borderBottom = "1px solid #4a5568"; 
-    
+
         const title = document.createElement('h4');
         title.textContent = "In session";
         title.style.margin = "0";
         title.style.padding = "0";
         title.style.fontSize = "1.1rem";
         title.style.fontWeight = "600";
-    
+
         const stats_button = document.createElement('button');
         stats_button.textContent = "Show session stats";
         stats_button.style.cursor = "pointer";
         stats_button.style.backgroundColor = "transparent";
         stats_button.style.border = "1px solid #4a5568";
         stats_button.style.borderRadius = "0.25rem";
-        stats_button.style.color = "#e2e8f0"; 
+        stats_button.style.color = "#e2e8f0";
         stats_button.style.padding = "0.25rem 0.75rem";
         stats_button.style.marginRight = "0.5rem";
         stats_button.style.transition = "all 0.2s ease";
@@ -878,7 +878,7 @@
             stats_button.style.backgroundColor = "transparent";
             stats_button.style.borderColor = "#4a5568"
         });
-    
+
         const close_button = document.createElement('button');
         close_button.innerHTML = "&times;";
         close_button.style.cursor = "pointer";
@@ -897,49 +897,49 @@
             close_button.style.backgroundColor = "transparent";
             close_button.style.borderColor = "#4a5568";
         });
-    
+
         title_bar.appendChild(title);
         title_bar.appendChild(stats_button);
         title_bar.appendChild(close_button);
-    
+
         let is_dragging = false;
         let start_x, start_y, initial_left, initial_top;
-    
+
         title_bar.addEventListener('mousedown', (e) => {
             if (e.target.tagName === 'BUTTON') return;
-            
+
             is_dragging = true;
             const rect = overlay.getBoundingClientRect();
             initial_left = rect.left;
             initial_top = rect.top;
             start_x = e.clientX;
             start_y = e.clientY;
-    
+
             document.addEventListener('mousemove', handle_mouse_move);
             document.addEventListener('mouseup', () => {
                 is_dragging = false;
                 document.removeEventListener('mousemove', handle_mouse_move);
             });
         });
-    
+
         function handle_mouse_move(e) {
             if (!is_dragging) return;
-            
+
             const dx = e.clientX - start_x;
             const dy = e.clientY - start_y;
-            
+
             overlay.style.left = `${initial_left + dx}px`;
             overlay.style.top = `${initial_top + dy}px`;
             overlay.style.transform = 'none';
         }
-    
+
         close_button.addEventListener('click', () => {
             overlay.remove();
         });
-    
+
         overlay.appendChild(title_bar);
         document.body.appendChild(overlay);
-    
+
         return {
             overlay_element: overlay,
             stats_button: stats_button,
@@ -978,29 +978,29 @@
 
     function display_session_modal(original_session) {
         const session = JSON.parse(JSON.stringify(original_session));
-    
+
         let comp_points = 0;
-    
+
         session.starting_points = session.starting_points.map((point) => point ?? 0);
         session.starting_ranks = session.starting_ranks.map((rank) => rank ?? 0);
-    
+
         const session_element = document.createElement('div');
         session_element.style.minWidth = '300px';
-    
+
         const session_end_time = Date.now();
         const session_duration = session_end_time - session.start_time;
         const session_length = format_time_noms(Math.floor(session_duration / 1000));
-    
+
         const session_length_element = document.createElement('p');
         session_length_element.textContent = `Session Length: ${session_length}`;
         session_element.appendChild(session_length_element);
-    
+
         const points_element = document.createElement('p');
-    
+
         // total points from api
         get_playerinfo(get_id(), (data) => {
             const total_api_points = data.points - session.starting_account_points;
-    
+
             // total from individual maps
             session.maps.forEach((map, index) => {
                 get_rank_in_map(map, get_id(), 0, true, (stats) => {
@@ -1010,7 +1010,7 @@
                     }
                     get_mapinfo(map, (map_data) => {
                         if (!map_data || typeof map_data !== "object" || !map_data.bonus) return;
-                
+
                         const bonus_count = map_data.bonus;
                         for (let b = 1; b <= bonus_count; b++) {
                             get_rank_in_map(map, get_id(), b, true, (bonus_stats) => {
@@ -1025,10 +1025,10 @@
                             });
                         }
                     });
-    
+
                     const final_points = Math.max(comp_points, total_api_points);
-                    session.total_points = final_points; 
-                    
+                    session.total_points = final_points;
+
                     if (comp_points > total_api_points) {
                         points_element.innerHTML = `Total points gained: <span class="text-success">~${final_points}</span>`;
                     } else {
@@ -1037,38 +1037,38 @@
                 });
             });
         });
-    
+
         session_element.appendChild(points_element);
-    
+
         const maps_element = document.createElement('div');
         session.maps.forEach((map, index) => {
             const map_container = document.createElement('div');
             map_container.style.marginBottom = '10px';
-    
+
             const map_name = document.createElement('a');
             map_name.textContent = map;
             map_name.href = `https://surfheaven.eu/map/${map}`;
-    
+
             const toggle_span = document.createElement('span');
             toggle_span.className = 'glyphicon glyphicon-menu-down';
             toggle_span.style.cursor = 'pointer';
             toggle_span.style.marginLeft = '10px';
-    
+
             const hidden_row = document.createElement('div');
-    
+
             get_rank_in_map(map, get_id(), 0, true, (stats) => {
                 const rank = stats.rank ?? 0;
                 const points = stats.points ?? 0;
-    
+
                 let info_text = `Map rank: #${session.starting_ranks[index]} -> #${rank < session.starting_ranks[index] ? '<span class="text-success">' + rank + '</span>' : rank}`;
                 if (points > session.starting_points[index]) {
                     info_text += `<br>&nbsp;&nbsp;&nbsp;&nbsp;Points change: ${session.starting_points[index]} -> ${points > session.starting_points[index] ? '<span class="text-success">' + points + '</span>' : points}`;
                 }
-    
+
                 //bonus track details
                 get_mapinfo(map, (map_data) => {
                     if (!map_data || typeof map_data !== "object" || !map_data.bonus) return;
-                
+
                     const bonus_count = map_data.bonus;
                     for (let b = 1; b <= bonus_count; b++) {
                         get_rank_in_map(map, get_id(), b, true, (bonus_stats) => {
@@ -1076,22 +1076,22 @@
                             const bonus_points = bonus_stats.points ?? 0;
                             const start_rank = session.starting_bonus_ranks[index]?.[b - 1] ?? 0;
                             const start_points = session.starting_bonus_points[index]?.[b - 1] ?? 0;
-                
+
                             let has_improved = false;
                             let bonus_info = `<br> Bonus ${b}: `;
-                
+
                             // rank improved
                             if (bonus_rank > 0 && (start_rank === 0 || bonus_rank < start_rank)) {
                                 has_improved = true;
                                 bonus_info += `#${start_rank} -> <span class="text-success">#${bonus_rank}</span>`;
                             }
-                
+
                             // points increased
                             if (bonus_points > start_points) {
                                 has_improved = true;
                                 bonus_info += `<br>&nbsp;&nbsp;&nbsp;&nbsp;points: ${start_points} -> <span class="text-success">${bonus_points}</span>`;
                             }
-                
+
                             if (has_improved) {
                                 info_text += bonus_info;
                                 hidden_row.innerHTML = info_text;
@@ -1099,53 +1099,53 @@
                         });
                     }
                 });
-    
+
                 hidden_row.innerHTML = info_text;
             });
-    
+
             hidden_row.style.display = 'none';
             hidden_row.style.marginTop = '5px';
             hidden_row.style.paddingLeft = '20px';
             hidden_row.style.color = '#666';
-    
+
             toggle_span.addEventListener('click', () => {
                 hidden_row.style.display = hidden_row.style.display === 'none' ? 'block' : 'none';
                 toggle_span.classList.toggle('glyphicon-menu-down');
                 toggle_span.classList.toggle('glyphicon-menu-up');
             });
-    
+
             map_container.appendChild(map_name);
             map_container.appendChild(toggle_span);
             map_container.appendChild(hidden_row);
-    
+
             maps_element.appendChild(map_container);
         });
-    
+
         session_element.appendChild(maps_element);
         show_overlay_window('Session stats', session_element);
     }
-    
-    function format_date(time){
+
+    function format_date(time) {
         let today = new Date();
         let date = new Date(time);
         let diff = today - date;
         let days = Math.floor(diff / (1000 * 60 * 60 * 24));
         let minutes = Math.floor(diff / (1000 * 60));
-        if(days == 0 && minutes < 60){
-          return minutes + " minutes ago";
-        } else if(days == 0 && minutes >= 60){
-          let hours = Math.floor(minutes/60);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
-          minutes -= hours * 60;
-          return hours + "h " + minutes + "m ago";
-        }else if(days == 1){
-          return "Yesterday";
-        }else if(days < 7){
-          return days + "d ago";
-        }else{
-          let month = date.toLocaleString('default', { month: 'short' });
-          return month + " " + date.getDate() + ", " + date.getFullYear();
+        if (days == 0 && minutes < 60) {
+            return minutes + " minutes ago";
+        } else if (days == 0 && minutes >= 60) {
+            let hours = Math.floor(minutes / 60);
+            minutes -= hours * 60;
+            return hours + "h " + minutes + "m ago";
+        } else if (days == 1) {
+            return "Yesterday";
+        } else if (days < 7) {
+            return days + "d ago";
+        } else {
+            let month = date.toLocaleString('default', { month: 'short' });
+            return month + " " + date.getDate() + ", " + date.getFullYear();
         }
-    }   
+    }
 
     //Hover info
     if (settings.hover_info) {
@@ -1156,41 +1156,41 @@
         let hover_timeout;
         let hover_length = 400; // ms to wait before showing hover info, cumulative with api response time
 
-        function fade_in(element){
+        function fade_in(element) {
             element.classList.add('show')
         }
-        function fade_out(element){
+        function fade_out(element) {
             element.classList.remove('show')
         }
 
         document.addEventListener('mouseover', (e) => {
-            if(e.target.tagName == "A" && !e.target.href.includes("#") && e.target.parentElement.tagName != "LI"){
+            if (e.target.tagName == "A" && !e.target.href.includes("#") && e.target.parentElement.tagName != "LI") {
                 hover_timeout = setTimeout(() => {
-                    if(e.target.href.includes("player")){
+                    if (e.target.href.includes("player")) {
                         let steamid = e.target.href.split('/')[4];
                         make_request(`https://api.surfheaven.eu/api/playerinfo/${steamid}`, (data) => {
                             display_hover_info(data, 0, e)
                         });
 
-                    }else if(e.target.href.includes('map')){
+                    } else if (e.target.href.includes('map')) {
                         let map_name = e.target.href.split('/')[4];
                         make_request(`https://api.surfheaven.eu/api/mapinfo/${map_name}`, (data) => {
                             display_hover_info(data, 1, e)
                         });
                     }
-                },hover_length)
+                }, hover_length)
             }
         });
         document.addEventListener('mouseout', (e) => {
-            if(e.target.tagName == "A"){
+            if (e.target.tagName == "A") {
                 clearTimeout(hover_timeout)
             }
             fade_out(hover_div);
         });
 
-        function display_hover_info(data, type, e){
+        function display_hover_info(data, type, e) {
             let left_offset = 10;
-            hover_div.style.top = (e.target.getBoundingClientRect().top+ Math.floor(window.scrollY))  + "px";
+            hover_div.style.top = (e.target.getBoundingClientRect().top + Math.floor(window.scrollY)) + "px";
             hover_div.style.left = (e.target.getBoundingClientRect().right + left_offset) + "px";
             hover_div.style.paddingTop = "0px";
             hover_div.style.paddingBottom = "0px";
@@ -1198,13 +1198,13 @@
             hover_div.style.zIndex = "99999";
             fade_in(hover_div);
 
-            function format_time_hours(time){
-                return Math.floor(time/3600) + "." + Math.floor((time%3600)/60);
+            function format_time_hours(time) {
+                return Math.floor(time / 3600) + "." + Math.floor((time % 3600) / 60);
             }
-            function format_time_hhmmss(time){
-                let hours = Math.floor(time/3600);
-                let minutes = Math.floor((time%3600)/60);
-                let seconds = (time%60).toFixed(2);
+            function format_time_hhmmss(time) {
+                let hours = Math.floor(time / 3600);
+                let minutes = Math.floor((time % 3600) / 60);
+                let seconds = (time % 60).toFixed(2);
                 if (hours > 0) {
                     return hours + "h " + minutes + "m " + seconds + "s";
                 } else if (minutes > 0) {
@@ -1213,17 +1213,17 @@
                     return seconds + "s";
                 }
             }
-            function format_points(points){
+            function format_points(points) {
                 // 4300 -> 4.3k
-                if(points < 1000){
+                if (points < 1000) {
                     return points;
-                }else{
-                    return Math.floor(points/1000) + "." + Math.floor((points%1000)/100) + "k";
+                } else {
+                    return Math.floor(points / 1000) + "." + Math.floor((points % 1000) / 100) + "k";
                 }
             }
             // type = 0 -> player
             // type = 1 -> map
-            if(type == 0){
+            if (type == 0) {
                 hover_div.style.backgroundColor = "rgba(13,17,23,0.6)";
                 hover_div.style.backgroundImage = "none";
                 hover_div.innerHTML = `<div class="row">
@@ -1235,14 +1235,14 @@
                 </div>
                 <div class="col-sm-7">
                     <h5>#${data[0].rank} (${create_flag(data[0].country_code)} #${data[0].country_rank})</h5>
-                    <h5>${format_points(data[0].points)} [${(data[0].rankname == "Custom" ? "#"+ data[0].rank : '<span style="color:'+GROUP_COLORS[GROUP_NAMES.indexOf(data[0].rankname)]+';">'+data[0].rankname)+"</span>"}]</h5>
+                    <h5>${format_points(data[0].points)} [${(data[0].rankname == "Custom" ? "#" + data[0].rank : '<span style="color:' + GROUP_COLORS[GROUP_NAMES.indexOf(data[0].rankname)] + ';">' + data[0].rankname) + "</span>"}]</h5>
                     <h5>${format_time_hours(data[0].playtime)}h</h5>
                     <h5>${format_date(data[0].lastplay)}</h5>
                 </div>
             </div>
             `;
             }
-            if(type == 1){
+            if (type == 1) {
                 make_request(`https://api.surfheaven.eu/api/records/${data[0].map}/0`, (map_data) => {
                     let own_rank = map_data.find((element) => element.steamid == get_id());
                     if (own_rank === undefined) {
@@ -1256,14 +1256,14 @@
                     let diff = own_rank.time - wr.time;
                     let diff_formatted = format_time_hhmmss(diff);
                     let diff_string = "";
-                    if(diff > 0){
-                        diff_string = "( +" +diff_formatted+ " )";
+                    if (diff > 0) {
+                        diff_string = "( +" + diff_formatted + " )";
                     }
 
                     const img = new Image();
                     img.src = `https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/${data[0].map}.jpg`;
 
-                    img.onload = function() {
+                    img.onload = function () {
                         hover_div.style.backgroundImage = `url(${img.src})`;
                         hover_div.style.backgroundSize = "cover";
                         hover_div.style.backgroundPosition = "center";
@@ -1276,14 +1276,14 @@
 
                         </div>
                     `;
-                        hover_div.style.top = (e.target.getBoundingClientRect().top+ Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height/2))  + "px";
+                        hover_div.style.top = (e.target.getBoundingClientRect().top + Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height / 2)) + "px";
                         insert_flags_to_profiles();
                     };
 
-                    img.onerror = function() {
+                    img.onerror = function () {
                         console.log("Image not found, trying backup url");
                         img.src = img_fallback(data[0].map);
-                        img.onload = function() {
+                        img.onload = function () {
                             hover_div.style.backgroundImage = `url(${img.src})`;
                             hover_div.style.backgroundSize = "cover";
                             hover_div.style.backgroundPosition = "center";
@@ -1294,10 +1294,10 @@
                                 <h5>Your rank ${own_rank.rank} / ${data[0].completions} ${diff_string}</h5>
                             </div>
                         `;
-                            hover_div.style.top = (e.target.getBoundingClientRect().top+ Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height/2)) + "px";
+                            hover_div.style.top = (e.target.getBoundingClientRect().top + Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height / 2)) + "px";
                             insert_flags_to_profiles();
                         };
-                        img.onerror = function() {
+                        img.onerror = function () {
 
                             hover_div.style.backgroundColor = "rgba(13,17,23,0.6)";
                             hover_div.style.backgroundImage = "none";
@@ -1318,19 +1318,19 @@
                                 <h5>${own_rank.rank} / ${data[0].completions}</h5>
                             </div>
                         </div>`;
-                        insert_flags_to_profiles();
+                            insert_flags_to_profiles();
                         }
                     };
 
                     hover_div.style.backgroundImage = "none";
                     hover_div.innerHTML = `<div class="row">
                     <h5>Loading...</h5>
-                    </div>`;    
+                    </div>`;
 
                 });
-                
+
             }
-            hover_div.style.top = (e.target.getBoundingClientRect().top + Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height/2) + (e.target.getBoundingClientRect().height/2)) + "px";
+            hover_div.style.top = (e.target.getBoundingClientRect().top + Math.floor(window.scrollY) - (hover_div.getBoundingClientRect().height / 2) + (e.target.getBoundingClientRect().height / 2)) + "px";
         }
     }
 
@@ -1360,7 +1360,7 @@
         overlay.style.zIndex = "9999";
         overlay.style.border = "1px solid rgba(0,0,0,1)";
         overlay.style.borderRadius = "0.5rem";
-    
+
         const close_button = document.createElement("button");
         close_button.type = "button";
         close_button.id = "close_button";
@@ -1369,61 +1369,61 @@
         close_button.style.top = "6px";
         close_button.style.right = "6px";
         close_button.style.padding = "5px 5px";
-        close_button.style.cursor = "default"; 
+        close_button.style.cursor = "default";
         close_button.innerHTML = `<i class="fas fa-times fa-lg"></i>`;
         close_button.addEventListener('click', () => {
             overlay.remove();
         });
-    
+
         const title = document.createElement("h4");
         title.style.marginTop = "0px";
         title.style.display = "inline-block";
-        title.style.padding = "0"; 
-    
+        title.style.padding = "0";
+
         const title_bar = document.createElement('div');
         title_bar.style.cursor = "move";
         title_bar.style.padding = "1rem";
         title_bar.style.position = "relative";
-    
+
         title.textContent = window_title;
         title_bar.appendChild(title);
         title_bar.appendChild(close_button);
-    
+
         const inner_panel = document.createElement('div');
         inner_panel.style = "background-color: #0D1117; width: auto; height: auto; padding:0.5rem; border-radius: 5px; box-shadow: 0px 0px 15px 5px rgba(0,0,0,0.5);overflow-y: auto; overflow-x: hidden;"
-    
+
         inner_panel.appendChild(title_bar);
         overlay.appendChild(inner_panel);
         inner_panel.appendChild(element_to_append);
         document.body.appendChild(overlay);
-    
-        title_bar.addEventListener('mousedown', function(e) {
+
+        title_bar.addEventListener('mousedown', function (e) {
             if (e.target === close_button || close_button.contains(e.target)) {
                 return;
             }
-    
+
             const rect = overlay.getBoundingClientRect();
             overlay.style.transform = 'none';
             overlay.style.top = `${rect.top}px`;
             overlay.style.left = `${rect.left}px`;
-    
+
             const start_x = e.clientX;
             const start_y = e.clientY;
             const initial_left = rect.left;
             const initial_top = rect.top;
-    
+
             function mouse_move(e) {
                 const dx = e.clientX - start_x;
                 const dy = e.clientY - start_y;
                 overlay.style.left = `${initial_left + dx}px`;
                 overlay.style.top = `${initial_top + dy}px`;
             }
-    
+
             function mouse_up() {
                 document.removeEventListener('mousemove', mouse_move);
                 document.removeEventListener('mouseup', mouse_up);
             }
-    
+
             document.addEventListener('mousemove', mouse_move);
             document.addEventListener('mouseup', mouse_up);
         });
@@ -1433,7 +1433,7 @@
         const response = await fetch(url);
         if (response.status === 502) {
             console.log(`API call failed, status code: ${response.status}`);
-            create_toast("API call failed", "Status code: " + response.status,"error",5000);
+            create_toast("API call failed", "Status code: " + response.status, "error", 5000);
             return false;
         }
         try {
@@ -1442,47 +1442,47 @@
                 return data;
             } else {
                 console.log(`API call returned no data for: ${url}`);
-                create_toast("Empty response body for", url,"error",5000);
+                create_toast("Empty response body for", url, "error", 5000);
                 return false;
             }
         } catch (error) {
             console.log(`An error occurred while parsing the response: ${error}`);
-            create_toast("Error while parsing request", error,"error",5000);
+            create_toast("Error while parsing request", error, "error", 5000);
             return false;
         }
     }
-    
+
     function make_request(url, func) {
         make_request_async(url)
             .then((data) => {
-                if(data){
+                if (data) {
                     func(data);
-                }else{
+                } else {
                     func(false);
                 }
             });
         api_call_count++;
     }
-    
-    function make_navbar_compact(){
-        let navbar = document.querySelector('form.navbar-form');
+
+    function make_navbar_compact() {
+        let navbar = document.querySelector('.navbar-form.navbar-search-desktop');
         let items = navbar.querySelectorAll('li');
-        for(let i = 0; i < items.length; i++){
+        for (let i = 0; i < items.length; i++) {
             let a = items[i].querySelector('a');
-            if(a.href.includes('discord') || a.href.includes('youtube')){
+            if (a.href.includes('discord') || a.href.includes('youtube')) {
                 items[i].remove();
             }
         }
         // more compact search bar
-        let search_bar = document.querySelector('input.form-control:nth-child(4)')
+        let search_bar = document.querySelector('input#global-search-desktop.form-control')
         search_bar.style.width = '150px'
         search_bar.placeholder = 'Search'
-        
+
     }
 
     function map_youtube_link(map_name) {
         var links = Array.from(document.querySelectorAll('a'));
-        var has_youtube_link = links.some(function(e) {
+        var has_youtube_link = links.some(function (e) {
             return e.href.includes('youtube.com/watch');
         });
         if (!has_youtube_link) {
@@ -1642,12 +1642,12 @@
                 let nickname = get_nickname(id);
                 let original_name = link.textContent;
 
-                if (nickname){
+                if (nickname) {
                     link.innerHTML = nickname;
                     link.title = original_name;
                 }
 
-                if (follow_list.includes(id) && link.parentElement.parentElement.id != "follow_list")  {
+                if (follow_list.includes(id) && link.parentElement.parentElement.id != "follow_list") {
                     link.classList.add("following");
                 }
 
@@ -1661,7 +1661,7 @@
                 if (!link.querySelector('img')) {
                     var country = ""
 
-                    if(!settings.flags) return;
+                    if (!settings.flags) return;
                     var cached_country = unsafeWindow.localStorage.getItem(id);
                     if (cached_country) {
                         country = cached_country;
@@ -1696,19 +1696,19 @@
         rank_elem.style.marginTop = "5px";
         titlediv.appendChild(rank_elem);
         make_request("https://api.surfheaven.eu/api/maprecord/" + map_name + "/" + _id, (data) => {
-            if(!data) return;
+            if (!data) return;
             let date_completed = new Date(data[0].date);
             rank_elem.innerHTML = "Your rank: #" + data[0].rank + " (" + format_seconds_to_time(data[0].time) + ") +" + data[0].points + " points";
             rank_elem.title = "Completed on " + date_completed.toLocaleDateString() + " at " + date_completed.toLocaleTimeString();
             add_shadow_to_text_recursively(rank_elem);
-            if(Number(data[0].rank) <= 10){
+            if (Number(data[0].rank) <= 10) {
                 titlediv.parentElement.classList.add("confetti");
             }
         });
     }
 
     function completions_by_tier(id) {
-        if(!settings.completions_by_tier) return;
+        if (!settings.completions_by_tier) return;
         let completions = new Array(7).fill(0);
         let total = new Array(7).fill(0);
         let bonus_completions = new Array(7).fill(0);
@@ -1739,12 +1739,12 @@
                         total[tier - 1]++;
                         bonus_total[tier - 1] += data2[i].bonus;
                     }
-                    if(settings.completions_bar_chart){
+                    if (settings.completions_bar_chart) {
                         let labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-                        let completions_data = completions.map(function(value, index) {
+                        let completions_data = completions.map(function (value, index) {
                             return Math.floor(value / (value + total[index] - value) * 100);
                         });
-                        let bonus_completions_data = bonus_completions.map(function(value, index) {
+                        let bonus_completions_data = bonus_completions.map(function (value, index) {
                             return Math.floor(value / (value + bonus_total[index] - value) * 100);
                         });
 
@@ -1770,7 +1770,7 @@
                             axisY: {
                                 onlyInteger: true,
                                 high: 100,
-                                labelInterpolationFnc: function(value) {
+                                labelInterpolationFnc: function (value) {
                                     return value + '%';
                                 }
                             }
@@ -1802,14 +1802,14 @@
         var id = "";
         if (use_custom) {
             id = custom_id;
-        }else{
-            if(unsafeWindow.localStorage.getItem('cached_id') != null && unsafeWindow.localStorage.getItem('cached_id') != ""){
+        } else {
+            if (unsafeWindow.localStorage.getItem('cached_id') != null && unsafeWindow.localStorage.getItem('cached_id') != "") {
                 console.log("get_id() -> using cached id");
                 id = localStorage.getItem('cached_id');
                 return id;
-            }else{console.log("no saved id found in local storage, checking dom");}
+            } else { console.log("no saved id found in local storage, checking dom"); }
             // trying to get the id from the dom to save on api calls, if that fails we use the api
-            try{
+            try {
                 let navbar_links = document.querySelectorAll(".nav > li > a");
                 let profile_href = "";
                 for (let i = 0; i < navbar_links.length; i++) {
@@ -1818,38 +1818,38 @@
                         profile_href = navbar_links[i].href;
                         break;
                     }
-    
+
                 }
                 let profile_id = profile_href.split("/").pop();
                 // rudimentary check to see if we got a valid id
                 if (!Number.isInteger(Number(profile_id))) {
                     console.log("could not get id from dom");
                     throw "need api for id";
-                }else{
+                } else {
                     id = profile_id;
                     unsafeWindow.localStorage.setItem('cached_id', id);
                     console.log("id from dom: " + id + ", caching");
                 }
-            }catch{
+            } catch {
                 make_request("https://api.surfheaven.eu/api/id", (data) => {
                     console.log(data)
-                    if(data){
+                    if (data) {
                         id = data[0].steamid;
                         console.log("id from api: " + id);
                         unsafeWindow.localStorage.setItem('cached_id', id);
-                    }else{
+                    } else {
                         console.log("even the api failed to return an id, prompting user for id");
-                        if (!showed_id_prompt && (!unsafeWindow.localStorage.getItem("waiting_for_id") || unsafeWindow.localStorage.getItem("waiting_for_id") == "false")){
+                        if (!showed_id_prompt && (!unsafeWindow.localStorage.getItem("waiting_for_id") || unsafeWindow.localStorage.getItem("waiting_for_id") == "false")) {
                             let last_ditch_id = prompt("The script couldn't figure out your ID. Please go to your profile, you will be prompted to confirm there. Alternatively you can type your username here, and then select your profile", "Your Steam username");
                             showed_id_prompt = true;
                             unsafeWindow.localStorage.setItem("waiting_for_id", "true")
 
-                            if(!isNaN(last_ditch_id) && last_ditch_id != "" && last_ditch_id != null){
+                            if (!isNaN(last_ditch_id) && last_ditch_id != "" && last_ditch_id != null) {
                                 // if your steam username happens to be just numbers, fuck you
                                 id = last_ditch_id;
                                 unsafeWindow.localStorage.setItem('cached_id', id);
-                            }else if(last_ditch_id != null && last_ditch_id != ""){
-                                unsafeWindow.location.href = "https://surfheaven.eu/search/"+last_ditch_id;
+                            } else if (last_ditch_id != null && last_ditch_id != "") {
+                                unsafeWindow.location.href = "https://surfheaven.eu/search/" + last_ditch_id;
                             }
                         }
                     }
@@ -1932,7 +1932,7 @@
         let data = table.data().toArray();
         table.destroy();
         $('#DataTables_Table_1').empty();
-        for(let i = 0; i < data.length; i++){
+        for (let i = 0; i < data.length; i++) {
             let map_name = data[i][0].split(">")[1].split("<")[0];
             data[i].push(map_dates[map_name].split("T")[0]);
         }
@@ -1946,7 +1946,7 @@
                 { title: "Completions" },
                 { title: "Date Added" }
             ],
-            "order": [[ 3, "desc" ]],
+            "order": [[3, "desc"]],
             "paging": true,
             //"pagingType": "simple",
             "info": false,
@@ -1955,7 +1955,7 @@
             "oLanguage": {
                 "sSearch": '<i class="fas fa-search"></i>'
             }
-            
+
         });
 
     }
@@ -1965,7 +1965,7 @@
         let data = table.data().toArray();
         table.destroy();
         $('#DataTables_Table_2').empty();
-        for(var i = 0; i < data.length; i++) {
+        for (var i = 0; i < data.length; i++) {
             let map_name = data[i][0].split(">")[1].split("<")[0];
             let bonus_number = data[i][1].split(" ")[1];
             let bonus_map = map_name + " " + bonus_number;
@@ -1980,7 +1980,7 @@
                 { title: "Completions" },
                 { title: "Date Added" }
             ],
-            "order": [[ 2, "desc" ]],
+            "order": [[2, "desc"]],
             "paging": true,
             //"pagingType": "simple", 
             "info": false,
@@ -2002,24 +2002,24 @@
     function countryISOMapping(country_code, reverse = false) {
         // https://github.com/vtex/country-iso-3-to-2/blob/master/index.js
         var countryISOMap = {
-            AFG: "AF",ALA: "AX",ALB: "AL",DZA: "DZ",ASM: "AS",AND: "AD",AGO: "AO",AIA: "AI",ATA: "AQ",ATG: "AG",ARG: "AR",ARM: "AM",ABW: "AW",AUS: "AU",
-            AUT: "AT",AZE: "AZ",BHS: "BS",BHR: "BH",BGD: "BD",BRB: "BB",BLR: "BY",BEL: "BE",BLZ: "BZ",BEN: "BJ",BMU: "BM",BTN: "BT",BOL: "BO",BES: "BQ",
-            BIH: "BA",BWA: "BW",BVT: "BV",BRA: "BR",VGB: "VG",IOT: "IO",BRN: "BN",BGR: "BG",BFA: "BF",BDI: "BI",KHM: "KH",CMR: "CM",CAN: "CA",CPV: "CV",
-            CYM: "KY",CAF: "CF",TCD: "TD",CHL: "CL",CHN: "CN",HKG: "HK",MAC: "MO",CXR: "CX",CCK: "CC",COL: "CO",COM: "KM",COG: "CG",COD: "CD",COK: "CK",
-            CRI: "CR",CIV: "CI",HRV: "HR",CUB: "CU",CUW: "CW",CYP: "CY",CZE: "CZ",DNK: "DK",DJI: "DJ",DMA: "DM",DOM: "DO",ECU: "EC",EGY: "EG",SLV: "SV",
-            GNQ: "GQ",ERI: "ER",EST: "EE",ETH: "ET",FLK: "FK",FRO: "FO",FJI: "FJ",FIN: "FI",FRA: "FR",GUF: "GF",PYF: "PF",ATF: "TF",GAB: "GA",GMB: "GM",
-            GEO: "GE",DEU: "DE",GHA: "GH",GIB: "GI",GRC: "GR",GRL: "GL",GRD: "GD",GLP: "GP",GUM: "GU",GTM: "GT",GGY: "GG",GIN: "GN",GNB: "GW",GUY: "GY",
-            HTI: "HT",HMD: "HM",VAT: "VA",HND: "HN",HUN: "HU",ISL: "IS",IND: "IN",IDN: "ID",IRN: "IR",IRQ: "IQ",IRL: "IE",IMN: "IM",ISR: "IL",ITA: "IT",
-            JAM: "JM",JPN: "JP",JEY: "JE",JOR: "JO",KAZ: "KZ",KEN: "KE",KIR: "KI",PRK: "KP",KOR: "KR",KWT: "KW",KGZ: "KG",LAO: "LA",LVA: "LV",LBN: "LB",
-            LSO: "LS",LBR: "LR",LBY: "LY",LIE: "LI",LTU: "LT",LUX: "LU",MKD: "MK",MDG: "MG",MWI: "MW",MYS: "MY",MDV: "MV",MLI: "ML",MLT: "MT",MHL: "MH",
-            MTQ: "MQ",MRT: "MR",MUS: "MU",MYT: "YT",MEX: "MX",FSM: "FM",MDA: "MD",MCO: "MC",MNG: "MN",MNE: "ME",MSR: "MS",MAR: "MA",MOZ: "MZ",MMR: "MM",
-            NAM: "NA",NRU: "NR",NPL: "NP",NLD: "NL",ANT: "AN",NCL: "NC",NZL: "NZ",NIC: "NI",NER: "NE",NGA: "NG",NIU: "NU",NFK: "NF",MNP: "MP",NOR: "NO",
-            OMN: "OM",PAK: "PK",PLW: "PW",PSE: "PS",PAN: "PA",PNG: "PG",PRY: "PY",PER: "PE",PHL: "PH",PCN: "PN",POL: "PL",PRT: "PT",PRI: "PR",QAT: "QA",
-            REU: "RE",ROU: "RO",RUS: "RU",RWA: "RW",BLM: "BL",SHN: "SH",KNA: "KN",LCA: "LC",MAF: "MF",SPM: "PM",VCT: "VC",WSM: "WS",SMR: "SM",STP: "ST",
-            SAU: "SA",SEN: "SN",SRB: "RS",SYC: "SC",SLE: "SL",SGP: "SG",SXM: "SX",SVK: "SK",SVN: "SI",SLB: "SB",SOM: "SO",ZAF: "ZA",SGS: "GS",SSD: "SS",
-            ESP: "ES",LKA: "LK",SDN: "SD",SUR: "SR",SJM: "SJ",SWZ: "SZ",SWE: "SE",CHE: "CH",SYR: "SY",TWN: "TW",TJK: "TJ",TZA: "TZ",THA: "TH",TLS: "TL",
-            TGO: "TG",TKL: "TK",TON: "TO",TTO: "TT",TUN: "TN",TUR: "TR",TKM: "TM",TCA: "TC",TUV: "TV",UGA: "UG",UKR: "UA",ARE: "AE",GBR: "GB",USA: "US",
-            UMI: "UM",URY: "UY",UZB: "UZ",VUT: "VU",VEN: "VE",VNM: "VN",VIR: "VI",WLF: "WF",ESH: "EH",YEM: "YE",ZMB: "ZM",ZWE: "ZW",XKX: "XK",XK: "XK"
+            AFG: "AF", ALA: "AX", ALB: "AL", DZA: "DZ", ASM: "AS", AND: "AD", AGO: "AO", AIA: "AI", ATA: "AQ", ATG: "AG", ARG: "AR", ARM: "AM", ABW: "AW", AUS: "AU",
+            AUT: "AT", AZE: "AZ", BHS: "BS", BHR: "BH", BGD: "BD", BRB: "BB", BLR: "BY", BEL: "BE", BLZ: "BZ", BEN: "BJ", BMU: "BM", BTN: "BT", BOL: "BO", BES: "BQ",
+            BIH: "BA", BWA: "BW", BVT: "BV", BRA: "BR", VGB: "VG", IOT: "IO", BRN: "BN", BGR: "BG", BFA: "BF", BDI: "BI", KHM: "KH", CMR: "CM", CAN: "CA", CPV: "CV",
+            CYM: "KY", CAF: "CF", TCD: "TD", CHL: "CL", CHN: "CN", HKG: "HK", MAC: "MO", CXR: "CX", CCK: "CC", COL: "CO", COM: "KM", COG: "CG", COD: "CD", COK: "CK",
+            CRI: "CR", CIV: "CI", HRV: "HR", CUB: "CU", CUW: "CW", CYP: "CY", CZE: "CZ", DNK: "DK", DJI: "DJ", DMA: "DM", DOM: "DO", ECU: "EC", EGY: "EG", SLV: "SV",
+            GNQ: "GQ", ERI: "ER", EST: "EE", ETH: "ET", FLK: "FK", FRO: "FO", FJI: "FJ", FIN: "FI", FRA: "FR", GUF: "GF", PYF: "PF", ATF: "TF", GAB: "GA", GMB: "GM",
+            GEO: "GE", DEU: "DE", GHA: "GH", GIB: "GI", GRC: "GR", GRL: "GL", GRD: "GD", GLP: "GP", GUM: "GU", GTM: "GT", GGY: "GG", GIN: "GN", GNB: "GW", GUY: "GY",
+            HTI: "HT", HMD: "HM", VAT: "VA", HND: "HN", HUN: "HU", ISL: "IS", IND: "IN", IDN: "ID", IRN: "IR", IRQ: "IQ", IRL: "IE", IMN: "IM", ISR: "IL", ITA: "IT",
+            JAM: "JM", JPN: "JP", JEY: "JE", JOR: "JO", KAZ: "KZ", KEN: "KE", KIR: "KI", PRK: "KP", KOR: "KR", KWT: "KW", KGZ: "KG", LAO: "LA", LVA: "LV", LBN: "LB",
+            LSO: "LS", LBR: "LR", LBY: "LY", LIE: "LI", LTU: "LT", LUX: "LU", MKD: "MK", MDG: "MG", MWI: "MW", MYS: "MY", MDV: "MV", MLI: "ML", MLT: "MT", MHL: "MH",
+            MTQ: "MQ", MRT: "MR", MUS: "MU", MYT: "YT", MEX: "MX", FSM: "FM", MDA: "MD", MCO: "MC", MNG: "MN", MNE: "ME", MSR: "MS", MAR: "MA", MOZ: "MZ", MMR: "MM",
+            NAM: "NA", NRU: "NR", NPL: "NP", NLD: "NL", ANT: "AN", NCL: "NC", NZL: "NZ", NIC: "NI", NER: "NE", NGA: "NG", NIU: "NU", NFK: "NF", MNP: "MP", NOR: "NO",
+            OMN: "OM", PAK: "PK", PLW: "PW", PSE: "PS", PAN: "PA", PNG: "PG", PRY: "PY", PER: "PE", PHL: "PH", PCN: "PN", POL: "PL", PRT: "PT", PRI: "PR", QAT: "QA",
+            REU: "RE", ROU: "RO", RUS: "RU", RWA: "RW", BLM: "BL", SHN: "SH", KNA: "KN", LCA: "LC", MAF: "MF", SPM: "PM", VCT: "VC", WSM: "WS", SMR: "SM", STP: "ST",
+            SAU: "SA", SEN: "SN", SRB: "RS", SYC: "SC", SLE: "SL", SGP: "SG", SXM: "SX", SVK: "SK", SVN: "SI", SLB: "SB", SOM: "SO", ZAF: "ZA", SGS: "GS", SSD: "SS",
+            ESP: "ES", LKA: "LK", SDN: "SD", SUR: "SR", SJM: "SJ", SWZ: "SZ", SWE: "SE", CHE: "CH", SYR: "SY", TWN: "TW", TJK: "TJ", TZA: "TZ", THA: "TH", TLS: "TL",
+            TGO: "TG", TKL: "TK", TON: "TO", TTO: "TT", TUN: "TN", TUR: "TR", TKM: "TM", TCA: "TC", TUV: "TV", UGA: "UG", UKR: "UA", ARE: "AE", GBR: "GB", USA: "US",
+            UMI: "UM", URY: "UY", UZB: "UZ", VUT: "VU", VEN: "VE", VNM: "VN", VIR: "VI", WLF: "WF", ESH: "EH", YEM: "YE", ZMB: "ZM", ZWE: "ZW", XKX: "XK", XK: "XK"
         }
         if (reverse) {
             return Object.keys(countryISOMap).find(key => countryISOMap[key] === country_code)
@@ -2032,12 +2032,6 @@
             make_request("https://api.surfheaven.eu/api/servers", (servers) => {
                 if (Array.isArray(servers)) {
                     // filter irrelevant servers
-                    //const region = document.getElementById("region_select").value;
-                    const region_map = {
-                        "Global": "ALL",
-                        "Germany": "EU",
-                        "Australia": "AU"
-                    }
                     const season_servers = [11, 12, 13, 20, 21, 22];
                     let calculated_time_left = [];
                     let au_times;
@@ -2057,25 +2051,21 @@
                             au_ids = [20, 21, 22];
                         }
                     }
-    
-                    //if (region_map[region] !== "ALL") {
-                    //    servers = servers.filter(server => server.region === region_map[region]);
-                    //}
 
                     const server_promises = servers.map((server, i) => {
                         if (server.playercount == 0) {
-                            console.log(`Server ${i+1} seems empty`)
+                            console.log(`Server ${i + 1} seems empty`)
                             server.map = scraped_maps[i];
                             server.playercount = "EMPTY"
-                            
+
                             return new Promise((resolve) => {
                                 GM_xmlhttpRequest({
                                     method: 'GET',
                                     url: `https://api.surfheaven.eu/api/mapinfo/${server.map}/`,
-                                    onload: function(response) {
+                                    onload: function (response) {
                                         let data = JSON.parse(response.responseText)
                                         console.log(data[0])
-                                        if(data) {
+                                        if (data) {
                                             console.log(`replacing with ${data[0].map}`)
                                             server.mapinfo = data[0]
                                         }
@@ -2088,31 +2078,31 @@
                             return Promise.resolve();
                         }
                     });
-                    
+
                     Promise.all(server_promises).then(() => {
                         const table = document.querySelector('.table');
                         table.removeAttribute('title');
-        
+
                         table.rows[0].insertCell(3).outerHTML = "<th>Rank</th>";
                         table.rows[0].insertCell(4).outerHTML = "<th>Bonus</th>";
-        
+
                         const rowsCount = Math.max(servers.length, table.rows.length - 1);
-        
+
                         const rank_cells = Array(rowsCount).fill().map((_, i) => {
                             if (table.rows[i + 1]) {
                                 return table.rows[i + 1].insertCell(3);
                             }
                         });
-        
+
                         const bonus_cells = Array(rowsCount).fill().map((_, i) => {
                             if (table.rows[i + 1]) {
                                 return table.rows[i + 1].insertCell(4);
                             }
                         });
-        
+
                         let table_rows = table.querySelectorAll('tbody > tr');
                         let follow_list = get_follow_list();
-        
+
                         const server_records = {};
                         records.forEach((record) => {
                             const record_found = servers.findIndex(server => server.map === record.map) >= 0;
@@ -2123,41 +2113,41 @@
                                 server_records[record.map][record.track] = record;
                             }
                         });
-        
+
                         servers.forEach((server, i) => {
                             try {
                                 let server_row = table_rows[i].querySelectorAll('td');
                                 let has_friends = false;
-        
+
                                 let reveal_glyph = document.createElement('span');
                                 reveal_glyph.className = "glyphicon glyphicon-menu-down";
                                 reveal_glyph.style = 'float: right; margin-right: 10px; cursor: pointer;color: rgb(198, 140, 41);';
                                 if (!server_row[0].querySelector('.glyphicon')) {
                                     server_row[0].appendChild(reveal_glyph);
                                 }
-        
+
                                 let stats_button = document.createElement('button');
                                 stats_button.className = 'btn btn-default btn-xs';
                                 stats_button.style = 'margin-left: 10px; cursor: pointer;';
                                 stats_button.textContent = 'Fetch ranks';
-                                stats_button.onclick = function() {
+                                stats_button.onclick = function () {
                                     stats_button.textContent = 'Fetching...';
                                     fetch_server_player_ranks(server_row[0], server.map);
                                 };
 
                                 if (!server_row[0].querySelector('.btn')) {
                                     server_row[0].childNodes[2].childNodes[0].appendChild(stats_button);
-                                }else{
+                                } else {
                                     server_row[0].querySelector('.btn').remove();
                                     server_row[0].childNodes[2].childNodes[0].appendChild(stats_button);
                                 }
-        
+
                                 let child_nodes = server_row[0].childNodes[2].childNodes;
                                 for (let i = child_nodes.length - 1; i > 0; i--) {
                                     child_nodes[i].remove();
                                 }
                                 // update player count
-                                server_row[5].textContent = server.playercount+ ' / ' + server.maxplayers;
+                                server_row[5].textContent = server.playercount + ' / ' + server.maxplayers;
                                 // add updated players list
                                 server.players.forEach((player) => {
                                     let player_element = document.createElement('div');
@@ -2173,7 +2163,7 @@
                                     let no_margin_hr = document.createElement('hr');
                                     no_margin_hr.className = 'nomargin';
                                     server_row[0].childNodes[2].appendChild(no_margin_hr);
-        
+
                                     if (follow_list.includes(player.steamid)) {
                                         has_friends = true;
                                     }
@@ -2181,11 +2171,11 @@
                                 if (has_friends) {
                                     server_row[0].classList.add('following');
                                     server_row[0].setAttribute('title', 'Friend(s) here');
-                                }else{
+                                } else {
                                     server_row[0].classList.remove('following');
                                 }
-        
-                                server_row[0].onclick = function(e) {
+
+                                server_row[0].onclick = function (e) {
                                     if (e.target.tagName !== 'DIV' && e.target.tagName !== 'A' && !e.target.classList.contains('btn')) {
                                         $(this).find(".glyphicon").toggleClass("glyphicon-menu-down glyphicon-menu-up");
                                         $(this).closest("tr").find(".hidden-row").slideToggle();
@@ -2193,7 +2183,7 @@
                                 }
                                 server_row[0].style.cursor = 'pointer';
                                 server_row[0].childNodes[2].style.cursor = 'default';
-        
+
                                 if (server.mapinfo) {
                                     server_row[2].innerHTML = `<a href="https://surfheaven.eu/map/${server.map}">${server.map}</a> <small>(T${server.mapinfo.tier}) ${server.mapinfo.type == 0 ? "Linear" : "Staged"} </small>`;
                                     var rec = server_records[server.map];
@@ -2201,19 +2191,19 @@
                                         const map_record = rec[0];
                                         if (map_record) {
                                             server_row[2].innerHTML += `<i title="You have completed this map!" class="fas fa-check text-success"></i>`;
-        
+
                                             const top_percent = unsafeWindow.localStorage.getItem('rank_threshold') / 100;
                                             const top_x = Math.ceil(server.mapinfo.completions * top_percent);
                                             let element_with_color = document.createElement('span');
                                             element_with_color.textContent = map_record.rank
                                             let complete_rank = document.createTextNode(" / " + server.mapinfo.completions);
-                                            if(unsafeWindow.localStorage.getItem('rank_threshold_type') == "percentage"){
+                                            if (unsafeWindow.localStorage.getItem('rank_threshold_type') == "percentage") {
                                                 if (map_record.rank <= top_x) {
                                                     element_with_color.className = 'text-success';
                                                 } else {
                                                     element_with_color.className = 'text-danger';
                                                 }
-                                            }else{
+                                            } else {
                                                 if (map_record.rank <= unsafeWindow.localStorage.getItem('rank_threshold')) {
                                                     element_with_color.className = 'text-success';
                                                 } else {
@@ -2232,30 +2222,30 @@
                                     } else {
                                         const txt = document.createTextNode("0 / " + server.mapinfo.completions);
                                         rank_cells[i].appendChild(txt);
-        
+
                                         const txt_2 = document.createTextNode("0 / " + server.mapinfo.bonus);
                                         bonus_cells[i].appendChild(txt_2);
                                     }
-                                    if(is_season && season_servers.includes(server.id)){
+                                    if (is_season && season_servers.includes(server.id)) {
                                         let next_map
-                                        if(easy_maps.includes(server.map)){
+                                        if (easy_maps.includes(server.map)) {
                                             next_map = easy_maps[(easy_maps.indexOf(server.map) + 1) % easy_maps.length];
-                                        }else if(medium_maps.includes(server.map)){
+                                        } else if (medium_maps.includes(server.map)) {
                                             next_map = medium_maps[(medium_maps.indexOf(server.map) + 1) % medium_maps.length];
-                                        }else if(hard_maps.includes(server.map)){
+                                        } else if (hard_maps.includes(server.map)) {
                                             next_map = hard_maps[(hard_maps.indexOf(server.map) + 1) % hard_maps.length];
-                                        }else{
+                                        } else {
                                             next_map = "Cannot determine next map, since the server is empty"
                                         }
-        
-                                        if(server.region != "AU") {
+
+                                        if (server.region != "AU") {
                                             server_row[2].innerHTML += `<small style="color: pink; padding-left: 4px;" title="${"Next map: " + next_map}"> (${calculated_time_left[server.id - 11]} min left)</small>`;
-                                        }else{
+                                        } else {
                                             server_row[2].innerHTML += `<small style="color: pink; padding-left: 4px;" title="${"Next map: " + next_map}"> (${au_times[au_ids.indexOf(server.id)]} min left)</small>`;
                                         }
                                     }
                                 }
-                            }catch(e){
+                            } catch (e) {
                                 console.log(e);
                             }
                         });
@@ -2281,15 +2271,15 @@
                             stats_button.remove();
                         });
                     }
-        
-                document.querySelector('.my-checkbox').disabled = false;
-        
-            }
-          });
-        });
-      }
 
-    function refresh_servers(){
+                    document.querySelector('.my-checkbox').disabled = false;
+
+                }
+            });
+        });
+    }
+
+    function refresh_servers() {
         reset_ranks();
         fetch_ranks(get_id());
     }
@@ -2299,7 +2289,7 @@
 
         make_request("https://api.surfheaven.eu/api/completions", (completions) => {
             servers.forEach((server, server_index) => {
-                try{
+                try {
                     // eslint-disable-next-line no-unused-vars
                     // const server_completions = completions.filter(completion => completion.map === server.map && completion.track > 0);
                     const server_completions_2 = Array(15).fill(null);
@@ -2336,15 +2326,15 @@
                         if (!records || !records[completion.track]) {
                             rank_text = `0 / ${completion.completions}`
                         } else {
-                            if(unsafeWindow.localStorage.getItem('rank_threshold_type') == "percentage"){
+                            if (unsafeWindow.localStorage.getItem('rank_threshold_type') == "percentage") {
                                 const top_percent = unsafeWindow.localStorage.getItem('rank_threshold') / 100;
-                                if ((records[completion.track].rank / completion.completions) <= top_percent ) {
+                                if ((records[completion.track].rank / completion.completions) <= top_percent) {
                                     rank_text = `<span class="text-success">${records[completion.track].rank}  </span>`;
                                 } else {
                                     rank_text = `<span class="text-danger">${records[completion.track].rank}  </span>`;
                                 }
-                            }else{
-                                if (records[completion.track].rank <= unsafeWindow.localStorage.getItem('rank_threshold') ) {
+                            } else {
+                                if (records[completion.track].rank <= unsafeWindow.localStorage.getItem('rank_threshold')) {
                                     rank_text = `<span class="text-success">${records[completion.track].rank}  </span>`;
                                 } else {
                                     rank_text = `<span class="text-danger">${records[completion.track].rank}  </span>`;
@@ -2362,7 +2352,7 @@
                         div.appendChild(rank_elem);
                     });
                 }
-                catch(e){
+                catch (e) {
                     //console.log(e);
                 }
             });
@@ -2405,7 +2395,7 @@
         cache_map_tiers();
         insert_user_rated_maps_table();
 
-        if(!settings.country_top_100) return;
+        if (!settings.country_top_100) return;
         // CTOP Panel
         // this shit is such a mess
         make_request("https://api.surfheaven.eu/api/playerinfo/" + get_id() + "/", (c) => {
@@ -2510,8 +2500,8 @@
         });
     }
 
-    function map_recommendations_panel(maps){
-        if(!settings.map_recommendations) return;
+    function map_recommendations_panel(maps) {
+        if (!settings.map_recommendations) return;
         if (localStorage.getItem("hide_recs") == null) localStorage.setItem("hide_recs", "false");
         let hide_recs = localStorage.getItem("hide_recs") === 'true';
         console.log("hide_recs", hide_recs)
@@ -2541,13 +2531,13 @@
         title_explainer.href = "#";
         title_explainer.innerHTML = " (?)";
         title_explainer.title = "Recommendations are based on maps you have rated, rate more maps to improve the recommendations!"
-        title_explainer.onclick = function(){
+        title_explainer.onclick = function () {
             let explainer_content = document.createElement('div');
             let own_top = localStorage.getItem("own_top");
             own_top = JSON.parse(own_top);
 
             explainer_content.style = "margin: 0px 10px 10px 10px;";
-            explainer_content.innerHTML += "The script calculates the average of "+ own_top.length +" of your top rated maps in terms of fun factor<br>";
+            explainer_content.innerHTML += "The script calculates the average of " + own_top.length + " of your top rated maps in terms of fun factor<br>";
             explainer_content.innerHTML += "It then calculates the _weighted_ distance from every other map to the average of your top ratings. <br>";
             explainer_content.innerHTML += "Finally, it shows the 10 closest maps in terms of distance.<br>";
             explainer_content.innerHTML += "It doesn't recommend maps you've rated, nor does it consider their tier.<br>";
@@ -2555,7 +2545,7 @@
             explainer_content.innerHTML += "You can also remove maps from recommendations by pressing the 'x' button<br>";
             explainer_content.innerHTML += "The current recommendations are based your following ratings:<br><br>";
 
-            for(let i = 0; i < own_top.length; i++){
+            for (let i = 0; i < own_top.length; i++) {
 
                 let map = own_top[i][0];
                 let mr = own_top[i][1];
@@ -2567,10 +2557,10 @@
 
         let hide_glyph = document.createElement('a');
         hide_glyph.paddingLeft = "5px";
-        
+
         hide_glyph.href = "#";
         hide_recs ? hide_glyph.innerHTML = '<i class="glyphicon glyphicon-menu-down"></i>' : hide_glyph.innerHTML = '<i class="glyphicon glyphicon-menu-up"></i>';
-        hide_glyph.onclick = function(){
+        hide_glyph.onclick = function () {
             console.log("setting hide_recs", !hide_recs)
             hide_recs = !hide_recs;
             localStorage.setItem("hide_recs", hide_recs);
@@ -2584,7 +2574,7 @@
         let settings_button = document.createElement('a');
         settings_button.href = "#";
         settings_button.innerHTML = '<i class="fas fa-cog"></i>';
-        settings_button.onclick = function(){
+        settings_button.onclick = function () {
 
             let difficulty_bias = localStorage.getItem("difficulty_bias") ? localStorage.getItem("difficulty_bias") : 0.0;
             let fun_factor_bias = localStorage.getItem("fun_factor_bias") ? localStorage.getItem("fun_factor_bias") : 0.6;
@@ -2592,7 +2582,7 @@
             let unit_bias = localStorage.getItem("unit_bias") ? localStorage.getItem("unit_bias") : 0.2;
             let show_completed = localStorage.getItem("show_completed") ? localStorage.getItem("show_completed") : false;
 
-            if(!document.querySelector("#bias_modal")){
+            if (!document.querySelector("#bias_modal")) {
 
 
                 let modal_fade = document.createElement('div');
@@ -2601,7 +2591,7 @@
                 modal_fade.style = "display: flex;"
                 modal_fade.setAttribute("tabindex", "-1");
                 modal_fade.setAttribute("role", "dialog");
-                
+
                 let modal = document.createElement('div');
                 modal.className = "modal";
                 modal.id = "bias_modal";
@@ -2641,7 +2631,7 @@
                 diff_slider.step = "0.01";
                 diff_slider.value = difficulty_bias;
                 diff_slider.id = "difficulty_bias";
-                diff_slider.addEventListener("input", function(){
+                diff_slider.addEventListener("input", function () {
                     diff_label.innerHTML = "Difficulty weight: " + diff_slider.value;
                     update_sliders();
                 })
@@ -2659,7 +2649,7 @@
                 fun_slider.step = "0.01";
                 fun_slider.value = fun_factor_bias;
                 fun_slider.id = "fun_factor_bias";
-                fun_slider.addEventListener("input", function(){
+                fun_slider.addEventListener("input", function () {
                     fun_label.innerHTML = "Fun factor weight: " + fun_slider.value;
                     update_sliders();
                 })
@@ -2677,7 +2667,7 @@
                 tech_slider.step = "0.01";
                 tech_slider.value = tech_bias;
                 tech_slider.id = "tech_bias";
-                tech_slider.addEventListener("input", function(){
+                tech_slider.addEventListener("input", function () {
                     tech_label.innerHTML = "Tech bias: " + tech_slider.value;
                     update_sliders();
                 })
@@ -2695,7 +2685,7 @@
                 unit_slider.step = "0.01";
                 unit_slider.value = unit_bias;
                 unit_slider.id = "unit_bias";
-                unit_slider.addEventListener("input", function(){
+                unit_slider.addEventListener("input", function () {
                     unit_label.innerHTML = "Unit bias: " + unit_slider.value;
                     update_sliders();
                 })
@@ -2724,7 +2714,7 @@
                 let cancel = document.createElement('button');
                 cancel.className = "btn btn-secondary";
                 cancel.innerHTML = "Cancel";
-                cancel.onclick = function(){
+                cancel.onclick = function () {
                     $("#bias_modal").modal('hide');
                 }
 
@@ -2748,40 +2738,40 @@
                     const fun_slider = document.getElementById('fun_factor_bias');
                     const tech_slider = document.getElementById('tech_bias');
                     const unit_slider = document.getElementById('unit_bias');
-                  
+
                     const difficulty_label = difficulty_slider.parentNode.querySelector('label');
                     const fun_label = fun_slider.parentNode.querySelector('label');
                     const tech_label = tech_slider.parentNode.querySelector('label');
                     const unit_label = unit_slider.parentNode.querySelector('label');
-                  
+
                     const total_value = parseFloat(difficulty_slider.value) + parseFloat(fun_slider.value) + parseFloat(tech_slider.value) + parseFloat(unit_slider.value);
-                  
+
                     if (total_value > 1) {
-                      const reduction_factor = total_value - 1;
-                      [difficulty_slider, fun_slider, tech_slider, unit_slider].forEach(slider => {
-                        const current_value = parseFloat(slider.value);
-                        slider.value = (current_value - reduction_factor * current_value).toFixed(2);
-                      });
+                        const reduction_factor = total_value - 1;
+                        [difficulty_slider, fun_slider, tech_slider, unit_slider].forEach(slider => {
+                            const current_value = parseFloat(slider.value);
+                            slider.value = (current_value - reduction_factor * current_value).toFixed(2);
+                        });
                     } else if (total_value < 1) {
-                      const remaining_value = 1 - total_value;
-                      const non_zero_sliders = [difficulty_slider, fun_slider, tech_slider, unit_slider].filter(slider => slider.value > 0);
-                      const distribution_value = remaining_value / non_zero_sliders.length;
-                      non_zero_sliders.forEach(slider => {
-                        const current_value = parseFloat(slider.value);
-                        slider.value = (current_value + distribution_value).toFixed(2);
-                      });
+                        const remaining_value = 1 - total_value;
+                        const non_zero_sliders = [difficulty_slider, fun_slider, tech_slider, unit_slider].filter(slider => slider.value > 0);
+                        const distribution_value = remaining_value / non_zero_sliders.length;
+                        non_zero_sliders.forEach(slider => {
+                            const current_value = parseFloat(slider.value);
+                            slider.value = (current_value + distribution_value).toFixed(2);
+                        });
                     }
                     difficulty_label.innerHTML = `Difficulty bias: ${difficulty_slider.value}`;
                     fun_label.innerHTML = `Fun factor bias: ${fun_slider.value}`;
                     tech_label.innerHTML = `Tech bias: ${tech_slider.value}`;
                     unit_label.innerHTML = `Unit bias: ${unit_slider.value}`;
-                  }
-                
-            }else{
+                }
+
+            } else {
                 $("#bias_modal").modal('show');
             }
 
-            function save_biases(){
+            function save_biases() {
                 difficulty_bias = document.getElementById("difficulty_bias").value;
                 fun_factor_bias = document.getElementById("fun_factor_bias").value;
                 tech_bias = document.getElementById("tech_bias").value;
@@ -2814,10 +2804,10 @@
         panel_row.appendChild(panel_heading);
         panel_row.appendChild(panel_body);
 
-        if(hide_recs == true){ 
+        if (hide_recs == true) {
             console.log("Hiding recommendations");
             panel_body.style = "display: none;";
-        }else if(hide_recs == false){
+        } else if (hide_recs == false) {
             console.log("Showing recommendations");
             panel_body.style = "display: block;";
         }
@@ -2836,7 +2826,7 @@
         if (maps == null || maps.length == 0) {
             return
         }
-        for(let i = 0; i < maps.length; i++){
+        for (let i = 0; i < maps.length; i++) {
             let map = maps[i];
             let rec = document.createElement('a');
             rec.className = "col-sm-1 outlined text-white text-center";
@@ -2845,7 +2835,7 @@
             rec.href = "https://surfheaven.eu/map/" + map;
             rec.innerHTML = map;
             let remove_button = document.createElement("span")
-            remove_button.onclick = function(){
+            remove_button.onclick = function () {
                 let blacklisted_maps;
                 blacklisted_maps = localStorage.getItem("blacklisted_maps") || "[]";
                 blacklisted_maps = JSON.parse(blacklisted_maps);
@@ -2859,15 +2849,15 @@
 
 
             let map_img = new Image();
-            map_img.src = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+map+".jpg"
+            map_img.src = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/" + map + ".jpg"
 
             let map_col = document.createElement('div');
             map_col.className = "col-sm-1";
 
-            map_col.style = "height:8vh;border-radius: 5px; background-image: url('https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+map+".jpg'); background-size: 100% 100% ;margin-left:1.5%; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6)";
+            map_col.style = "height:8vh;border-radius: 5px; background-image: url('https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/" + map + ".jpg'); background-size: 100% 100% ;margin-left:1.5%; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6)";
 
-            map_img.onerror = function() {
-                map_col.style = "height:8vh;border-radius: 5px; background-image: url('"+img_fallback(map)+"'); background-size: 100% 100% ;margin-left:1.5%; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6)";
+            map_img.onerror = function () {
+                map_col.style = "height:8vh;border-radius: 5px; background-image: url('" + img_fallback(map) + "'); background-size: 100% 100% ;margin-left:1.5%; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6)";
             }
 
             map_col.append(rec);
@@ -2876,26 +2866,26 @@
         }
 
         panel_body.append(rec_content);
-        
+
         let target = document.querySelector('.content > div:nth-child(1)')
 
         target.insertBefore(row, target.children[2]);
     };
 
-    function img_fallback(map_name){
-        if(map_name.endsWith("_csgo")){
+    function img_fallback(map_name) {
+        if (map_name.endsWith("_csgo")) {
             map_name = map_name.slice(0, -5);
-        }else if(map_name.endsWith("_go")){
+        } else if (map_name.endsWith("_go")) {
             map_name = map_name.slice(0, -3);
-        }else if(map_name.endsWith("_go_fix")){
+        } else if (map_name.endsWith("_go_fix")) {
             map_name = map_name.slice(0, -7);
         }
 
-        return "https://ksf.surf/maps/"+map_name+".jpg";
+        return "https://ksf.surf/maps/" + map_name + ".jpg";
     }
 
-    function insert_user_rated_maps_table(){
-        if(!settings.user_ratings_table) return;
+    function insert_user_rated_maps_table() {
+        if (!settings.user_ratings_table) return;
         GM_xmlhttpRequest({
             method: "GET",
             url: "https://iloveur.mom/surfheaven/get_ratings.php",
@@ -2914,7 +2904,7 @@
                 thead.innerHTML = "<tr><th>Map name</th><th>Ratings</th><th>Difficulty</th><th>Fun</th><th>Unit</th><th>Tech</th></tr>";
                 table.appendChild(thead);
 
-                for (let map in maps){
+                for (let map in maps) {
                     let row = document.createElement('tr');
                     let map_name = document.createElement('td');
                     let num_ratings = document.createElement('td');
@@ -2922,7 +2912,7 @@
                     let fun_factor_rating = document.createElement('td');
                     let unit_rating = document.createElement('td');
                     let tech_rating = document.createElement('td');
-                    
+
                     map_name.innerHTML = `<a href="https://surfheaven.eu/map/${map}">${map}</a> <span>T${tiers[map]}</span>`;
                     num_ratings.innerHTML = Number(maps[map].num_ratings);
                     difficulty_rating.innerHTML = Number(maps[map].difficulty_rating).toFixed(maps[map].difficulty_rating % 1 === 0 ? 0 : 2);
@@ -2961,13 +2951,13 @@
                 let target_div = document.querySelector('.content > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)');
                 target_div.insertBefore(table_panel_container, target_div.children[1]);
 
-                for (let i = 0; i < target_div.children.length; i++){
+                for (let i = 0; i < target_div.children.length; i++) {
                     target_div.children[i].className = thirds_class;
                 }
 
                 $('#user_rated_maps_table').DataTable({
                     "ordering": true,
-                    "order": [[ 1, "desc" ]],
+                    "order": [[1, "desc"]],
                     "pagingType": "simple",
                     "info": false,
                     "searching": true,
@@ -2981,21 +2971,21 @@
         });
     }
 
-    function scrape_time_left(){
-        if(!is_season) return;
+    function scrape_time_left() {
+        if (!is_season) return;
         let server_table_body = document.querySelector('#logsTable > tbody:nth-child(2)');
-        for (let i = 0; i < server_table_body.children.length; i++){
+        for (let i = 0; i < server_table_body.children.length; i++) {
             let row = server_table_body.children[i];
-            for (let j = 0; j < row.children.length; j++){
+            for (let j = 0; j < row.children.length; j++) {
                 let cell = row.children[j];
-                for (let k = 0; k < cell.children.length; k++){
+                for (let k = 0; k < cell.children.length; k++) {
                     let small_element = cell.children[k];
-                    if (small_element.tagName === "SMALL"){
-                        if (small_element.innerHTML.includes("left")){
+                    if (small_element.tagName === "SMALL") {
+                        if (small_element.innerHTML.includes("left")) {
                             let regex = /\d+/
                             season_time_left.push(small_element.innerHTML.match(regex)[0]);
                         }
-                        
+
                     }
                 }
             }
@@ -3003,11 +2993,11 @@
         }
         console.log(season_time_left)
     }
-    function scrape_maps(){
+    function scrape_maps() {
         let maps = []
         let server_table_body = document.querySelector('#logsTable > tbody:nth-child(2)');
         let server_rows = server_table_body.children;
-        for (let i = 0; i < server_rows.length; i++){
+        for (let i = 0; i < server_rows.length; i++) {
             let map = server_rows[i].cells[2].querySelector('a').innerHTML
             maps.push(map)
         }
@@ -3020,9 +3010,9 @@
         scraped_maps = scrape_maps();
         servers_load_time = new Date().getTime();
 
-        document.querySelector(".panel-heading > h4:nth-child(1)").innerHTML = "";; 
-        document.querySelector(".panel-heading > p:nth-child(3)").innerHTML = "";   
-        document.querySelector(".panel-heading > p:nth-child(4)").innerHTML = "";;  
+        document.querySelector(".panel-heading > h4:nth-child(1)").innerHTML = "";
+        document.querySelector(".panel-heading > p:nth-child(3)").innerHTML = "";
+        document.querySelector(".panel-heading > p:nth-child(4)").innerHTML = "";
 
 
         var my_div = document.createElement('div');
@@ -3045,13 +3035,9 @@
         } else {
             auto_fetch_ranks();
         }
-        if (document.getElementById("region_select").value == "") {
-            document.getElementById("region_select").value = "Global";
-        }
-
 
         let threshold_type = unsafeWindow.localStorage.getItem('rank_threshold_type');
-        if(threshold_type === null){
+        if (threshold_type === null) {
             unsafeWindow.localStorage.setItem('rank_threshold_type', 'percentage');
             threshold_type = 'percentage';
         }
@@ -3061,11 +3047,11 @@
         rank_threshold_radio_percentage.name = 'rank_threshold_percentage';
         rank_threshold_radio_percentage.id = 'rank_threshold_percentage';
         rank_threshold_radio_percentage.style = 'margin-left: 4px;';
-        if(threshold_type === 'percentage'){
+        if (threshold_type === 'percentage') {
             rank_threshold_radio_percentage.checked = true;
         }
-        rank_threshold_radio_percentage.addEventListener('change', function(){
-            if(rank_threshold_radio_percentage.checked){
+        rank_threshold_radio_percentage.addEventListener('change', function () {
+            if (rank_threshold_radio_percentage.checked) {
                 unsafeWindow.localStorage.setItem('rank_threshold_type', 'percentage');
                 rank_threshold_radio_raw.checked = false;
                 refresh_servers();
@@ -3077,15 +3063,15 @@
         rank_threshold_radio_raw.name = 'rank_threshold_raw';
         rank_threshold_radio_raw.id = 'rank_threshold_raw';
         rank_threshold_radio_raw.style = 'margin-left: 4px;';
-        if(threshold_type === 'raw'){
+        if (threshold_type === 'raw') {
             rank_threshold_radio_raw.checked = true;
         }
-        rank_threshold_radio_raw.addEventListener('change', function(){
-            if(rank_threshold_radio_raw.checked){
+        rank_threshold_radio_raw.addEventListener('change', function () {
+            if (rank_threshold_radio_raw.checked) {
                 unsafeWindow.localStorage.setItem('rank_threshold_type', 'raw');
                 rank_threshold_radio_percentage.checked = false;
                 refresh_servers();
-            } 
+            }
         });
 
         let rank_threshold_radio_percentage_label = document.createElement('label');
@@ -3102,9 +3088,9 @@
         rank_threshold_input.min = 0;
         rank_threshold_input.max = unsafeWindow.localStorage.getItem('rank_threshold_type') === 'percentage' ? 100 : 100000;
         let rank_threshold = 50;
-        if(unsafeWindow.localStorage.getItem('rank_threshold') === null){
+        if (unsafeWindow.localStorage.getItem('rank_threshold') === null) {
             unsafeWindow.localStorage.setItem('rank_threshold', rank_threshold);
-        }else{
+        } else {
             rank_threshold = unsafeWindow.localStorage.getItem('rank_threshold');
         }
         rank_threshold_input.value = rank_threshold;
@@ -3117,7 +3103,7 @@
         rank_threshold_label.innerHTML = 'Highlight your rank based on : ';
         let rank_threshold_container = document.createElement('div');
         rank_threshold_container.className = 'form-group';
-        
+
         rank_threshold_container.appendChild(rank_threshold_label);
         rank_threshold_container.appendChild(rank_threshold_radio_percentage);
         rank_threshold_container.appendChild(rank_threshold_radio_percentage_label);
@@ -3126,7 +3112,7 @@
         rank_threshold_container.appendChild(rank_threshold_input);
 
 
-        rank_threshold_input.addEventListener('change', function(){
+        rank_threshold_input.addEventListener('change', function () {
             unsafeWindow.localStorage.setItem('rank_threshold', rank_threshold_input.value);
             refresh_servers();
         });
@@ -3152,21 +3138,21 @@
             checkbox.type = 'checkbox';
             checkbox.id = id;
             checkbox.style.marginLeft = '4px';
-        
+
             const is_checked = localStorage.getItem(id) === 'true';
             checkbox.checked = is_checked;
-        
-            checkbox.addEventListener('change', function() {
+
+            checkbox.addEventListener('change', function () {
                 localStorage.setItem(id, this.checked);
             });
-        
+
             const label = document.createElement('label');
             label.htmlFor = id;
             label.textContent = label_text;
-        
+
             return { checkbox, label };
         }
-        
+
         const checkboxes = [
             { id: 's1_checkbox', label: '1' },
             { id: 's2_checkbox', label: '2' },
@@ -3174,9 +3160,9 @@
             { id: 's4_checkbox', label: '4' },
             { id: 's12_checkbox', label: '12' }
         ];
-        
+
         const elements = checkboxes.map(({ id, label }) => create_checkboxes(id, label));
-        
+
         elements.forEach(({ checkbox, label }) => {
             server_filters_group.appendChild(checkbox);
             server_filters_group.appendChild(label);
@@ -3195,7 +3181,7 @@
         queue_button.onclick = function () {
             let server_filters = [];
             let checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            for (let i = 1; i < checkboxes.length-1; i++) {
+            for (let i = 1; i < checkboxes.length - 1; i++) {
                 if (checkboxes[i].checked) {
                     server_filters.push(i);
                 }
@@ -3206,8 +3192,7 @@
             }
 
             console.log(server_filters);
-            let region = document.getElementById("region_select").value;
-            queue_for_empty_server(region, server_filters);
+            queue_for_empty_server(server_filters);
             queue_button.innerHTML = '<i class="fa fa-spinner fa-pulse fa-lg fa-fw"></i> Queueing...  (click to cancel)';
             queue_button.classList = 'btn btn-danger btn-lg';
             queue_button.onclick = function () {
@@ -3224,20 +3209,15 @@
         document.querySelector('.panel-heading').appendChild(rank_threshold_container);
 
 
-        function queue_for_empty_server(region,filters){
+        function queue_for_empty_server(filters) {
             let found = false;
             let check_delay = 5000;
-            const region_map = {
-                "Global": "ALL",
-                "Germany": "EU",
-                "Australia": "AU"
-            }
-            let region_code = region_map[region];
+
 
             make_request('https://api.surfheaven.eu/api/servers', function (data) {
                 for (let i = 0; i < data.length; i++) {
                     if (data[i].players.length == 0 && !data[i].ip.includes('mayhem') && !filters.includes(data[i].id)) {
-                        if (region_code == "ALL" || data[i].region == region_code) {
+                        if (data[i].region == "EU") {
                             queue_button.disabled = false;
                             queue_button.innerHTML = 'Queue for empty server';
                             queue_button.classList = 'btn btn-success btn-lg';
@@ -3249,9 +3229,9 @@
                         }
                     }
                 }
-                if(!found){
-                    console.log('No empty servers found for ' + region_map[region] + ', checking again in ' + check_delay/1000 + ' seconds...');
-                    setTimeout(function() { queue_for_empty_server(region,filters)}, check_delay);
+                if (!found) {
+                    console.log('No empty servers found, checking again in ' + check_delay / 1000 + ' seconds...');
+                    setTimeout(function () { queue_for_empty_server(filters) }, check_delay);
                 }
             });
         }
@@ -3259,9 +3239,9 @@
         // periodically refresh servers
         setInterval(function () {
             console.log('Refreshing servers...');
-            create_toast('Refreshing servers...', '','info',5000);
+            create_toast('Refreshing servers...', '', 'info', 5000);
             refresh_servers();
-        }, 1000*60*2);
+        }, 1000 * 60 * 2);
     }
 
     function profile_page() {
@@ -3277,28 +3257,28 @@
         original_username = original_username.trim();
 
         // Prompt user to confirm profile if it's not cached
-        if(unsafeWindow.localStorage.getItem('waiting_for_id') == 'true'){
+        if (unsafeWindow.localStorage.getItem('waiting_for_id') == 'true') {
             console.log("profile confirmation")
             do_after(() => {
-                if(window.confirm('Is this the correct profile? ('+original_username +', ID: '+current_profile_id+')')){
+                if (window.confirm('Is this the correct profile? (' + original_username + ', ID: ' + current_profile_id + ')')) {
                     unsafeWindow.localStorage.setItem('cached_id', current_profile_id);
                     unsafeWindow.localStorage.setItem('waiting_for_id', false);
                 }
-            },1000);
+            }, 1000);
         }
 
         star_span.textContent = '* ';
-        star_span.title = "Actual username: "+original_username;
+        star_span.title = "Actual username: " + original_username;
         star_span.style.cssText = "color: #949BA2; text-shadow: none !important;";
 
-        if(get_nickname(current_profile_id) != null){
+        if (get_nickname(current_profile_id) != null) {
             steam_button.parentNode.insertBefore(star_span, steam_button);
-            username_h2.childNodes[1].textContent = " "+ get_nickname(current_profile_id);
+            username_h2.childNodes[1].textContent = " " + get_nickname(current_profile_id);
             username_text_element.title = original_username;
         }
         username_h2.appendChild(document.createElement('br'));
 
-        if(settings.follow_list){
+        if (settings.follow_list) {
             var follow_button = document.createElement('button');
             if (get_follow_list().includes(current_profile_id)) {
                 follow_button.className = 'btn btn-danger btn-xs';
@@ -3324,22 +3304,22 @@
             follow_button.style = 'margin-right: 5px;';
             username_h2.appendChild(follow_button);
         }
-        
+
         // Set nickname button
         const set_nickname_button = document.createElement('button');
         set_nickname_button.className = 'btn btn-success btn-xs';
         set_nickname_button.style = 'margin-right: 5px;';
-        if(current_profile_id != get_id()) username_h2.appendChild(set_nickname_button);
+        if (current_profile_id != get_id()) username_h2.appendChild(set_nickname_button);
         set_nickname_button.innerHTML = '<i class="fas fa-edit"></i> Set nickname';
         set_nickname_button.onclick = function () {
             let nickname = prompt("Enter nickname, leave blank to reset:");
             if (nickname != null) {
                 set_nickname(current_profile_id, nickname);
-                if(nickname == ""){
-                    username_text_element.textContent = " "+ original_username + " ";
+                if (nickname == "") {
+                    username_text_element.textContent = " " + original_username + " ";
                     star_span.parentNode.removeChild(star_span);
-                }else{
-                    username_text_element.textContent = " "+ nickname
+                } else {
+                    username_text_element.textContent = " " + nickname
                     steam_button.parentNode.insertBefore(star_span, steam_button);;
                 }
             }
@@ -3347,7 +3327,7 @@
 
         // Gift Vip button, only if user is not vip, since some ppl have lifetime
         make_request('https://api.surfheaven.eu/api/playerinfo/' + current_profile_id, function (data) {
-            if(data[0].vip != true){
+            if (data[0].vip != true) {
                 const gift_vip_button = document.createElement('button');
                 gift_vip_button.className = 'btn btn-success btn-xs';
                 get_id() == current_profile_id ? gift_vip_button.innerHTML = "<i class='fab fa-paypal'></i> Buy vip" : gift_vip_button.innerHTML = "<i class='fa fa-gift'></i> Gift VIP";
@@ -3359,8 +3339,8 @@
             }
         });
 
-        if(get_id() == current_profile_id){
-            if(settings.user_effects){
+        if (get_id() == current_profile_id) {
+            if (settings.user_effects) {
                 let target_div = document.querySelector('.m-t-xs');
                 let user_effect_button = document.createElement('button');
                 user_effect_button.className = 'btn btn-success btn-xs ';
@@ -3371,8 +3351,8 @@
                 }
                 target_div.appendChild(user_effect_button);
             }
-            if(localStorage.getItem('completed_maps_last_update') == null || (Date.now() - parseInt(localStorage.getItem('completed_maps_last_update'))) > 1000 * 60 * 10){
-                make_request('https://api.surfheaven.eu/api/records/'+current_profile_id, function (data) {
+            if (localStorage.getItem('completed_maps_last_update') == null || (Date.now() - parseInt(localStorage.getItem('completed_maps_last_update'))) > 1000 * 60 * 10) {
+                make_request('https://api.surfheaven.eu/api/records/' + current_profile_id, function (data) {
                     let maps = [];
                     for (let i = 0; i < data.length; i++) {
                         if (data[i].track == 0) {
@@ -3382,9 +3362,9 @@
                     localStorage.setItem('completed_maps', JSON.stringify(maps));
                     localStorage.setItem('completed_maps_last_update', Date.now());
                     console.log("Updated completed maps");
-                    
+
                 })
-                
+
             }
         }
 
@@ -3395,8 +3375,8 @@
         completions_by_tier(current_profile_id);
         insert_points_until_next_rank();
         insert_profile_dropdown_stats(current_profile_id);
-        
-        
+
+
         const points_history_button = document.createElement('button');
         points_history_button.className = 'btn btn-info btn-xs';
         points_history_button.innerHTML = '<i class="fas fa-history"></i> Points history';
@@ -3404,7 +3384,7 @@
             let iframe = document.createElement('iframe');
             iframe.width = "1000px"
             iframe.height = "500px"
-            iframe.src = "https://iloveur.mom/surfheaven/history.html?id="+current_profile_id;
+            iframe.src = "https://iloveur.mom/surfheaven/history.html?id=" + current_profile_id;
             show_overlay_window('Points history', iframe);
 
         };
@@ -3424,26 +3404,26 @@
         // avg bonus rank and map rank with higher precision
         let bonus_ranks = [];
         let map_ranks = [];
-        make_request("https://api.surfheaven.eu/api/records/"+current_profile_id, function (data) {
-            for(let i = 0; i < data.length; i++){
-                if(data[i].track != 0)
-                bonus_ranks.push(data[i].rank);
+        make_request("https://api.surfheaven.eu/api/records/" + current_profile_id, function (data) {
+            for (let i = 0; i < data.length; i++) {
+                if (data[i].track != 0)
+                    bonus_ranks.push(data[i].rank);
                 else
-                map_ranks.push(data[i].rank);
+                    map_ranks.push(data[i].rank);
             }
             let avg_rank = map_ranks.reduce((a, b) => a + b, 0) / map_ranks.length;
             let avg_brank = bonus_ranks.reduce((a, b) => a + b, 0) / bonus_ranks.length;
             var stats_table = document.querySelector('.medium > tbody:nth-child(1)');
             var stats_table_rows = stats_table.children;
             var points_td = document.createElement('td');
-            points_td.innerHTML = '<strong class="c-white">'+avg_brank.toFixed(2)+'</strong> Avg Bonus Rank';
-            stats_table_rows[4].innerHTML = '<td><strong class="c-white">'+avg_rank.toFixed(2)+'</strong> Avg Map Rank</td>';
+            points_td.innerHTML = '<strong class="c-white">' + avg_brank.toFixed(2) + '</strong> Avg Bonus Rank';
+            stats_table_rows[4].innerHTML = '<td><strong class="c-white">' + avg_rank.toFixed(2) + '</strong> Avg Map Rank</td>';
             stats_table_rows[4].appendChild(points_td);
 
         });
 
         // common uncompleted maps button
-        if(current_profile_id != get_id()){
+        if (current_profile_id != get_id()) {
             let common_uncompleted_maps_button = document.createElement('button');
             common_uncompleted_maps_button.className = 'btn btn-success btn-xs';
             common_uncompleted_maps_button.id = "common_uncompleted_maps_button";
@@ -3461,7 +3441,7 @@
             let common_uncompleted_maps_target_div = document.querySelector('div.col-sm-12:nth-child(4) > div:nth-child(1) > div:nth-child(1)');
             common_uncompleted_maps_target_div.insertBefore(common_uncompleted_maps_button, common_uncompleted_maps_target_div.children[1]);
         }
-        if(settings.map_recommendations && get_id() == current_profile_id){
+        if (settings.map_recommendations && get_id() == current_profile_id) {
             GM_xmlhttpRequest({
                 method: "GET",
                 url: "https://iloveur.mom/surfheaven/get_raw_ratings.php",
@@ -3475,7 +3455,7 @@
                         let show_completed = localStorage.getItem("show_completed") === "true";
                         let recommended_maps
                         // recommended_maps = recommend_maps(current_profile_id, data, 10, diff_bias, fun_bias, tech_bias, unit_bias);
-                        recommended_maps = recommend_maps_new(current_profile_id,data,10,diff_bias,fun_bias,tech_bias,unit_bias,show_completed);
+                        recommended_maps = recommend_maps_new(current_profile_id, data, 10, diff_bias, fun_bias, tech_bias, unit_bias, show_completed);
                         console.log(recommended_maps);
                         recommended_maps = recommended_maps.map(map => map[0]);
                         map_recommendations_panel(recommended_maps)
@@ -3490,37 +3470,37 @@
     //       data[map].some(rating => rating.id === user1) &&
     //       data[map].some(rating => rating.id === user2)
     //     );
-      
+
     //     if (common_maps.length === 0) {
     //       return 0;
     //     }
-      
+
     //     const user1_ratings = [];
     //     const user2_ratings = [];
-      
+
     //     for (const map of common_maps) {
     //       const user1_rating = data[map].find(rating => rating.id === user1)[rating_type];
     //       const user2_rating = data[map].find(rating => rating.id === user2)[rating_type];
     //       user1_ratings.push(parseInt(user1_rating));
     //       user2_ratings.push(parseInt(user2_rating));
     //     }
-      
+
     //     const n = user1_ratings.length;
     //     const sum1 = user1_ratings.reduce((a, b) => a + b, 0);
     //     const sum2 = user2_ratings.reduce((a, b) => a + b, 0);
     //     const sum1_sq = user1_ratings.reduce((a, b) => a + Math.pow(b, 2), 0);
     //     const sum2_sq = user2_ratings.reduce((a, b) => a + Math.pow(b, 2), 0);
     //     const p_sum = user1_ratings.reduce((a, b, i) => a + b * user2_ratings[i], 0);
-      
+
     //     const num = p_sum - (sum1 * sum2 / n);
     //     const den = Math.sqrt((sum1_sq - Math.pow(sum1, 2) / n) * (sum2_sq - Math.pow(sum2, 2) / n));
     //     if (den === 0) {
     //       return 0;
     //     }
-      
+
     //     return num / den;
     // }
-      
+
 
     function recommend_maps_new(user_id, data, top_n = 10, weight_difficulty = 0.1, weight_fun_factor = 0.4, weight_tech = 0.25, weight_unit = 0.25, show_completed = false) {
         // get the highest rated map by user, then calculate the closest maps by distance to it
@@ -3531,8 +3511,8 @@
                 if (rating.id == user_id) {
                     own_ratings[map] = [
                         parseFloat(rating.difficulty_rating),
-                        parseFloat(rating.fun_factor_rating), 
-                        parseFloat(rating.tech_rating), 
+                        parseFloat(rating.fun_factor_rating),
+                        parseFloat(rating.tech_rating),
                         parseFloat(rating.unit_rating)
                     ];
                 } else {
@@ -3542,33 +3522,33 @@
                     other_maps[map].push([
                         parseFloat(rating.difficulty_rating),
                         parseFloat(rating.fun_factor_rating),
-                        parseFloat(rating.tech_rating), 
+                        parseFloat(rating.tech_rating),
                         parseFloat(rating.unit_rating)
                     ]);
                 }
             }
         }
-    
+
         if (Object.keys(own_ratings).length === 0) {
             return [];
         }
-    
+
         for (const map in other_maps) {
             //the average for each rating for each map
             other_maps[map] = other_maps[map].reduce((a, b) => a.map((x, i) => x + b[i] / other_maps[map].length), [0, 0, 0, 0]);
         }
-    
+
         other_maps = Object.fromEntries(Object.entries(other_maps).filter(([key]) => !own_ratings.hasOwnProperty(key)));
         own_ratings = Object.fromEntries(Object.entries(own_ratings).sort((a, b) => b[1][1] - a[1][1]));
         own_ratings = Object.fromEntries(Object.entries(own_ratings).filter(([key]) => own_ratings[key][1] >= 3));
-        
+
         // the top maps based on your fun_factor rating
         let own_top = Object.entries(own_ratings).slice(0, Math.min(10, Object.keys(own_ratings).length));
         localStorage.setItem("own_top", JSON.stringify(own_top));
         // the average of your top maps
         let own_map = own_top.map(x => x[1]).reduce((a, b) => a.map((x, i) => x + b[i] / own_top.length), [0, 0, 0, 0]);
-    
-    
+
+
         let distances = {};
         for (const map in other_maps) {
             let dist = weighted_euclidean_distance(own_map, other_maps[map], [weight_difficulty, weight_fun_factor, weight_tech, weight_unit]);
@@ -3584,12 +3564,12 @@
         if (!show_completed) {
             distances = Object.fromEntries(Object.entries(distances).filter(([key]) => !completed_maps.includes(key)));
         }
-    
+
         let recommended_maps = Object.entries(distances).slice(0, top_n);
-        
+
         return recommended_maps;
     }
-    
+
     function weighted_euclidean_distance(a, b, weights) {
         return Math.sqrt(a.reduce((acc, val, i) => acc + weights[i] * Math.pow(val - b[i], 2), 0));
     }
@@ -3665,42 +3645,42 @@
     //     console.log("Recommended maps with biases:" ,"Diff: ",diff_bias, "Fun: ", fun_bias, "Tech: ", tech_bias, "Unit: ", unit_bias);
     //     return recommended_maps;
     // }
-    
+
     // function pearson_correlation_map(map1, map2, data, rating_type) {
     //     const users1 = data[map1].map(rating => rating.id);
     //     const users2 = data[map2].map(rating => rating.id);
     //     const common_users = users1.filter(user => users2.includes(user));
-      
+
     //     if (common_users.length === 0) {
     //         return 0;
     //     }
-    
+
     //     const map1_ratings = [];
     //     const map2_ratings = [];
-    
+
     //     for (const user of common_users) {
     //         const map1_rating = data[map1].find(rating => rating.id === user)[rating_type];
     //         const map2_rating = data[map2].find(rating => rating.id === user)[rating_type];
     //         map1_ratings.push(parseInt(map1_rating));
     //         map2_ratings.push(parseInt(map2_rating));
     //     }
-    
+
     //     const n = map1_ratings.length;
     //     const sum1 = map1_ratings.reduce((a, b) => a + b, 0);
     //     const sum2 = map2_ratings.reduce((a, b) => a + b, 0);
     //     const sum1_sq = map1_ratings.reduce((a, b) => a + Math.pow(b, 2), 0);
     //     const sum2_sq = map2_ratings.reduce((a, b) => a + Math.pow(b, 2), 0);
     //     const p_sum = map1_ratings.reduce((a, b, i) => a + b * map2_ratings[i], 0);
-    
+
     //     const num = p_sum - (sum1 * sum2 / n);
     //     const den = Math.sqrt((sum1_sq - Math.pow(sum1, 2) / n) * (sum2_sq - Math.pow(sum2, 2) / n));
     //     if (den === 0) {
     //         return 0;
     //     }
-    
+
     //     return num / den;
     // }
-    
+
     // function recommend_similar_maps(map_id, data, top_n = 5, diff_bias = 0.25, fun_bias = 0.25, tech_bias = 0.25, unit_bias = 0.25) {
     //     const map_ids = Object.keys(data);
     //     const map_similarities_difficulty = map_ids
@@ -3722,10 +3702,10 @@
     //         const combined_similarity = difficulty_similarity * diff_bias + fun_similarity * fun_bias + tech_similarity * tech_bias + unit_similarity * unit_bias;
     //         return [other_map, combined_similarity];
     //     });
-    
+
     //     map_similarities.sort((a, b) => b[1] - a[1]);
     //     const recommended_maps = map_similarities.slice(0, top_n).map(([map]) => map);
-        
+
     //     console.log("Recommended maps similar to:", map_id, "with biases - Diff:", diff_bias, "Fun:", fun_bias, "Tech:", tech_bias, "Unit:", unit_bias);
     //     console.log(recommended_maps);
     //     return recommended_maps;
@@ -3740,16 +3720,16 @@
             const fun_factor_rating = parseFloat(ratings.fun_factor_rating);
             const unit_rating = parseFloat(ratings.unit_rating);
             const tech_rating = parseFloat(ratings.tech_rating);
-    
+
             map_ratings[map] = [difficulty_rating, fun_factor_rating, unit_rating, tech_rating];
         }
-    
+
         if (!map_ratings.hasOwnProperty(map_name)) {
             throw new Error(`Map "${map_name}" not found in the provided map data.`);
         }
 
         const target_map_ratings = map_ratings[map_name];
-    
+
         const distances = {};
         for (const map in map_ratings) {
             if (map === map_name) continue;
@@ -3758,17 +3738,17 @@
             //console.log(`Distance between ${map} and ${map_name}: ${distance}`);
             distances[map] = distance;
         }
-    
+
         const sorted_distances = Object.keys(distances).sort((a, b) => distances[a] - distances[b]);
         return sorted_distances.slice(0, top_n);
     }
-    
+
     function euclidean_distance(a, b) {
         return Math.sqrt(a.reduce((acc, val, i) => acc + Math.pow(val - b[i], 2), 0));
     }
 
 
-    function create_color_grid(username, c){
+    function create_color_grid(username, c) {
         const colors = [
             "Black",
             "Navy",
@@ -3928,7 +3908,7 @@
         color_grid.style.maxWidth = '440px';
         color_grid.appendChild(test_string);
         color_grid.appendChild(selected_colors_text);
-        for(let i = 0; i < colors.length; i++){
+        for (let i = 0; i < colors.length; i++) {
             let color_button = document.createElement('button');
             color_button.className = 'btn btn-default';
             color_button.style.backgroundColor = colors[i];
@@ -3937,7 +3917,7 @@
             color_button.style.height = '24px';
             color_button.style.borderRadius = '22px';
             color_button.title = colors[i];
-            color_button.onclick = function(){
+            color_button.onclick = function () {
                 add_color(colors[i]);
             }
             color_grid.appendChild(color_button);
@@ -3952,19 +3932,19 @@
         let save_button = document.createElement('button');
         save_button.className = 'btn btn-success';
         save_button.innerHTML = 'Save';
-        save_button.onclick = function(){
+        save_button.onclick = function () {
             GM_xmlhttpRequest({
                 method: 'POST',
                 url: 'https://iloveur.mom/surfheaven/user_effects.php',
-                data: "d=" + atob(c) + "&e=" + "candycane-custom-"+selected_colors.join('-'),
-                headers:{
+                data: "d=" + atob(c) + "&e=" + "candycane-custom-" + selected_colors.join('-'),
+                headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
                 },
-                onload: function(response) {
+                onload: function (response) {
                     GM_xmlhttpRequest({
                         method: 'GET',
                         url: 'https://iloveur.mom/surfheaven/user_effects.json',
-                        onload: function(response) {
+                        onload: function (response) {
                             response = JSON.parse(response.responseText);
                             unsafeWindow.localStorage.setItem('user_effects', JSON.stringify(response));
                             console.log("Saved user_effects.json to localstorage", response)
@@ -3974,11 +3954,11 @@
                 }
             });
         }
-        
+
         let reset_button = document.createElement('button');
         reset_button.className = 'btn btn-danger';
         reset_button.innerHTML = 'Reset';
-        reset_button.onclick = function(){
+        reset_button.onclick = function () {
             selected_colors = [];
             test_string.innerHTML = `<span class="">${username}</span>`;
             selected_colors_text.innerHTML = selected_colors.join(', ');
@@ -3986,62 +3966,62 @@
         buttons_div.appendChild(reset_button);
         buttons_div.appendChild(save_button);
 
-        function add_color(color){
+        function add_color(color) {
             selected_colors.push(color.toLowerCase());
-            create_custom_candycane_style("candycane-custom-"+selected_colors.join('-'));
-            test_string.innerHTML = `<span class="${"candycane-custom-"+selected_colors.join('-')}">${username}</span>`;
+            create_custom_candycane_style("candycane-custom-" + selected_colors.join('-'));
+            test_string.innerHTML = `<span class="${"candycane-custom-" + selected_colors.join('-')}">${username}</span>`;
             selected_colors_text.innerHTML = selected_colors.join(', ');
         }
         return color_grid;
 
     }
 
-    function player_comparison(id_array, find_common_uncompleted = false){
+    function player_comparison(id_array, find_common_uncompleted = false) {
         let player_data = [];
-        for(let i = 0; i < id_array.length; i++){
-            if(!find_common_uncompleted){
+        for (let i = 0; i < id_array.length; i++) {
+            if (!find_common_uncompleted) {
                 make_request(`https://api.surfheaven.eu/api/records/${id_array[i]}/`, (data) => {
                     let only_maps = [];
-                    for(let i = 0; i < data.length; i++){
-                        if(data[i].track == 0){
+                    for (let i = 0; i < data.length; i++) {
+                        if (data[i].track == 0) {
                             only_maps.push(data[i]);
                         }
                     }
                     player_data.push(only_maps);
-                    if(player_data.length == id_array.length){
+                    if (player_data.length == id_array.length) {
                         create_comparison_table(player_data);
                     }
                 });
-            }else{
-                let table = $('#DataTables_Table_1').DataTable({retrieve: true});
+            } else {
+                let table = $('#DataTables_Table_1').DataTable({ retrieve: true });
                 table.page.len(-1).draw();
                 make_request(`https://api.surfheaven.eu/api/uncompleted/${id_array[i]}/`, (data) => {
                     let only_maps = [];
-                    for(let i = 0; i < data.length; i++){
-                        if(data[i].track == 0){
+                    for (let i = 0; i < data.length; i++) {
+                        if (data[i].track == 0) {
                             only_maps.push(data[i].map);
                         }
                     }
                     player_data.push(only_maps);
-                    if(player_data.length == id_array.length){
+                    if (player_data.length == id_array.length) {
                         // find common uncompleted maps
                         let common_maps = [];
                         player_data[0].forEach((map) => {
-                            if(player_data[1].find((map2) => map2 === map)){
+                            if (player_data[1].find((map2) => map2 === map)) {
                                 common_maps.push([map]);
                             }
                         });
-                        for(let x = 0; x < 2; x++){ // double pass
-                            for(let i = 0; i < table.rows().count(); i++){
+                        for (let x = 0; x < 2; x++) { // double pass
+                            for (let i = 0; i < table.rows().count(); i++) {
                                 let map_name = table.row(i).data()[0].match(/(?<=<a href="\/map\/)[^"]+/)[0];
                                 let found = false;
-                                for(let j = 0; j < common_maps.length; j++){
-                                    if(map_name == common_maps[j][0]){
+                                for (let j = 0; j < common_maps.length; j++) {
+                                    if (map_name == common_maps[j][0]) {
                                         found = true;
                                         break;
                                     }
                                 }
-                                if(!found){
+                                if (!found) {
                                     table.row(i).remove();
                                 }
                             }
@@ -4052,15 +4032,15 @@
             }
         }
 
-        function create_comparison_table(player_data){
+        function create_comparison_table(player_data) {
             let common_maps = [];
             let p1_name = player_data[0][0].name;
             let p2_name = player_data[1][0].name;
-            for(let i = 0; i < player_data[0].length; i++){
-                for(let j = 0; j < player_data[1].length; j++){
-                    if(player_data[0][i].map == player_data[1][j].map){
+            for (let i = 0; i < player_data[0].length; i++) {
+                for (let j = 0; j < player_data[1].length; j++) {
+                    if (player_data[0][i].map == player_data[1][j].map) {
                         let map_data = [];
-                        map_data.push([player_data[0][i].map,player_data[0][i].tier, player_data[0][i].rank, player_data[0][i].points, player_data[1][j].rank, player_data[1][j].points])
+                        map_data.push([player_data[0][i].map, player_data[0][i].tier, player_data[0][i].rank, player_data[0][i].points, player_data[1][j].rank, player_data[1][j].points])
                         common_maps.push(map_data);
                     }
                 }
@@ -4073,7 +4053,7 @@
             thead.innerHTML = `<tr><th>Map</th><th>Tier</th><th>${p1_name}'s rank</th><th>Points</th><th>${p2_name}'s rank</th><th>Points</th></tr>`;
             table.appendChild(thead);
             let tbody = document.createElement('tbody');
-            for(let i = 0; i < common_maps.length; i++){
+            for (let i = 0; i < common_maps.length; i++) {
                 let tr = document.createElement('tr');
                 let td = document.createElement('td');
                 td.innerHTML = `<a href="https://surfheaven.eu/map/${common_maps[i][0][0]}">${common_maps[i][0][0]}</a>`;
@@ -4107,7 +4087,7 @@
                     "lengthMenu": [10, 20]
                 }
             );
-            show_overlay_window("Map comparison",container);
+            show_overlay_window("Map comparison", container);
         }
     }
 
@@ -4130,67 +4110,67 @@
         insert_map_page_tag_list(current_map_name);
         insert_friend_rankings(current_map_name);
         insert_rating(current_map_name);
-        if(settings.comments) insert_comments();
+        if (settings.comments) insert_comments();
 
-        if(settings.map_cover_image){
+        if (settings.map_cover_image) {
             for (let i = 0; i < button_div.children.length; i++) {
                 let button = button_div.children[i];
-    
-                if(button.classList.contains("btn-success")){
+
+                if (button.classList.contains("btn-success")) {
                     bonus_buttons.push(button);
                 }
             }
-            for(let i = 0; i < bonus_buttons.length; i++){
-                bonus_buttons[i].addEventListener("click", function() {
-                    try{document.getElementById("fetch_friends_bonus_ranks").remove()}catch(e){}
-                    let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+current_map_name+"_b" + Number(i+1)+".jpg";
+            for (let i = 0; i < bonus_buttons.length; i++) {
+                bonus_buttons[i].addEventListener("click", function () {
+                    try { document.getElementById("fetch_friends_bonus_ranks").remove() } catch (e) { }
+                    let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/" + current_map_name + "_b" + Number(i + 1) + ".jpg";
                     let target_div = document.querySelector('.panel-c-warning');
-                    target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
+                    target_div.style = "background: url('" + map_link + "'); background-position: center;background-repeat: no-repeat;background-size: cover;";
                     insert_bonus_dropdown_stats(current_map_name, Number(i));
-                    insert_friend_bonus_rankings(document.getElementById("DataTables_Table_"+Number(i+1)+"_filter"),current_map_name, Number(i+1));
+                    insert_friend_bonus_rankings(document.getElementById("DataTables_Table_" + Number(i + 1) + "_filter"), current_map_name, Number(i + 1));
                 })
             }
-            if(map_button){
-                map_button.addEventListener("click", function() {
-                    try{document.getElementById("fetch_friends_bonus_ranks").remove()}catch(e){}
-                    let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+current_map_name+".jpg";
+            if (map_button) {
+                map_button.addEventListener("click", function () {
+                    try { document.getElementById("fetch_friends_bonus_ranks").remove() } catch (e) { }
+                    let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/" + current_map_name + ".jpg";
                     let img = new Image();
                     img.src = map_link;
-                    img.onerror = function() {
-                       map_link = "https://ksf.surf/maps/" + current_map_name + ".jpg"; 
-                       let target_div = document.querySelector('.panel-c-warning');
-                       target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
+                    img.onerror = function () {
+                        map_link = "https://ksf.surf/maps/" + current_map_name + ".jpg";
+                        let target_div = document.querySelector('.panel-c-warning');
+                        target_div.style = "background: url('" + map_link + "'); background-position: center;background-repeat: no-repeat;background-size: cover;";
                     }
                     let target_div = document.querySelector('.panel-c-warning');
-                    target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
+                    target_div.style = "background: url('" + map_link + "'); background-position: center;background-repeat: no-repeat;background-size: cover;";
                 })
             }
         }
 
         let bonus_count = bonus_buttons.length
-        if(bonus_count > 0){
+        if (bonus_count > 0) {
             let bonus_elem = document.querySelector('table.table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(6) > td:nth-child(2) > span:nth-child(3)')
             let bonus_link = document.createElement('a');
             bonus_link.href = '#';
             bonus_link.innerHTML = ' Bonus';
             bonus_completions = new Array(bonus_count).fill(0);
-            bonus_link.addEventListener("click", function() {
+            bonus_link.addEventListener("click", function () {
                 let bonus_count = bonus_buttons.length
-                make_request("https://api.surfheaven.eu/api/completions/"+current_map_name, (data) => {
-                    data.sort((a,b) => a.track - b.track);
-                    for(let i = 0; i < data.length; i++){
-                        if(data[i].track > 0){
-                            bonus_completions[data[i].track-1] = data[i].completions;
+                make_request("https://api.surfheaven.eu/api/completions/" + current_map_name, (data) => {
+                    data.sort((a, b) => a.track - b.track);
+                    for (let i = 0; i < data.length; i++) {
+                        if (data[i].track > 0) {
+                            bonus_completions[data[i].track - 1] = data[i].completions;
                         }
                     }
                     let container = document.createElement('div');
                     container.paddingLeft = "20px";
-                    for(let i = 0; i < bonus_count; i++){
+                    for (let i = 0; i < bonus_count; i++) {
                         let p = document.createElement('p');
-                        p.textContent = "Bonus " + (i+1) + ": " + bonus_completions[i] + " completions";
+                        p.textContent = "Bonus " + (i + 1) + ": " + bonus_completions[i] + " completions";
                         container.appendChild(p);
                     }
-                    show_overlay_window("Bonus comps",container);
+                    show_overlay_window("Bonus comps", container);
                 })
             });
             bonus_elem.parentNode.replaceChild(bonus_link, bonus_elem);
@@ -4198,42 +4178,42 @@
 
     }
 
-    function insert_mapper_link(){
+    function insert_mapper_link() {
         let author_element = document.querySelector(".media > p:nth-child(2)");
         let author_name = author_element.innerText.split("Author: ")[1];
         let date_added = author_element.innerText.split("\n")[1];
         let regex = /[^\p{L}\p{N}\s_]/gu; // surely not caused by author of surf_barbies_malibu_adventure
         author_name = author_name.split("\n")[0];
 
-        if(author_name.includes('&')){
+        if (author_name.includes('&')) {
             author_name = author_name
-            .split('&')
-            .flatMap(name => name.split(',')
-            .map(n => n.trim()));
-        }else if(author_name.includes(',')){
+                .split('&')
+                .flatMap(name => name.split(',')
+                    .map(n => n.trim()));
+        } else if (author_name.includes(',')) {
             author_name = author_name
-            .split(',')
-            .map(n => n.trim());
+                .split(',')
+                .map(n => n.trim());
         }
 
-        if(typeof author_name == 'string'){ // single mapper
+        if (typeof author_name == 'string') { // single mapper
             let author_link = document.createElement('a');
             author_link.innerText = author_name;
             author_name = author_name.replace(regex, '');
             author_link.href = "https://surfheaven.eu/search/" + encodeURI(author_name);
             author_element.innerHTML = "Author: ";
             author_element.appendChild(author_link);
-        }else{ // multiple mappers
-            for(let i = 0; i < author_name.length; i++){
+        } else { // multiple mappers
+            for (let i = 0; i < author_name.length; i++) {
                 let author_link = document.createElement('a');
                 author_link.innerText = author_name[i];
                 author_name[i] = author_name[i].replace(regex, '');
                 author_link.href = "https://surfheaven.eu/search/" + encodeURI(author_name[i]);
-                if(i == 0){
+                if (i == 0) {
                     author_element.innerHTML = "Authors: ";
                 }
                 author_element.appendChild(author_link);
-                if(i < author_name.length - 1){
+                if (i < author_name.length - 1) {
                     author_element.innerHTML += " & ";
                 }
             }
@@ -4242,7 +4222,7 @@
 
     }
 
-    function insert_comments(){
+    function insert_comments() {
         let target_div = document.querySelectorAll('.content > div:nth-child(1)')
         let comment_root_div = document.createElement('div')
         comment_root_div.className = "col xs-12 col-sm-12"
@@ -4277,14 +4257,14 @@
         script.setAttribute("data-input-position", "bottom")
         script.setAttribute("data-theme", "transparent_dark")
         script.setAttribute("data-lang", "en")
-        script.setAttribute("data-loading","lazy")
+        script.setAttribute("data-loading", "lazy")
         script.setAttribute("crossorigin", "anonymous")
         script.async = true
         comment_panel_body_div.appendChild(script)
 
     }
 
-    function insert_friend_bonus_rankings(el,map_name,bonus){
+    function insert_friend_bonus_rankings(el, map_name, bonus) {
         let friends_button = document.createElement('button')
         friends_button.classList = "btn btn-default btn-sm"
         friends_button.id = "fetch_friends_bonus_ranks"
@@ -4292,15 +4272,15 @@
         friends_button.style = "margin-right: 10px;"
 
         el.insertBefore(friends_button, el.firstChild)
-        friends_button.onclick = function() {
-            console.log("Showing friends ranks for "+map_name+" b"+bonus)
+        friends_button.onclick = function () {
+            console.log("Showing friends ranks for " + map_name + " b" + bonus)
             make_request(`https://api.surfheaven.eu/api/records/${map_name}`, (data) => {
                 console.log("friends rank data")
                 let friends = get_follow_list()
                 console.log("friends", friends)
-    
+
                 data = data.filter((record) => record.track == bonus)
-    
+
                 let friend_bonus_ranks = []
                 for (let record of data) {
                     if (friends.includes(record.steamid) || record.steamid == get_id()) {
@@ -4308,7 +4288,7 @@
                         let date = new Date(ds)
                         let formatted_date = date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour12: false })
 
-                        friend_bonus_ranks.push([record.name, record.rank,record.time.toFixed(3),formatted_date,record.finishcount])
+                        friend_bonus_ranks.push([record.name, record.rank, record.time.toFixed(3), formatted_date, record.finishcount])
                     }
                 }
 
@@ -4320,40 +4300,40 @@
                 table_container.style.width = "600px"
                 table_container.style.overflowY = "auto"
                 table_container.appendChild(table)
-                show_overlay_window(map_name +" bonus "+bonus+" friend ranks", table_container)
+                show_overlay_window(map_name + " bonus " + bonus + " friend ranks", table_container)
                 friends_button.remove()
                 console.log(data)
-    
+
             })
         }
     }
 
-    function timestring_to_seconds(timestring){
+    function timestring_to_seconds(timestring) {
         let hours = 0
         let minutes = 0
         let seconds = 0
         let milliseconds = 0
         let split = timestring.split(':')
 
-        if(split.length == 3){
+        if (split.length == 3) {
             hours = parseInt(split[0])
             minutes = parseInt(split[1])
             seconds = parseInt(split[2].split('.')[0])
             milliseconds = parseInt(split[2].split('.')[1])
-        } else if(split.length == 2){
+        } else if (split.length == 2) {
             minutes = parseInt(split[0])
             seconds = parseInt(split[1].split('.')[0])
             milliseconds = parseInt(split[1].split('.')[1])
-        } else if(split.length == 1){
+        } else if (split.length == 1) {
             seconds = parseInt(split[0].split('.')[0])
             milliseconds = parseInt(split[0].split('.')[1])
         }
-        return hours*3600 + minutes*60 + seconds + milliseconds/1000
+        return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000
     }
 
-    function insert_bonus_dropdown_stats(map_name,bonus){
-        let _b = bonus == 0 ? "" : bonus+1
-        let table = document.querySelector('div.table-responsive.table-bonuses'+_b)
+    function insert_bonus_dropdown_stats(map_name, bonus) {
+        let _b = bonus == 0 ? "" : bonus + 1
+        let table = document.querySelector('div.table-responsive.table-bonuses' + _b)
         let table_offset = 4
         let table_text_nodes
         table_text_nodes = table.querySelectorAll('td')
@@ -4364,17 +4344,17 @@
         insert_timediffs_b()
         insert_glyphs_local()
 
-        function insert_timediffs_b(){
+        function insert_timediffs_b() {
             let all_times = []
             let time_diffs = []
-            for (let i = 2; i < table_text_nodes.length; i+=table_offset) {
+            for (let i = 2; i < table_text_nodes.length; i += table_offset) {
                 let curr_time = table_text_nodes[i].textContent
                 //console.log(timestring_to_seconds(curr_time))
 
                 let diff = timestring_to_seconds(curr_time) - timestring_to_seconds(fastest_b_time)
-                if (diff > 0){
+                if (diff > 0) {
                     time_diffs.push(diff.toFixed(3))
-                }else{
+                } else {
                     time_diffs.push(0)
                 }
 
@@ -4382,53 +4362,53 @@
             }
             //console.log("all_times ", all_times)
             //console.log("time_diffs ", time_diffs)
-    
-            for(let i = 2; i < table_text_nodes.length; i+=table_offset){
+
+            for (let i = 2; i < table_text_nodes.length; i += table_offset) {
                 let curr_diff = time_diffs.shift()
-                if (curr_diff == 0){
+                if (curr_diff == 0) {
                     continue
                 }
-                if(!table_text_nodes[i].querySelector("span")){
+                if (!table_text_nodes[i].querySelector("span")) {
                     table_text_nodes[i].innerHTML += " <span style='color:lightcoral'><small>+" + curr_diff + "</small></span>"
                 }
             }
         }
 
-        function insert_glyphs_local(){
+        function insert_glyphs_local() {
             records_table.forEach((record) => {
                 let toggle_glyph = document.createElement('A')
                 toggle_glyph.className = "glyphicon glyphicon-menu-down"
                 toggle_glyph.style = "float: right; margin-right: 10px;margin-left: 20px; cursor: pointer;"
                 toggle_glyph.href = "#"
-    
+
                 let link = record.href.split('/')
                 let id = link[link.length - 1]
-    
-                if(!record.href.includes('#')){
-                    if(!record.parentElement.querySelector('.glyphicon')){
+
+                if (!record.href.includes('#')) {
+                    if (!record.parentElement.querySelector('.glyphicon')) {
                         record.insertAdjacentElement('afterend', toggle_glyph);
                     }
-                } 
-                toggle_glyph.onclick = function(e){
+                }
+                toggle_glyph.onclick = function (e) {
                     e.preventDefault()
                     toggle_glyph.className = toggle_glyph.className == "glyphicon glyphicon-menu-down" ? "glyphicon glyphicon-menu-up" : "glyphicon glyphicon-menu-down"
                     let hidden_row = document.createElement('div')
                     hidden_row.className = "hidden-row"
                     hidden_row.style = "display: none;"
                     hidden_row.innerHTML = "<p>Loading... <i class='fa fa-spinner fa-spin'></i></p>"
-    
-                    if(!$(this).closest("td").find(".hidden-row").length){
+
+                    if (!$(this).closest("td").find(".hidden-row").length) {
                         hidden_row.setAttribute("fetched", "false")
                         $(this).closest("td").append(hidden_row);
-                    } 
+                    }
                     $(this).closest("td").find(".hidden-row").slideToggle();
-    
-                    if(hidden_row.getAttribute("fetched") == "false"){
-                        
-                        insert_dropdown_stats_div(map_name,id,hidden_row, bonus+1)
+
+                    if (hidden_row.getAttribute("fetched") == "false") {
+
+                        insert_dropdown_stats_div(map_name, id, hidden_row, bonus + 1)
                     }
                 }
-    
+
             })
         }
 
@@ -4442,7 +4422,7 @@
 
     }
 
-    function insert_dropdown_stats(map, friends = false){
+    function insert_dropdown_stats(map, friends = false) {
         let records_table
         let table_text_nodes
         let target_div = document.querySelectorAll('div.col')
@@ -4451,7 +4431,7 @@
         let table
         let table_offset = 4
 
-        if(friends){
+        if (friends) {
             correct_div = target_div[target_div.length - 2]
             table = document.querySelector('div.table-responsive.table-friends')
             table_offset = 5
@@ -4463,25 +4443,25 @@
 
         records_table = table.querySelectorAll('a')
         table_text_nodes = table.querySelectorAll('td')
-        if(fastest_time == -1){
+        if (fastest_time == -1) {
             fastest_time = table_text_nodes[2].textContent
         }
         console.log("fastest_time ", fastest_time)
-        
+
         insert_timediffs()
         insert_glyphs_local()
 
-        function insert_timediffs(){
+        function insert_timediffs() {
             let all_times = []
             let time_diffs = []
-            for (let i = 2; i < table_text_nodes.length; i+=table_offset) {
+            for (let i = 2; i < table_text_nodes.length; i += table_offset) {
                 let curr_time = table_text_nodes[i].textContent
                 console.log(timestring_to_seconds(curr_time))
 
                 let diff = timestring_to_seconds(curr_time) - timestring_to_seconds(fastest_time)
-                if (diff > 0){
+                if (diff > 0) {
                     time_diffs.push(diff.toFixed(3))
-                }else{
+                } else {
                     time_diffs.push(0)
                 }
 
@@ -4489,19 +4469,19 @@
             }
             console.log("all_times ", all_times)
             console.log("time_diffs ", time_diffs)
-    
-            for(let i = 2; i < table_text_nodes.length; i+=table_offset){
+
+            for (let i = 2; i < table_text_nodes.length; i += table_offset) {
                 let curr_diff = time_diffs.shift()
-                if (curr_diff == 0){
+                if (curr_diff == 0) {
                     continue
                 }
-                if(!table_text_nodes[i].querySelector("span")){
+                if (!table_text_nodes[i].querySelector("span")) {
                     table_text_nodes[i].innerHTML += " <span style='color:lightcoral'><small>+" + curr_diff + "</small></span>"
                 }
             }
         }
 
-        function insert_glyphs_local(track = 0){ // local variation of the same function, i'll fix this later
+        function insert_glyphs_local(track = 0) { // local variation of the same function, i'll fix this later
             records_table.forEach((record) => {
                 let toggle_glyph = document.createElement('A')
                 toggle_glyph.className = "glyphicon glyphicon-menu-down"
@@ -4510,13 +4490,13 @@
 
                 let link = record.href.split('/')
                 let id = link[link.length - 1]
-    
-                if(!record.href.includes('#')){
-                    if(!record.parentElement.querySelector('.glyphicon')){
+
+                if (!record.href.includes('#')) {
+                    if (!record.parentElement.querySelector('.glyphicon')) {
                         record.insertAdjacentElement('afterend', toggle_glyph);
                     }
-                } 
-                toggle_glyph.onclick = function(e){
+                }
+                toggle_glyph.onclick = function (e) {
                     e.preventDefault()
                     toggle_glyph.className = toggle_glyph.className == "glyphicon glyphicon-menu-down" ? "glyphicon glyphicon-menu-up" : "glyphicon glyphicon-menu-down"
                     let hidden_row = document.createElement('div')
@@ -4524,17 +4504,17 @@
                     hidden_row.style = "display: none;"
                     hidden_row.innerHTML = "<p>Loading... <i class='fa fa-spinner fa-spin'></i></p>"
 
-                    if(!$(this).closest("td").find(".hidden-row").length){
+                    if (!$(this).closest("td").find(".hidden-row").length) {
                         hidden_row.setAttribute("fetched", "false")
                         $(this).closest("td").append(hidden_row);
-                    } 
+                    }
                     $(this).closest("td").find(".hidden-row").slideToggle();
 
-                    if(hidden_row.getAttribute("fetched") == "false"){
-                        insert_dropdown_stats_div(map,id,hidden_row, track)
+                    if (hidden_row.getAttribute("fetched") == "false") {
+                        insert_dropdown_stats_div(map, id, hidden_row, track)
                     }
                 }
-    
+
             })
         }
 
@@ -4549,7 +4529,7 @@
 
     }
 
-    function insert_profile_dropdown_stats(current_profile_id){
+    function insert_profile_dropdown_stats(current_profile_id) {
         let table = document.querySelector('#player-maps')
         let records_table = table.querySelectorAll('a')
 
@@ -4561,7 +4541,7 @@
         });
     }
 
-    function insert_glyphs(records_table, id){
+    function insert_glyphs(records_table, id) {
         records_table.forEach((record, i) => {
             let toggle_glyph = document.createElement('A')
             toggle_glyph.className = "glyphicon glyphicon-menu-down"
@@ -4570,12 +4550,12 @@
 
             let map = record.href.split('/').pop()
 
-            if(!record.href.includes('#')){
-                if(!record.parentElement.querySelector('.glyphicon')){
+            if (!record.href.includes('#')) {
+                if (!record.parentElement.querySelector('.glyphicon')) {
                     record.insertAdjacentElement('afterend', toggle_glyph);
                 }
-            } 
-            toggle_glyph.onclick = function(e){
+            }
+            toggle_glyph.onclick = function (e) {
                 e.preventDefault()
                 toggle_glyph.className = toggle_glyph.className == "glyphicon glyphicon-menu-down" ? "glyphicon glyphicon-menu-up" : "glyphicon glyphicon-menu-down"
                 let hidden_row = document.createElement('div')
@@ -4583,25 +4563,25 @@
                 hidden_row.style = "display: none;"
                 hidden_row.innerHTML = "<p>Loading... <i class='fa fa-spinner fa-spin'></i></p>"
 
-                if(!$(this).closest("td").find(".hidden-row").length){
+                if (!$(this).closest("td").find(".hidden-row").length) {
                     hidden_row.setAttribute("fetched", "false")
                     $(this).closest("td").append(hidden_row);
-                } 
+                }
                 $(this).closest("td").find(".hidden-row").slideToggle();
 
-                if(hidden_row.getAttribute("fetched") == "false"){
-                    insert_dropdown_stats_div(map,id,hidden_row)
+                if (hidden_row.getAttribute("fetched") == "false") {
+                    insert_dropdown_stats_div(map, id, hidden_row)
                 }
             }
         })
     }
 
-    function insert_dropdown_stats_div(map,id,hidden_row, track = 0){
+    function insert_dropdown_stats_div(map, id, hidden_row, track = 0) {
         //console.log("map", map, "id", id, "track", track)
-        make_request("https://api.surfheaven.eu/api/records/"+map+"/"+id, function(data){
+        make_request("https://api.surfheaven.eu/api/records/" + map + "/" + id, function (data) {
             let index = data.findIndex(x => x.map == map && x.track == track)
             hidden_row.setAttribute("fetched", "true")
-            if(data){
+            if (data) {
                 console.log(data[index])
                 let session_attempts = data[index].session_zonestarts
                 let total_attempts = data[index].zonestarts
@@ -4610,11 +4590,11 @@
                 let session_mapseconds = data[index].session_mapseconds
                 let total_mapseconds = data[index].mapseconds
 
-                if(session_mapseconds == 0){
+                if (session_mapseconds == 0) {
                     hidden_row.innerHTML = `<p style="margin-bottom:0px; ">&emsp;&emsp;Record predates the collection of session stats :( <br>
                         &emsp;&emsp;Points: <strong>${data[index].points}</strong><br>
                         &emsp;&emsp;Finishes: <strong>${data[index].finishcount}</strong></p>`
-                }else{
+                } else {
                     hidden_row.innerHTML = `<p style="margin-bottom:0px; ">&emsp;&emsp;Attempts: <strong>${session_attempts}</strong> in session (<strong>${total_attempts}</strong> total) <br>
                     &emsp;&emsp;Time in map: <strong>${format_time_noms(session_mapseconds)}</strong> in session (<strong>${format_time_noms(total_mapseconds)}</strong> total) <br>
                     &emsp;&emsp;Time in level: <strong>${format_time_noms(session_leveltime)}</strong> in session (<strong>${format_time_noms(total_leveltime)}</strong> total) <br>
@@ -4622,29 +4602,29 @@
                     &emsp;&emsp;Points: <strong>${data[index].points}</strong></p>`;
                 }
 
-            }else{
-                hidden_row.innerHTML = "<p style='margin-bottom:0px;'>&emsp;&emsp;Cant get stats for map " + map +"</p>"
+            } else {
+                hidden_row.innerHTML = "<p style='margin-bottom:0px;'>&emsp;&emsp;Cant get stats for map " + map + "</p>"
             }
-            
+
         })
 
     }
 
-    function format_time_noms(time){
+    function format_time_noms(time) {
         let hours = Math.floor(time / 3600);
         let minutes = Math.floor((time - (hours * 3600)) / 60);
         let seconds = time - (hours * 3600) - (minutes * 60);
-        if (hours < 10) {hours = "0"+hours;}
-        if (minutes < 10) {minutes = "0"+minutes;}
-        if (seconds < 10) {seconds = "0"+seconds;}
+        if (hours < 10) { hours = "0" + hours; }
+        if (minutes < 10) { minutes = "0" + minutes; }
+        if (seconds < 10) { seconds = "0" + seconds; }
 
-        if(hours > 0){
-            return hours+':'+minutes+':'+seconds;
+        if (hours > 0) {
+            return hours + ':' + minutes + ':' + seconds;
         }
-        return minutes+':'+seconds;
+        return minutes + ':' + seconds;
     }
 
-    function format_seconds_to_time(seconds){
+    function format_seconds_to_time(seconds) {
         let time = new Date(seconds * 1000);
         let hours = time.getUTCHours();
         let minutes = time.getUTCMinutes();
@@ -4659,8 +4639,8 @@
         return formatted_time;
     }
 
-    function insert_rating(map){
-        if(!settings.user_ratings) return;
+    function insert_rating(map) {
+        if (!settings.user_ratings) return;
 
         GM_xmlhttpRequest({
             method: "GET",
@@ -4676,22 +4656,22 @@
                     target.display = "block";
                     target.innerHTML = "<b>Similarly rated maps</b>: &nbsp;";
                     for (let i = 0; i < maps.length; i++) {
-                        target.innerHTML += " <a href='https://surfheaven.eu/map/" + maps[i] +"' style='padding-left:5px; padding-right:5px'>" + maps[i] + " </a>&nbsp; <p class='small'> | </p> &nbsp;";
+                        target.innerHTML += " <a href='https://surfheaven.eu/map/" + maps[i] + "' style='padding-left:5px; padding-right:5px'>" + maps[i] + " </a>&nbsp; <p class='small'> | </p> &nbsp;";
                     }
                     target.innerHTML = target.innerHTML.slice(0, -27);
                 }
             }
         })
-        
-        function toggle_rating_modal(){
-            if(!document.querySelector('#rating_modal')){
+
+        function toggle_rating_modal() {
+            if (!document.querySelector('#rating_modal')) {
                 let modal_fade = document.createElement('div');
                 modal_fade.className = "modal fade";
                 modal_fade.id = "rating_modal";
                 modal_fade.style = "display: flex;"
                 modal_fade.setAttribute("tabindex", "-1");
                 modal_fade.setAttribute("role", "dialog");
-                
+
                 let modal = document.createElement('div');
                 modal.className = "modal";
                 modal.id = "rating_modal";
@@ -4736,7 +4716,7 @@
                 difficulty_rating_input.setAttribute("max", "5");
                 difficulty_rating_input.setAttribute("value", "3");
                 difficulty.appendChild(difficulty_rating_input);
-                difficulty_rating_input.addEventListener('input', function(){
+                difficulty_rating_input.addEventListener('input', function () {
                     difficulty_label.innerHTML = "Difficulty " + difficulty_rating_input.value + "/5" + "<br><small>How hard do you find this map relative to its tier?</small>";
                 });
                 modal_body.appendChild(difficulty);
@@ -4758,7 +4738,7 @@
                 fun_rating_input.setAttribute("max", "5");
                 fun_rating_input.setAttribute("value", "3");
                 fun.appendChild(fun_rating_input);
-                fun_rating_input.addEventListener('input', function(){
+                fun_rating_input.addEventListener('input', function () {
                     fun_label.innerHTML = "Fun " + fun_rating_input.value + "/5" + "<br><small>How fun do you find this map?</small>";
                 });
                 modal_body.appendChild(fun);
@@ -4784,7 +4764,7 @@
                 unit_rating.appendChild(unit_rating_label);
                 unit_rating.appendChild(unit_rating_input);
 
-                unit_rating_input.addEventListener('input', function() {
+                unit_rating_input.addEventListener('input', function () {
                     unit_rating_label.innerHTML = 'Unit ' + unit_rating_input.value + "/5" + "<small><br>Is the map unit heavy?</small>";
                 });
                 modal_body.appendChild(unit_rating);
@@ -4809,7 +4789,7 @@
                 tech_rating.appendChild(tech_rating_label);
                 tech_rating.appendChild(tech_rating_input);
 
-                tech_rating_input.addEventListener('input', function() {
+                tech_rating_input.addEventListener('input', function () {
                     tech_rating_label.innerHTML = 'Tech ' + tech_rating_input.value + "/5" + "<small><br>How technical is the map?</small>";
                 });
 
@@ -4831,21 +4811,21 @@
                         method: 'POST',
                         url: 'https://iloveur.mom/surfheaven/submit_rating.php',
                         data: "map=" + map + "&id=" + get_id() + "&difficulty=" + difficulty_value + "&fun=" + fun_factor + "&unit=" + unit_rating + "&tech=" + tech_rating,
-                        headers:{
+                        headers: {
                             "Content-Type": "application/x-www-form-urlencoded"
                         },
-                        onload: function(response) {
+                        onload: function (response) {
                             //console.log(response);
                             let json = JSON.parse(response.responseText);
 
-                            if(json.error_message){
+                            if (json.error_message) {
                                 create_toast("Error submitting rating", json.error_message, "error", 5000);
-                            }else{
+                            } else {
                                 create_toast("Success", json.success_message, "success", 5000);
                                 update_ratings_text();
                             }
                         },
-                        onerror: function(error) {
+                        onerror: function (error) {
                             console.error(error);
                             create_toast("Error submitting rating", "error", "error", 5000);
                         }
@@ -4864,7 +4844,7 @@
                 modal_footer.appendChild(cancel_button);
                 document.body.appendChild(modal_fade);
                 $('#rating_modal').modal('show');
-            }else{
+            } else {
                 $('#rating_modal').modal('show');
             }
         }
@@ -4998,13 +4978,13 @@
         let map_ratings = [];
         update_ratings_text();
 
-        function update_ratings_text(){
+        function update_ratings_text() {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: 'https://iloveur.mom/surfheaven/get_rating.php?map=' + map,
-                onload: function(response) {
+                onload: function (response) {
                     let json = JSON.parse(response.responseText);
-                    if(json.error_message){
+                    if (json.error_message) {
                         console.log(json.error_message);
                         //create_toast("Error",json.error_message,"warning",5000) // most likely no ratings error
                         difficulty_panel_body_text.innerHTML = "Difficulty N/A";
@@ -5013,7 +4993,7 @@
                         tech_panel_body_text.innerHTML = "Tech N/A";
                         panel_heading_span.innerHTML += " (0 Ratings, be the first to rate this map!)";
 
-                    }else{
+                    } else {
                         map_ratings = json;
                         let difficulty = Number(map_ratings.difficulty_rating);
                         let fun = Number(map_ratings.fun_factor_rating);
@@ -5022,23 +5002,23 @@
                         let num_ratings = Number(map_ratings.num_ratings);
                         let show_raters_link = document.createElement('a');
                         show_raters_link.href = "#";
-                        show_raters_link.innerHTML = '('+num_ratings+')';
-                        show_raters_link.onclick = function(){
+                        show_raters_link.innerHTML = '(' + num_ratings + ')';
+                        show_raters_link.onclick = function () {
                             show_map_raters(map);
                         };
 
-                        difficulty_panel_body_text.innerHTML = "Difficulty "+difficulty.toFixed(difficulty % 1 === 0 ? 0 : 2) + "/5";
-                        fun_panel_body_text.innerHTML = "Fun "+fun.toFixed(fun % 1 === 0 ? 0 : 2) + "/5";
-                        unit_panel_body_text.innerHTML = "Unit "+unit.toFixed(unit % 1 === 0 ? 0 : 2) + "/5";
-                        tech_panel_body_text.innerHTML = "Tech "+tech.toFixed(tech % 1 === 0 ? 0 : 2) + "/5";
+                        difficulty_panel_body_text.innerHTML = "Difficulty " + difficulty.toFixed(difficulty % 1 === 0 ? 0 : 2) + "/5";
+                        fun_panel_body_text.innerHTML = "Fun " + fun.toFixed(fun % 1 === 0 ? 0 : 2) + "/5";
+                        unit_panel_body_text.innerHTML = "Unit " + unit.toFixed(unit % 1 === 0 ? 0 : 2) + "/5";
+                        tech_panel_body_text.innerHTML = "Tech " + tech.toFixed(tech % 1 === 0 ? 0 : 2) + "/5";
                         panel_heading_span.innerHTML = "Map Ratings "
                         panel_heading_span.appendChild(show_raters_link);
 
                     }
                 },
-                onerror: function(error) {
+                onerror: function (error) {
                     console.log(error);
-                    create_toast("Error",error,"error",5000)
+                    create_toast("Error", error, "error", 5000)
                 }
             });
         }
@@ -5047,13 +5027,13 @@
 
     }
 
-    function show_map_raters(map_name){
+    function show_map_raters(map_name) {
         GM_xmlhttpRequest({
             method: 'GET',
-            url: 'https://iloveur.mom/surfheaven/get_raters.php?map='+map_name,
+            url: 'https://iloveur.mom/surfheaven/get_raters.php?map=' + map_name,
             onload: function (response) {
                 let ratings = JSON.parse(response.responseText);
-                if(!ratings.error_message){
+                if (!ratings.error_message) {
                     let max_ratings_to_show = 20;
                     let ratings_div = document.createElement('div');
                     ratings_div.id = "ratings_div";
@@ -5067,19 +5047,19 @@
                     ratings_div_list.style.padding = "0";
                     ratings_div_list.style.marginLeft = "0";
                     ratings_div.appendChild(ratings_div_list);
-                    for(let i = 0; i < ratings.length; i++){
+                    for (let i = 0; i < ratings.length; i++) {
                         let ratings_div_list_item = document.createElement('li');
-                        if(i >= max_ratings_to_show){
+                        if (i >= max_ratings_to_show) {
                             ratings_div_list_item.innerHTML = `... and ${ratings.length - max_ratings_to_show} others`;
                             ratings_div.appendChild(ratings_div_list_item);
                             break;
                         }
-                        make_request('https://api.surfheaven.eu/api/playerinfo/'+ratings[i], (data) => {
-                            if(data){
+                        make_request('https://api.surfheaven.eu/api/playerinfo/' + ratings[i], (data) => {
+                            if (data) {
                                 ratings_div_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${ratings[i]}" target="_blank">${data[0].name}</a>`
                                 ratings_div_list.appendChild(ratings_div_list_item);
                                 insert_flags_to_profiles();
-                            }else{
+                            } else {
                                 ratings_div_list_item.innerHTML = `<a href="https://steamcommunity.com/profiles/${ratings[i]}" target="_blank">${ratings[i]}</a>`
                                 ratings_div_list.appendChild(ratings_div_list_item);
                             }
@@ -5087,26 +5067,26 @@
 
 
                     }
-                    show_overlay_window("Rated by",ratings_div);
-                }else{
-                    create_toast("Error",ratings.error_message,"error",5000)
+                    show_overlay_window("Rated by", ratings_div);
+                } else {
+                    create_toast("Error", ratings.error_message, "error", 5000)
                 }
             }
         })
-            
+
     }
 
-    function insert_friend_rankings(map){
+    function insert_friend_rankings(map) {
         let follow_list = get_follow_list();
         let friend_ranks = [];
         make_request(`https://api.surfheaven.eu/api/records/${map}/0`, (data) => {
-            for(let i = 0; i < data.length; i++){
-                if(follow_list.includes(data[i].steamid) || data[i].steamid == get_id()){
+            for (let i = 0; i < data.length; i++) {
+                if (follow_list.includes(data[i].steamid) || data[i].steamid == get_id()) {
                     friend_ranks.push([data[i].rank, data[i].time, data[i].date, data[i].steamid, data[i].name, data[i].points]);
                 }
             }
-            if(friend_ranks.length > 0){
-                friend_ranks.sort((a,b) => a[0] - b[0]);
+            if (friend_ranks.length > 0) {
+                friend_ranks.sort((a, b) => a[0] - b[0]);
             }
             const button_target_div = document.querySelector('.links');
 
@@ -5118,10 +5098,10 @@
             children.length > 1 ? friends_ranking_button.innerHTML = "Friends" : friends_ranking_button.innerHTML = "Show friends";
             friends_ranking_button.href = "#";
             friends_ranking_button.setAttribute("for", "table-friends");
-            friends_ranking_button.onclick = function(e) {
-                try{document.getElementById("fetch_friends_bonus_ranks").remove()}catch(e){}
+            friends_ranking_button.onclick = function (e) {
+                try { document.getElementById("fetch_friends_bonus_ranks").remove() } catch (e) { }
                 insert_dropdown_stats(map, true);
-                if(children.length > 1){
+                if (children.length > 1) {
                     // Has bonuses
                     if (!$(this).hasClass("active") && $(this).is("[for]")) {
                         var c = $(this).parent().attr("for");
@@ -5131,7 +5111,7 @@
                         $(".map-tables-" + c + " ." + $(this).attr("for")).removeClass("hide");
                     }
                     if ($(this).attr('href') == '#') return false;
-                }else{
+                } else {
                     // No bonuses
                     e.preventDefault();
                     let table_maps_div = document.querySelector('.table-maps');
@@ -5144,7 +5124,7 @@
             }
 
             let container = document.createElement('div');
-            container.className = "table-responsive table-friends hide"; 
+            container.className = "table-responsive table-friends hide";
             let table = document.createElement('table');
             table.className = "table table-striped table-hover no-footer";
             let thead = document.createElement('thead');
@@ -5152,7 +5132,7 @@
             thead.innerHTML = `<tr><th>#</th><th>Name</th><th>Time</th><th>Date</th><th>Points</th></tr>`;
             table.appendChild(thead);
             let tbody = document.createElement('tbody');
-            for(let i = 0; i < friend_ranks.length; i++){
+            for (let i = 0; i < friend_ranks.length; i++) {
                 let tr = document.createElement('tr');
                 let td = document.createElement('td');
                 // rank
@@ -5191,11 +5171,11 @@
                 }
             );
             document.querySelector('.map-tables-records').appendChild(container);
-            
+
             button_target_div.prepend(friends_ranking_button);
             // whitespace removal
-            for(let i = 0; i < button_target_div.childNodes.length; i++){
-                if(button_target_div.childNodes[i].nodeType == 3){
+            for (let i = 0; i < button_target_div.childNodes.length; i++) {
+                if (button_target_div.childNodes[i].nodeType == 3) {
                     button_target_div.childNodes[i].remove();
                 }
             }
@@ -5203,7 +5183,7 @@
         });
     }
 
-    function insert_map_page_tag_list(current_map_name){
+    function insert_map_page_tag_list(current_map_name) {
         let tag_container = document.createElement('div');
         tag_container.className = "container-fluid";
         tag_container.style = "padding-left: 0px; padding-right: 0px;";
@@ -5229,7 +5209,7 @@
         }
 
         let tags = get_tags(current_map_name);
-        for(let i = 0; i < tags.length; i++){
+        for (let i = 0; i < tags.length; i++) {
             let tag = document.createElement('span');
             tag.style.whiteSpace = "pre-wrap";
             tag.style.cursor = "default";
@@ -5243,10 +5223,10 @@
         control_row.appendChild(tag_add_link);
         tag_container.appendChild(control_row);
 
-        function append_to_last_row(tag){
+        function append_to_last_row(tag) {
             let target_div = document.querySelectorAll('.container-fluid')[2];
             curr_row = Math.floor(target_div.getElementsByClassName("tag").length / max_tags_per_row);
-            if(target_div.getElementsByClassName("tags")[curr_row] == undefined){
+            if (target_div.getElementsByClassName("tags")[curr_row] == undefined) {
                 let row = document.createElement('div');
                 row.className = "tags";
                 target_div.appendChild(row);
@@ -5255,51 +5235,51 @@
         }
     }
 
-    function add_tag(map_name, tag){
+    function add_tag(map_name, tag) {
         let tags = get_tags(map_name);
-        if(!tags.includes(tag)){
+        if (!tags.includes(tag)) {
             tags.push(tag);
             set_map_tags(map_name, tags);
             console.log(`added tag ${tag} to map ${map_name}`)
         }
-        else{
+        else {
             console.log(`tag ${tag} already exists on map ${map_name}`)
-        } 
+        }
 
     }
 
-    function remove_tag(map_name, tag){
+    function remove_tag(map_name, tag) {
         let tags = get_tags(map_name);
         let index = tags.indexOf(tag);
-        if(index > -1){
+        if (index > -1) {
             tags.splice(index, 1);
         }
-        if(tags.length == 0){
+        if (tags.length == 0) {
             let db = get_tag_db();
             delete db[map_name];
             save_tag_db(db);
-        }else{
+        } else {
             set_map_tags(map_name, tags);
             console.log(`removed tag ${tag} from map ${map_name}`)
         }
     }
 
-    function get_tag_db(){
+    function get_tag_db() {
         let db = unsafeWindow.localStorage.getItem("map_tags");
-        if(db == null){
+        if (db == null) {
             db = {};
-        }else{
+        } else {
             db = JSON.parse(db);
         }
         return db;
     }
 
-    function rename_tag(old_tag, new_tag){
+    function rename_tag(old_tag, new_tag) {
         let db = get_tag_db();
-        for(let map_name in db){
+        for (let map_name in db) {
             let tags = db[map_name];
             let index = tags.indexOf(old_tag);
-            if(index > -1){
+            if (index > -1) {
                 tags[index] = new_tag;
                 db[map_name] = tags;
             }
@@ -5307,20 +5287,20 @@
         save_tag_db(db);
     }
 
-    function save_tag_db(db){
-        for(let map_name in db){
+    function save_tag_db(db) {
+        for (let map_name in db) {
             db[map_name].sort();
         }
         unsafeWindow.localStorage.setItem("map_tags", JSON.stringify(db));
         console.log("saved db")
     }
 
-    function set_map_tags(map_name, tags){
+    function set_map_tags(map_name, tags) {
         let db = get_tag_db();
-        if(tags.length == 0){
+        if (tags.length == 0) {
             delete db[map_name];
             console.log(`no tags remaining for ${map_name}, deleting entry`)
-        }else{
+        } else {
             tags.sort();
             db[map_name] = tags;
             console.log(`saved tags ${tags} for ${map_name}`)
@@ -5329,21 +5309,21 @@
 
     }
 
-    function get_tags(map_name){
+    function get_tags(map_name) {
         let db = get_tag_db();
         let tags = db[map_name];
-        if(tags == null){
+        if (tags == null) {
             tags = [];
         }
         console.log(`got tags ${tags} for ${map_name}`)
         return tags.sort();
     }
 
-    function get_maps_with_tag(tag){
+    function get_maps_with_tag(tag) {
         let db = get_tag_db();
         let maps = [];
-        for(let key in db){
-            if(db[key].includes(tag)){
+        for (let key in db) {
+            if (db[key].includes(tag)) {
                 maps.push(key);
             }
         }
@@ -5351,12 +5331,12 @@
         return maps;
     }
 
-    function get_all_tags_from_db(){
+    function get_all_tags_from_db() {
         let db = get_tag_db();
         let tags = [];
-        for(let key in db){
-            for(let i = 0; i < db[key].length; i++){
-                if(!tags.includes(db[key][i])){
+        for (let key in db) {
+            for (let i = 0; i < db[key].length; i++) {
+                if (!tags.includes(db[key][i])) {
                     tags.push(db[key][i]);
                 }
             }
@@ -5366,8 +5346,8 @@
         return tags;
     }
 
-    function purge_all_tags(){
-        if(window.confirm("Are you sure you want to purge all tags?")){
+    function purge_all_tags() {
+        if (window.confirm("Are you sure you want to purge all tags?")) {
             let db = {};
             save_tag_db(db);
             console.log("purged all tags")
@@ -5378,7 +5358,7 @@
     /**
      * Backs up all tags as a JSON file
      */
-    function export_all_tags(){
+    function export_all_tags() {
         let db = get_tag_db();
         console.log("saving all tags as json file")
         download(JSON.stringify(db), "surfheaven_map_tags_backup.json", "text/plain");
@@ -5388,8 +5368,8 @@
      * Exports maps with a specific tag as a JSON file
      * @param {Array} tags array of tags
      */
-    function export_specific_tags(tags){
-        for(let i = 0; i < tags.length; i++){
+    function export_specific_tags(tags) {
+        for (let i = 0; i < tags.length; i++) {
             let tag = tags[i];
             let maps = get_maps_with_tag(tag);
             let json = {};
@@ -5402,7 +5382,7 @@
     /**
      * Imports tags from a JSON file and updates the tag database
      */
-    function import_tags(){
+    function import_tags() {
         let file_input = document.createElement('input');
         file_input.type = "file";
         file_input.accept = ".json";
@@ -5416,28 +5396,28 @@
                 console.log(db)
                 let old_db = get_tag_db();
                 // key is the tag, value is the maps
-                for(let key in db){
+                for (let key in db) {
                     console.log(`importing tag ${key}`)
                     let maps = db[key];
-                    for(let i = 0; i < maps.length; i++){
-                        if(old_db[maps[i]] != undefined){
+                    for (let i = 0; i < maps.length; i++) {
+                        if (old_db[maps[i]] != undefined) {
                             console.log(`adding tag ${key} to map ${maps[i]}`)
                             let map = maps[i];
                             let tags = get_tags(map);
-                            if(!tags.includes(key)){
+                            if (!tags.includes(key)) {
                                 tags.push(key);
                                 set_map_tags(map, tags);
                             }
-                        }else{
+                        } else {
                             console.log(`adding map ${maps[i]} with tag ${key}`)
                             set_map_tags(maps[i], [key]);
                         }
-                    }        
+                    }
                     console.log("imported tags")
                     document.getElementById('overlay').remove();
                     open_map_tag_menu();
                 }
-            }; 
+            };
             reader.readAsText(file);
 
         }
@@ -5446,13 +5426,13 @@
 
     function download(content, fileName, contentType) {
         var a = document.createElement("a");
-        var file = new Blob([content], {type: contentType});
+        var file = new Blob([content], { type: contentType });
         a.href = URL.createObjectURL(file);
         a.download = fileName;
         a.click();
     }
 
-    function open_map_tag_menu(){
+    function open_map_tag_menu() {
         let root_div = document.createElement('div');
         root_div.classList = "container-fluid";
 
@@ -5470,7 +5450,7 @@
         map_tag_table_head.innerHTML = `<tr><th>Map</th><th>Tags</th></tr>`;
 
         let db = get_tag_db();
-        for(let map in db){
+        for (let map in db) {
             let row = document.createElement('tr');
             let map_name = document.createElement('td');
             map_name.innerHTML = `<a href="https://surfheaven.eu/map/${map}">${map}</a>`;
@@ -5479,7 +5459,7 @@
             row.appendChild(map_name);
             row.appendChild(tags);
             map_tag_table_body.appendChild(row);
-            
+
         }
         map_tag_table.appendChild(map_tag_table_head);
         map_tag_table.appendChild(map_tag_table_body);
@@ -5504,33 +5484,33 @@
         tag_links.style.flexWrap = "wrap";
 
         let all_tags = get_all_tags_from_db();
-        for(let i = 0; i < all_tags.length; i++){
+        for (let i = 0; i < all_tags.length; i++) {
             let tag_link = document.createElement('a');
             tag_link.className = "tag";
             tag_link.innerHTML = all_tags[i];
             tag_link.onclick = () => {
-                if(tag_link.classList.contains("tag-selected")){
+                if (tag_link.classList.contains("tag-selected")) {
                     tag_link.classList.remove("tag-selected");
-                }else{
+                } else {
                     tag_link.classList.add("tag-selected");
                 }
                 let selected_tags = tag_links.getElementsByClassName("tag-selected");
 
-                if(selected_tags.length == 0){
+                if (selected_tags.length == 0) {
                     export_button.style.display = "none";
                     rename_button.style.display = "none";
                 }
-                else if(selected_tags.length == 1){
+                else if (selected_tags.length == 1) {
                     export_button.style.display = "inline-block";
                     rename_button.style.display = "inline-block";
-                }else{
+                } else {
                     export_button.style.display = "inline-block";
                     rename_button.style.display = "none";
                 }
-                    
+
                 let tag_array = [];
                 let regex = "";
-                for(let i = 0; i < selected_tags.length; i++){
+                for (let i = 0; i < selected_tags.length; i++) {
                     tag_array.push(selected_tags[i].innerHTML);
 
                 }
@@ -5538,13 +5518,13 @@
                     return `(?=.*${tag}\\b)`;
                 }).join("");
                 regex = `^${tag_regex_pattern}.*$`;
-                table.column(1).search(regex,true).draw();
+                table.column(1).search(regex, true).draw();
 
             }
-            function append_to_last_row(tag){
+            function append_to_last_row(tag) {
                 let max_tags_per_row = 12;
                 let last_row = tag_links.lastElementChild;
-                if(last_row == null || last_row.childElementCount == max_tags_per_row){
+                if (last_row == null || last_row.childElementCount == max_tags_per_row) {
                     let new_row = document.createElement('div');
                     new_row.className = "row";
                     new_row.style.marginBottom = "10px";
@@ -5575,7 +5555,7 @@
         export_button.onclick = () => {
             let selected_tags = tag_links.getElementsByClassName("tag-selected");
             let tag_array = [];
-            for(let i = 0; i < selected_tags.length; i++){
+            for (let i = 0; i < selected_tags.length; i++) {
                 tag_array.push(selected_tags[i].innerHTML);
             }
             export_specific_tags(tag_array);
@@ -5589,17 +5569,17 @@
         rename_button.style.display = "none";
         rename_button.onclick = () => {
             let selected_tags = tag_links.getElementsByClassName("tag-selected");
-            if(selected_tags.length == 1){
+            if (selected_tags.length == 1) {
                 let tag = selected_tags[0].innerHTML;
-                let new_tag = prompt("Enter new tag name",tag);
-                if(new_tag != null && new_tag != ""){
-                    rename_tag(tag,new_tag);
+                let new_tag = prompt("Enter new tag name", tag);
+                if (new_tag != null && new_tag != "") {
+                    rename_tag(tag, new_tag);
                     selected_tags[0].innerHTML = new_tag;
 
                     let rows = map_tag_table_body.getElementsByTagName('tr');
-                    for(let i = 0; i < rows.length; i++){
+                    for (let i = 0; i < rows.length; i++) {
                         let tags = rows[i].getElementsByTagName('td')[1].innerHTML;
-                        tags = tags.replace(tag,new_tag);
+                        tags = tags.replace(tag, new_tag);
                         rows[i].getElementsByTagName('td')[1].innerHTML = tags;
                     }
                 }
@@ -5621,14 +5601,14 @@
         table_wrapper.appendChild(map_tag_table);
         root_div.appendChild(table_wrapper);
         root_div.appendChild(button_wrapper);
-        
-        show_overlay_window("Map tags",root_div);
+
+        show_overlay_window("Map tags", root_div);
     }
 
-    function open_tag_selection_window(map_name, from_map_page = false){
-        if(document.getElementById("tag_selection_modal") != null){
+    function open_tag_selection_window(map_name, from_map_page = false) {
+        if (document.getElementById("tag_selection_modal") != null) {
             $('#tag_selection_modal').modal('show');
-        }else{
+        } else {
             let modal = document.createElement('div');
             modal.innerHTML = `<div class="modal fade" id="tag_selection_modal" tabindex="-1" role="dialog" style="display: flex;">
             <div class="modal-dialog" role="document">
@@ -5652,21 +5632,21 @@
             let all_tags = get_all_tags_from_db();
             let curr_row = 0; // current row in modal
             let max_tags_per_row = 12;
-            for(let i = 0; i < all_tags.length; i++){
+            for (let i = 0; i < all_tags.length; i++) {
                 let tag = document.createElement('a');
                 tag.className = "tag";
                 tag.innerHTML = all_tags[i];
-                if(from_map_page){
-                    if((map_name in db)){
-                        if(db[map_name].includes(all_tags[i])){
+                if (from_map_page) {
+                    if ((map_name in db)) {
+                        if (db[map_name].includes(all_tags[i])) {
                             tag.classList.add("tag-selected");
                         }
                     }
                 }
                 tag.onclick = () => {
-                    if(tag.classList.contains("tag-selected")){
+                    if (tag.classList.contains("tag-selected")) {
                         tag.classList.remove("tag-selected");
-                    }else{
+                    } else {
                         tag.classList.add("tag-selected");
                     }
                 }
@@ -5694,15 +5674,15 @@
             create_tag_button.innerHTML = "Create tag";
             create_tag_button.onclick = () => {
                 // add tag to selection grid
-                if(tag_input.value != "" && tag_input.value != " "){
+                if (tag_input.value != "" && tag_input.value != " ") {
                     let tag = document.createElement('a');
                     tag.className = "tag tag-selected";
                     tag.style.whiteSpace = "nowrap";
                     tag.innerHTML = tag_input.value;
                     tag.onclick = () => {
-                        if(tag.classList.contains("tag-selected")){
+                        if (tag.classList.contains("tag-selected")) {
                             tag.classList.remove("tag-selected");
-                        }else{
+                        } else {
                             tag.classList.add("tag-selected");
                         }
                     }
@@ -5717,21 +5697,21 @@
             modal.getElementsByClassName("modal-footer")[0].getElementsByClassName("btn-primary")[0].onclick = () => {
                 let selected_tags = modal.getElementsByClassName("tag-selected");
                 let _tags = [];
-                for(let i = 0; i < selected_tags.length; i++){
+                for (let i = 0; i < selected_tags.length; i++) {
                     let tag = selected_tags[i].innerHTML;
                     _tags.push(tag)
                 }
-                set_map_tags(map_name,_tags)
+                set_map_tags(map_name, _tags)
                 // add the tags to the map
-                if(from_map_page){
+                if (from_map_page) {
                     let map_tags_div = document.getElementsByClassName("tags")[0];
-                    if(map_tags_div == undefined){
+                    if (map_tags_div == undefined) {
                         map_tags_div = document.createElement('div');
                         map_tags_div.className = "tags";
                         document.getElementsByClassName("container-fluid")[2].appendChild(map_tags_div);
                     }
                     map_tags_div.innerHTML = "";
-                    for(let i = 0; i < _tags.length; i++){
+                    for (let i = 0; i < _tags.length; i++) {
                         let tag = document.createElement('a');
                         tag.className = "tag";
                         tag.innerHTML = _tags[i];
@@ -5742,9 +5722,9 @@
             }
 
             $('#tag_selection_modal').modal('show');
-            function append_to_last_row(tag){
+            function append_to_last_row(tag) {
                 curr_row = Math.floor(modal.getElementsByClassName("tag").length / max_tags_per_row);
-                if(modal.getElementsByClassName("row")[curr_row] == undefined){
+                if (modal.getElementsByClassName("row")[curr_row] == undefined) {
                     let row = document.createElement('div');
                     row.className = "row";
                     row.style.marginTop = "10px";
@@ -5756,31 +5736,31 @@
 
     }
 
-    function insert_points_until_next_rank(){
+    function insert_points_until_next_rank() {
         const points_regex = /Points (\d+)/;
         const rank_regex = /Rank (\d+)/;
         const own_points = Number(document.body.innerText.match(points_regex)[1])
         const own_rank = Number(document.body.innerText.match(rank_regex)[1])
 
-        if (own_rank == 1){
+        if (own_rank == 1) {
             console.log("Already #1 :)");
             return;
         }
 
-        function find_next_rank(rank){
+        function find_next_rank(rank) {
             let count = 0;
-            for(let i = 0; i < GROUP_THRESHOLDS.length; i++){
-                if(GROUP_THRESHOLDS[i] < rank) count++;
+            for (let i = 0; i < GROUP_THRESHOLDS.length; i++) {
+                if (GROUP_THRESHOLDS[i] < rank) count++;
             }
-            return GROUP_THRESHOLDS[count-1];
+            return GROUP_THRESHOLDS[count - 1];
         };
 
         let next_rank = find_next_rank(own_rank);
         let points_until_next_rank = 0;
 
-        make_request("https://api.surfheaven.eu/api/rankinfo/", function(data){
-            for(let i = 0; i < data.length; i++){
-                if(data[i].rank < own_rank){
+        make_request("https://api.surfheaven.eu/api/rankinfo/", function (data) {
+            for (let i = 0; i < data.length; i++) {
+                if (data[i].rank < own_rank) {
                     let next_rank_points = data[i].points;
                     points_until_next_rank = next_rank_points - own_points;
                     console.log(`Points until next rank: ${points_until_next_rank}`);
@@ -5795,58 +5775,58 @@
         });
     }
 
-    function insert_points_per_rank(map_name){
+    function insert_points_per_rank(map_name) {
         // will error out if cp_chart is disabled, due to the queryselectors being wrong, perhaps i need to switch to finding the elements with regex instead
-        if(!settings.points_per_rank) return;
+        if (!settings.points_per_rank) return;
         let total_completions_element
 
-        if(settings.map_cover_image){total_completions_element = document.querySelector('table.table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(2) > td:nth-child(2) > strong:nth-child(2)')}
-        else{total_completions_element = document.querySelector('table.table-responsive > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) > strong:nth-child(1)')}
+        if (settings.map_cover_image) { total_completions_element = document.querySelector('table.table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(2) > td:nth-child(2) > strong:nth-child(2)') }
+        else { total_completions_element = document.querySelector('table.table-responsive > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) > strong:nth-child(1)') }
 
         let last_rank = Number(total_completions_element.textContent)
-        let ranks = [1,2,3,10,15,25,50,100,250,500,1000,last_rank];
+        let ranks = [1, 2, 3, 10, 15, 25, 50, 100, 250, 500, 1000, last_rank];
         let points = [];
         let count = 0;
         for (let i = 0; i < ranks.length; i++) {
             if (ranks[i] >= last_rank) {
-              break;
+                break;
             }
             count++;
-          }
+        }
 
         ranks = ranks.slice(0, count);
         ranks.push(last_rank);
 
-        for(let i = 0; i < ranks.length; i++){
-            make_request("https://api.surfheaven.eu/api/maprank/"+map_name+"/"+ranks[i]+"/0", function(data){
-                try{points.push(data[0].points);}
-                catch{points.push(0);}
+        for (let i = 0; i < ranks.length; i++) {
+            make_request("https://api.surfheaven.eu/api/maprank/" + map_name + "/" + ranks[i] + "/0", function (data) {
+                try { points.push(data[0].points); }
+                catch { points.push(0); }
             });
         }
         // make_request isnt async so we need to wait for /some time/ before we can start using the data
-        setTimeout(function(){
-            points.sort(function(a, b){return b-a});
+        setTimeout(function () {
+            points.sort(function (a, b) { return b - a });
             //console.log(points,ranks)
 
             let table = document.createElement('table');
             table.className = "text-white";
             table.style = "width: 100%;";
 
-            for (let i = 0; i < Math.ceil(ranks.length/2); i++) {
+            for (let i = 0; i < Math.ceil(ranks.length / 2); i++) {
                 let row = table.insertRow(i);
-                if(points[i] !== undefined && points[i] !== 0){
+                if (points[i] !== undefined && points[i] !== 0) {
                     let cell1 = row.insertCell(0);
                     cell1.innerHTML = `#<strong class="c-white">${ranks[i]}: ${points[i]}</strong> pts`;
                 }
-                if(points[i+Math.ceil(points.length/2)]!== undefined && points[i+Math.ceil(points.length/2)] !== 0){
+                if (points[i + Math.ceil(points.length / 2)] !== undefined && points[i + Math.ceil(points.length / 2)] !== 0) {
                     let cell2 = row.insertCell(1);
-                    cell2.innerHTML = `#<strong class="c-white">${ranks[i+Math.ceil(points.length/2)]}: ${points[i+Math.ceil(points.length/2)]}</strong> pts`;
+                    cell2.innerHTML = `#<strong class="c-white">${ranks[i + Math.ceil(points.length / 2)]}: ${points[i + Math.ceil(points.length / 2)]}</strong> pts`;
                 }
 
             }
             let table_body = document.createElement('tbody');
             let target_div = (settings.map_cover_image ? document.querySelector('div.col-md-3:nth-child(4)') : document.querySelector('div.col-md-3:nth-child(2)'));
-            let upper_table =(settings.map_cover_image ? document.querySelector('table.table:nth-child(2)') : document.querySelector('table.table-responsive')) ;
+            let upper_table = (settings.map_cover_image ? document.querySelector('table.table:nth-child(2)') : document.querySelector('table.table-responsive'));
             let table_title = document.createElement('h4');
 
             upper_table.style = "margin-top: 0px; margin-bottom: 0px;";
@@ -5861,36 +5841,36 @@
 
     }
 
-    function insert_map_picture(map_name){
-        if(!settings.map_cover_image) return;
+    function insert_map_picture(map_name) {
+        if (!settings.map_cover_image) return;
         let attempt = 0
-        let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/"+map_name+".jpg"
+        let map_link = "https://github.com/Sayt123/SurfMapPics/raw/Maps-and-bonuses/csgo/" + map_name + ".jpg"
 
         let target_div = document.querySelector('.panel-c-warning');
-        target_div.style = "background: url('"+map_link+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
-        
+        target_div.style = "background: url('" + map_link + "'); background-position: center;background-repeat: no-repeat;background-size: cover;";
+
         let img = new Image();
 
         img.src = map_link;
-        img.onerror = function() {
+        img.onerror = function () {
             attempt++;
-            if(attempt > 1) return;
+            if (attempt > 1) return;
             console.log("Image from sayt123 failed, trying ksf");
             img.src = img_fallback(map_name);
-            target_div.style = "background: url('"+img.src+"'); background-position: center;background-repeat: no-repeat;background-size: cover;";
+            target_div.style = "background: url('" + img.src + "'); background-position: center;background-repeat: no-repeat;background-size: cover;";
         }
 
-        if(target_div.style.backgroundImage != "none"){
+        if (target_div.style.backgroundImage != "none") {
             add_shadow_to_text_recursively(target_div);
         }
         let col_1;
         let col_2;
         let col_3;
-        if(settings.cp_chart){
+        if (settings.cp_chart) {
             col_1 = document.querySelector('div.col-md-3:nth-child(2)');
             col_2 = document.querySelector('div.col-md-3:nth-child(4)');
             col_3 = document.querySelector('.col-md-5');
-        }else{
+        } else {
             col_1 = document.querySelector('div.col-sm-6');
             col_2 = document.querySelector('.col-md-5');
         }
@@ -5898,7 +5878,7 @@
         col_2.classList.add("text-center")
         col_1.style = "background-color: rgba(0, 0, 0, 0.4); margin-right: 4.15%; border-radius: 1rem; height: 300px; box-shadow: 0px 2px 0px 0px #f6a821;";
         col_2.style = "background-color: rgba(0, 0, 0, 0.4); margin-right: 4.15%; border-radius: 1rem; height: 300px; box-shadow: 0px 2px 0px 0px #f6a821;";
-        if(settings.cp_chart) col_3.style = "background-color: rgba(0, 0, 0, 0.4); border-radius: 1rem; height: 300px; box-shadow: 0px 2px 0px 0px #f6a821;";
+        if (settings.cp_chart) col_3.style = "background-color: rgba(0, 0, 0, 0.4); border-radius: 1rem; height: 300px; box-shadow: 0px 2px 0px 0px #f6a821;";
     }
 
     function add_shadow_to_text_recursively(element) {
@@ -5918,7 +5898,7 @@
     }
 
     function cp_chart() {
-        if(!settings.cp_chart) return;
+        if (!settings.cp_chart) return;
         var top_panel_row = document.querySelector('.panel-c-warning > div:nth-child(1) > div:nth-child(1)')
         var map_info_col = document.querySelector('.panel-c-warning > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)')
         var map_stats_col = document.querySelector('.panel-c-warning > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)')
@@ -5927,7 +5907,7 @@
         map_info_col.className = "col-md-3";
         map_stats_col.className = "col-md-3";
         top_panel_row.appendChild(cp_chart_col);
-        
+
         make_request('https://api.surfheaven.eu/api/checkpoints/' + current_map_name, function (data) {
             var cp_labels = ["Start"];
             var cp_series = [0];
@@ -5967,7 +5947,7 @@
                             };
                             var diff = (own_series[i] - cp_series[i]).toFixed(2);
                             // sometimes the api returns checkpoints with missing times, fun
-                            if (i != 0 && i < data2.length - 1 && !isNaN(diff)) cp_labels[i] = (diff > 0 ? "+" : "") + diff ;
+                            if (i != 0 && i < data2.length - 1 && !isNaN(diff)) cp_labels[i] = (diff > 0 ? "+" : "") + diff;
                         }
                         // manually adding diff to the end, because mysteriously sometimes it's not added,
                         // and after i manually add it, sometimes its added twice, but still only visible once??? maybe im retarded, maybe its maybeline
@@ -5987,7 +5967,7 @@
 
             let records_table
             let target_div = document.querySelectorAll('div.col')
-            let correct_div = target_div[target_div.length -(settings.comments? 2 : 1)]
+            let correct_div = target_div[target_div.length - (settings.comments ? 2 : 1)]
             let table_div = correct_div.querySelector('div.table-responsive.table-maps')
             let table = table_div.childNodes[1]
 
@@ -5996,7 +5976,7 @@
             let first_page = true
             add_chart_buttons();
 
-            function add_chart_buttons (){
+            function add_chart_buttons() {
                 records_table.forEach((a_element, i) => {
                     let button_element = document.createElement('button');
                     button_element.className = 'btn btn-success btn-xs'
@@ -6007,10 +5987,10 @@
                     let link = a_element.href.split('/')
                     let id = link[link.length - 1]
                     if (id == get_id()) button_element.style.display = 'none';
-                    if(!a_element.href.includes('#')){
-                        if(a_element.parentElement.querySelector('button')) return;
+                    if (!a_element.href.includes('#')) {
+                        if (a_element.parentElement.querySelector('button')) return;
                         a_element.parentElement.appendChild(button_element);
-                    } 
+                    }
                     button_element.onclick = function () {
                         make_request('https://api.surfheaven.eu/api/checkpoints/' + current_map_name + '/' + id, function (data3) {
                             var new_series = [0];
@@ -6033,13 +6013,13 @@
             $(table).on('draw.dt', function () {
                 records_table = table.querySelectorAll('a')
                 add_chart_buttons();
-              });
+            });
         });
 
     }
 
     function insert_steam_avatar(steam_profile_url) {
-        if(!settings.steam_avatar) return;
+        if (!settings.steam_avatar) return;
         GM_xmlhttpRequest({
             method: 'GET',
             url: '/inc/getSteam.php?u=' + steam_profile_url,
@@ -6070,7 +6050,7 @@
         settings_row.classList.add("row");
         settings_row.style.minWidth = "400px";
         let category_count = 0;
-        for(let category in settings_categories) {
+        for (let category in settings_categories) {
             const settings_column = document.createElement("div");
             settings_column.classList.add("col-md-6");
 
@@ -6080,7 +6060,7 @@
             category_h4.textContent = category;
             category_div.appendChild(category_h4);
 
-            for(let setting of settings_categories[category]) {
+            for (let setting of settings_categories[category]) {
                 const label = document.createElement('label');
                 const input = document.createElement('input');
                 input.type = 'checkbox';
@@ -6088,14 +6068,14 @@
                 input.name = 'settings';
                 input.checked = settings[setting];
                 label.appendChild(input);
-                label.appendChild(document.createTextNode(" "+settings_labels[setting]));
+                label.appendChild(document.createTextNode(" " + settings_labels[setting]));
                 category_div.appendChild(label);
                 category_div.appendChild(document.createElement('br'));
             }
             settings_column.appendChild(category_div);
             settings_row.appendChild(settings_column);
             category_count++;
-            if(category_count % 2 == 0) {
+            if (category_count % 2 == 0) {
                 settings_div.appendChild(settings_row);
                 settings_row = document.createElement("div");
                 settings_row.classList.add("row");
@@ -6103,7 +6083,7 @@
             }
         }
         settings_div.appendChild(settings_row);
-        
+
         //save settings
         const save_settings_button = document.createElement("button");
         save_settings_button.classList.add("btn", "btn-sm", "btn-success");
@@ -6138,7 +6118,7 @@
                 reader.onload = (e) => {
                     unsafeWindow.localStorage.clear();
                     const data = JSON.parse(e.target.result);
-                    for(let key in data) {
+                    for (let key in data) {
                         unsafeWindow.localStorage.setItem(key, data[key]);
 
                     }
@@ -6148,7 +6128,7 @@
             }
             file_input.click();
         }
-        
+
         backup_everything_button.onclick = () => {
             download(JSON.stringify(localStorage), "surfheaven_extended_settings.json", "text/plain");
         }
@@ -6171,9 +6151,9 @@
         let localstorage_size_text = () => {
             let total = 0;
             for (let key in localStorage) {
-              if (localStorage.hasOwnProperty(key)) {
-                total += (localStorage[key].length + key.length) * 2; // each character is 2 bytes
-              }
+                if (localStorage.hasOwnProperty(key)) {
+                    total += (localStorage[key].length + key.length) * 2; // each character is 2 bytes
+                }
             }
             return (total / 1024).toFixed(2) + " KB";
             //return ((new Blob(Object.values(localStorage)).size + new Blob(Object.keys(localStorage)).size) / 1024).toFixed(2) + " KB"; 
@@ -6213,22 +6193,22 @@
         import_button.className = "btn btn-primary btn-sm";
         import_button.textContent = "Load tags";
         import_button.onclick = () => {
-          const file_input = document.createElement("input");
-          file_input.type = "file";
-          file_input.accept = ".json";
-        
-          file_input.onchange = () => {
-            let file = file_input.files[0];
-            let reader = new FileReader();
-            reader.onload = (e) => {
-              let db = JSON.parse(e.target.result);
-              save_tag_db(db);
-              console.log("Imported tags");
-              window.location.reload();
+            const file_input = document.createElement("input");
+            file_input.type = "file";
+            file_input.accept = ".json";
+
+            file_input.onchange = () => {
+                let file = file_input.files[0];
+                let reader = new FileReader();
+                reader.onload = (e) => {
+                    let db = JSON.parse(e.target.result);
+                    save_tag_db(db);
+                    console.log("Imported tags");
+                    window.location.reload();
+                }
+                reader.readAsText(file);
             }
-            reader.readAsText(file);
-          }
-          file_input.click();
+            file_input.click();
         }
         settings_div.appendChild(import_button);
 
@@ -6309,7 +6289,7 @@
         settings_footer.style.marginTop = "1rem";
         settings_div.appendChild(settings_footer);
 
-        show_overlay_window("Settings",settings_div);
+        show_overlay_window("Settings", settings_div);
     }
 
     function show_my_ratings() {
@@ -6337,7 +6317,7 @@
                             });
                         }
                     }
-    
+
                     let table = document.createElement('table');
                     table.classList.add('table');
                     table.classList.add('table-striped');
@@ -6408,18 +6388,18 @@
         });
     }
 
-    function gift_vip(steamid){
+    function gift_vip(steamid) {
         unsafeWindow.localStorage.setItem('gift_vip_steamid', steamid);
         window.location.href = '/donate/';
     }
 
     function create_toast(title, message, type, timeout) {
-        if(!settings.toasts && type != 'info' && type != 'success') return;
+        if (!settings.toasts && type != 'info' && type != 'success') return;
         const toasts = document.querySelectorAll('.toast');
 
         let total_height = 50; // align just under navbar
         toasts.forEach(toast => {
-          total_height += toast.offsetHeight + parseInt(getComputedStyle(toast).marginBottom) + 10;
+            total_height += toast.offsetHeight + parseInt(getComputedStyle(toast).marginBottom) + 10;
         });
         const top_position = total_height + 20;
 
@@ -6432,21 +6412,21 @@
         title_elem.style.marginBottom = 0;
         title_elem.classList.add('outlined');
         toast.appendChild(title_elem);
-        
+
         const message_elem = document.createElement('h5');
         message_elem.textContent = message;
         message_elem.classList.add('outlined');
         message_elem.style.marginTop = "0.5rem";
-        if(message.length != 0 ) toast.appendChild(message_elem);
-        
+        if (message.length != 0) toast.appendChild(message_elem);
+
         const closeButton = document.createElement('button');
         closeButton.classList.add('close');
         closeButton.textContent = '×';
         closeButton.addEventListener('click', () => {
-          toast.style.animation = 'fade-out 0.5s forwards';
-          setTimeout(() => {
-            toast.remove();
-          }, 500);
+            toast.style.animation = 'fade-out 0.5s forwards';
+            setTimeout(() => {
+                toast.remove();
+            }, 500);
         });
 
         toast.appendChild(closeButton);
@@ -6455,52 +6435,52 @@
         let timer = setTimeout(() => {
             toast.style.animation = 'fade-out 0.5s forwards';
             setTimeout(() => {
-              toast.remove();
+                toast.remove();
             }, 500);
-          }, timeout);
-        
+        }, timeout);
+
         toast.addEventListener('mouseover', () => {
             clearTimeout(timer);
         });
-        
+
         toast.addEventListener('mouseout', () => {
             timer = setTimeout(() => {
                 toast.style.animation = 'fade-out 0.5s forwards';
                 setTimeout(() => {
-                  toast.remove();
+                    toast.remove();
                 }, 500);
-              }, timeout);
+            }, timeout);
         });
     }
 
-    function set_nickname(id,nickname){
-        if(nickname == ""){
-            unsafeWindow.localStorage.removeItem("nickname_"+id);
+    function set_nickname(id, nickname) {
+        if (nickname == "") {
+            unsafeWindow.localStorage.removeItem("nickname_" + id);
         } else {
-            unsafeWindow.localStorage.setItem("nickname_"+id,nickname);
+            unsafeWindow.localStorage.setItem("nickname_" + id, nickname);
         }
     }
 
-    function get_nickname(id){
+    function get_nickname(id) {
         let nickname = null;
-        if(unsafeWindow.localStorage.getItem("nickname_"+id) != null){
-            nickname = unsafeWindow.localStorage.getItem("nickname_"+id);
+        if (unsafeWindow.localStorage.getItem("nickname_" + id) != null) {
+            nickname = unsafeWindow.localStorage.getItem("nickname_" + id);
         }
         return nickname;
     }
 
-    function show_all_map_raters(){
+    function show_all_map_raters() {
         let rater_list = [];
         let raters_div = document.createElement("div");
         raters_div.style.minWidth = "300px";
         raters_div.style.maxHeight = "500px";
         raters_div.style.overflowY = "scroll";
-    
+
         let raters_list = document.createElement("ul");
         raters_list.style.listStyleType = "none";
         raters_list.style.paddingLeft = "0px";
         raters_list.style.marginLeft = "0px";
-    
+
         GM_xmlhttpRequest({
             method: "GET",
             url: "https://iloveur.mom/surfheaven/get_raw_ratings.php",
@@ -6524,7 +6504,7 @@
                             });
                         }
                     }
-    
+
                     show_overlay_window(rater_count + " lovely raters", raters_div);
                     let loading_element = document.createElement("h3");
                     raters_div.appendChild(loading_element);
@@ -6539,7 +6519,7 @@
                                     const rater_info = player[0].name;
                                     rater_list.push([id, rater_info, rater_counts[id]]);
                                     loading_element.innerHTML = "Loading raters... (" + (++processed_count) + "/" + rater_count + ") <i class='fas fa-spinner fa-spin'></i>";
-    
+
                                     if (processed_count === rater_count) {
                                         console.log("got all raters, displaying rater list");
                                         raters_div.innerHTML = "";
@@ -6550,7 +6530,7 @@
                                             raters_list.appendChild(rater_li);
                                         }
                                         raters_div.appendChild(raters_list);
-    
+
                                         insert_flags_to_profiles();
                                     }
                                 }
