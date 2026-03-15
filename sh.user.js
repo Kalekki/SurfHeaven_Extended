@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.21
+// @version      4.2.21.1
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
