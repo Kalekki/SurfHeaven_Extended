@@ -1,3 +1,6 @@
+___4.2.21.2___
+Brought back icons that robert took from us (fixes being able to show run stats)
+
 ___4.2.21.1___
 Fix servers page (again) (thanks toasti)
 

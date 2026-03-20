@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.21.1
+// @version      4.2.21.2
 // @description  More stats and features for SurfHeaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
@@ -16,7 +16,9 @@
 // @grant        GM_addStyle
 // @grant        GM.getValue
 // @grant        GM.setValue
+// @grant        GM_getResourceText
 // @grant        GM_info
+// @resource     FONT_AWESOME_5_CSS https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css
 // @license      MIT
 // ==/UserScript==
 
@@ -60,6 +62,31 @@
     custom_css.rel = 'stylesheet';
     custom_css.href = 'https://iloveur.mom/surfheaven/styles.css?d=' + now.getHours();
     document.head.appendChild(custom_css);
+
+    // fix icons
+    GM_addStyle(`
+        @font-face {
+            font-family: 'Glyphicons Halflings';
+            src: url('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/fonts/glyphicons-halflings-regular.woff2') format('woff2'),
+                 url('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/fonts/glyphicons-halflings-regular.woff') format('woff'),
+                 url('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/fonts/glyphicons-halflings-regular.ttf') format('truetype');
+        }
+        .glyphicon {
+            position: relative;
+            top: 1px;
+            display: inline-block;
+            font-family: 'Glyphicons Halflings';
+            font-style: normal;
+            font-weight: normal;
+            line-height: 1;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .glyphicon-menu-down:before { content: "\\e259"; }
+        .glyphicon-menu-up:before { content: "\\e260"; }
+    `);
+    const fa_css = GM_getResourceText("FONT_AWESOME_5_CSS").replace(/url\(['"]?\.\.\/webfonts\/([^'"]+)['"]?\)/g, 'url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/$1)');
+    GM_addStyle(fa_css);
 
     // colors are approximate and might be wrong, let me know
     const GROUP_THRESHOLDS = [1, 2, 3, 10, 25, 50, 75, 100, 150, 250, 500, 750, 1000, 1500, 2000, 3000, 6000, 15000, 25000]
