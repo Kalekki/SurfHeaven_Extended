@@ -8,6 +8,7 @@
 // @downloadURL  https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/chartist/0.11.4/chartist.min.js
 // @match        https://csgo.surfheaven.eu/*
+// @match        https://surfheaven.eu/*
 // @icon         https://www.google.com/s2/favicons?domain=csgo.surfheaven.eu
 // @connect      raw.githubusercontent.com
 // @connect      csgo.surfheaven.eu
@@ -63,6 +64,21 @@
     custom_css.rel = 'stylesheet';
     custom_css.href = 'https://iloveur.mom/surfheaven/styles.css?d=' + now.getHours();
     document.head.appendChild(custom_css);
+
+    // migration to csgo.surfheaven.eu
+    if (location.hostname === 'surfheaven.eu') {
+        if (unsafeWindow.localStorage.getItem('sh_ranks_backed_up') === null &&
+            unsafeWindow.localStorage.getItem('settings') !== null){
+            alert(
+                "Surfheaven csgo site has moved to csgo.surfheaven.eu. " +
+                "We're saving your settings for you. Once you enter csgo.surfheaven.eu, " +
+                "Open the settings -> import the backup that we just downloaded."
+            );
+            unsafeWindow.localStorage.setItem('sh_ranks_backed_up', 'true');
+            download(JSON.stringify(unsafeWindow.localStorage),"surfheaven_extended_settings.json","text/plain");
+        }
+        return;
+    }
 
     // fix icons
     GM_addStyle(`
