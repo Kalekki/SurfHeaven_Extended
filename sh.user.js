@@ -1,16 +1,17 @@
 // ==UserScript==
 // @name         SurfHeaven ranks Ext
 // @namespace    http://tampermonkey.net/
-// @version      4.2.21.2
-// @description  More stats and features for SurfHeaven.eu
+// @version      4.2.21.3
+// @description  More stats and features for csgo.surfheaven.eu
 // @author       kalle, Link
 // @updateURL    https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
 // @downloadURL  https://github.com/Kalekki/SurfHeaven_Extended/raw/main/sh.user.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/chartist/0.11.4/chartist.min.js
-// @match        https://surfheaven.eu/*
-// @icon         https://www.google.com/s2/favicons?domain=surfheaven.eu
+// @match        https://csgo.surfheaven.eu/*
+// @icon         https://www.google.com/s2/favicons?domain=csgo.surfheaven.eu
 // @connect      raw.githubusercontent.com
-// @connect      surfheaven.eu
+// @connect      csgo.surfheaven.eu
+// @connect      api.surfheaven.eu
 // @connect      iloveur.mom
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
@@ -446,7 +447,7 @@
             let table_data = [];
             search_results.forEach((map) => {
                 table_data.push([
-                    `<a href="https://surfheaven.eu/map/${map.map}">${map.map}</a>`,
+                    `<a href="https://csgo.surfheaven.eu/map/${map.map}">${map.map}</a>`,
                     map.author,
                     map.tier,
                     map.type == 0 ? "Linear" : "Staged",
@@ -632,7 +633,7 @@
                 let last_online = data[0].lastplay;
 
                 const profile_link = document.createElement('a');
-                profile_link.href = `https://surfheaven.eu/player/${follow_list[i]}`;
+                profile_link.href = `https://csgo.surfheaven.eu/player/${follow_list[i]}`;
                 profile_link.innerHTML = name != "" ? name : follow_list[i];
                 profile_link.style = "width:220px; float: left;";
                 const last_online_span = document.createElement('span');
@@ -830,9 +831,9 @@
                         if (follow_list.includes(player[0])) {
                             let follow_list_item = document.createElement('h5');
                             if (player[4] == "AU") {
-                                follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="https://surfheaven.eu/map/${player[3]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2] - 13} (AU)</a>`
+                                follow_list_item.innerHTML = `<a href="https://csgo.surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="https://csgo.surfheaven.eu/map/${player[3]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2] - 13} (AU)</a>`
                             } else {
-                                follow_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="https://surfheaven.eu/map/${player[3]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
+                                follow_list_item.innerHTML = `<a href="https://csgo.surfheaven.eu/player/${player[0]}">${player[1]}</a> in <a href="https://csgo.surfheaven.eu/map/${player[3]}" title="${player[3]}" style="color:rgb(0,255,0)">#${player[2]}</a>`
                             }
                             follow_list_panel_body_div.appendChild(follow_list_item);
                         }
@@ -1074,7 +1075,7 @@
 
             const map_name = document.createElement('a');
             map_name.textContent = map;
-            map_name.href = `https://surfheaven.eu/map/${map}`;
+            map_name.href = `https://csgo.surfheaven.eu/map/${map}`;
 
             const toggle_span = document.createElement('span');
             toggle_span.className = 'glyphicon glyphicon-menu-down';
@@ -1298,7 +1299,7 @@
                         hover_div.innerHTML = `
                         <div class="row outlined text-center" style="min-width: 18vw; min-height: 18vh;">
                             <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")} by ${data[0].author}</h5>
-                            <h5>WR by <a href="https://surfheaven.eu/player/${wr.steamid}">${wr.name}</a></h5>
+                            <h5>WR by <a href="https://csgo.surfheaven.eu/player/${wr.steamid}">${wr.name}</a></h5>
                             <h5>Your rank ${own_rank.rank} / ${data[0].completions} ${diff_string}</h5>
 
                         </div>
@@ -1317,7 +1318,7 @@
                             hover_div.innerHTML = `
                             <div class="row outlined text-center" style="min-width: 18vw; min-height: 18vh;">
                                 <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")} by ${data[0].author}</h5>
-                                <h5>WR by <a href="https://surfheaven.eu/player/${wr.steamid}">${wr.name}</a></h5>
+                                <h5>WR by <a href="https://csgo.surfheaven.eu/player/${wr.steamid}">${wr.name}</a></h5>
                                 <h5>Your rank ${own_rank.rank} / ${data[0].completions} ${diff_string}</h5>
                             </div>
                         `;
@@ -1341,7 +1342,7 @@
                                 <h5>T${data[0].tier} ${(data[0].type == 0 ? " linear" : " staged")}</h5>
                                 <h5>${data[0].author}</h5>
                                 <h5>${format_date(data[0].date_added)}</h5>
-                                <h5><a href="https://surfheaven.eu/player/${wr.steamid}">${wr.name}</a></h5>
+                                <h5><a href="https://csgo.surfheaven.eu/player/${wr.steamid}">${wr.name}</a></h5>
                                 <h5>${own_rank.rank} / ${data[0].completions}</h5>
                             </div>
                         </div>`;
@@ -1656,7 +1657,7 @@
         let follow_list = get_follow_list();
         var a = document.getElementsByTagName('a');
         Array.from(a).forEach(function (link) {
-            if (link.href.includes("https://surfheaven.eu/player/")) {
+            if (link.href.includes("https://csgo.surfheaven.eu/player/")) {
                 if (link.href.includes("#")) {
                     return;
                 }
@@ -1665,7 +1666,7 @@
                     return;
                 }
 
-                var id = link.href.split("https://surfheaven.eu/player/")[1];
+                var id = link.href.split("https://csgo.surfheaven.eu/player/")[1];
                 let nickname = get_nickname(id);
                 let original_name = link.textContent;
 
@@ -1840,7 +1841,7 @@
                 let navbar_links = document.querySelectorAll(".nav > li > a");
                 let profile_href = "";
                 for (let i = 0; i < navbar_links.length; i++) {
-                    if (navbar_links[i].href.includes("https://surfheaven.eu/player/")) {
+                    if (navbar_links[i].href.includes("https://csgo.surfheaven.eu/player/")) {
                         console.log("found profile link");
                         profile_href = navbar_links[i].href;
                         break;
@@ -1876,7 +1877,7 @@
                                 id = last_ditch_id;
                                 unsafeWindow.localStorage.setItem('cached_id', id);
                             } else if (last_ditch_id != null && last_ditch_id != "") {
-                                unsafeWindow.location.href = "https://surfheaven.eu/search/" + last_ditch_id;
+                                unsafeWindow.location.href = "https://csgo.surfheaven.eu/search/" + last_ditch_id;
                             }
                         }
                     }
@@ -2021,8 +2022,8 @@
     }
 
     function country_code_to_flag_url(country_code) {
-        var url = ("https://surfheaven.eu/flags/" + countryISOMapping(country_code) + ".svg").toLowerCase();
-        if (url == "https://surfheaven.eu/flags/undefined.svg") url = "https://upload.wikimedia.org/wikipedia/commons/2/2a/Flag_of_None.svg"
+        var url = ("https://csgo.surfheaven.eu/flags/" + countryISOMapping(country_code) + ".svg").toLowerCase();
+        if (url == "https://csgo.surfheaven.eu/flags/undefined.svg") url = "https://upload.wikimedia.org/wikipedia/commons/2/2a/Flag_of_None.svg"
         return url;
     }
 
@@ -2182,7 +2183,7 @@
                                     let col_elem = document.createElement('div');
                                     col_elem.className = 'col-sm-12';
                                     let player_link = document.createElement('a');
-                                    player_link.href = `https://surfheaven.eu/player/${player.steamid}`;
+                                    player_link.href = `https://csgo.surfheaven.eu/player/${player.steamid}`;
                                     player_link.textContent = player.name;
                                     col_elem.appendChild(player_link);
                                     player_element.appendChild(col_elem);
@@ -2212,7 +2213,7 @@
                                 server_row[0].childNodes[2].style.cursor = 'default';
 
                                 if (server.mapinfo) {
-                                    server_row[2].innerHTML = `<a href="https://surfheaven.eu/map/${server.map}">${server.map}</a> <small>(T${server.mapinfo.tier}) ${server.mapinfo.type == 0 ? "Linear" : "Staged"} </small>`;
+                                    server_row[2].innerHTML = `<a href="https://csgo.surfheaven.eu/map/${server.map}">${server.map}</a> <small>(T${server.mapinfo.tier}) ${server.mapinfo.type == 0 ? "Linear" : "Staged"} </small>`;
                                     var rec = server_records[server.map];
                                     if (rec) {
                                         const map_record = rec[0];
@@ -2286,7 +2287,7 @@
                         make_request(`https://api.surfheaven.eu/api/records/${map}/0`, (player_records) => {
                             console.log("fetching ranks for ", map);
                             player_records.forEach(record => {
-                                let player_elems = server_row.querySelectorAll(`a[href="https://surfheaven.eu/player/${record.steamid}"]`);
+                                let player_elems = server_row.querySelectorAll(`a[href="https://csgo.surfheaven.eu/player/${record.steamid}"]`);
                                 player_elems.forEach(elem => {
                                     let rank_span = document.createElement('span');
                                     rank_span.style.marginLeft = '10px';
@@ -2486,7 +2487,7 @@
                     crank_td.innerHTML = j + 1;
                     grank_td.innerHTML = ctop_100[j][2];
                     name_a.innerHTML = ctop_100[j][0];
-                    name_a.href = "https://surfheaven.eu/player/" + ctop_100[j][3];
+                    name_a.href = "https://csgo.surfheaven.eu/player/" + ctop_100[j][3];
                     points_td.innerHTML = ctop_100[j][1];
 
                     name_td.appendChild(name_a);
@@ -2576,7 +2577,7 @@
 
                 let map = own_top[i][0];
                 let mr = own_top[i][1];
-                explainer_content.innerHTML += "<a href='https://surfheaven.eu/map/" + map + "'>" + map + "</a>" + "&nbsp;&nbsp;&nbsp;&nbsp;<p> Diff: <b>" + mr[0] + "</b>, Fun: <b>" + mr[1] + "</b>, Tech: <b>" + mr[2] + "</b>, Unit: <b>" + mr[3] + "</b></p>";
+                explainer_content.innerHTML += "<a href='https://csgo.surfheaven.eu/map/" + map + "'>" + map + "</a>" + "&nbsp;&nbsp;&nbsp;&nbsp;<p> Diff: <b>" + mr[0] + "</b>, Fun: <b>" + mr[1] + "</b>, Tech: <b>" + mr[2] + "</b>, Unit: <b>" + mr[3] + "</b></p>";
             }
             show_overlay_window("Map Recommendations", explainer_content);
         }
@@ -2859,7 +2860,7 @@
             rec.className = "col-sm-1 outlined text-white text-center";
 
             rec.style = "color: white; width: auto; border-radius: 5px;position: relative; display: flex; justify-content: center; padding-left:0px;";
-            rec.href = "https://surfheaven.eu/map/" + map;
+            rec.href = "https://csgo.surfheaven.eu/map/" + map;
             rec.innerHTML = map;
             let remove_button = document.createElement("span")
             remove_button.onclick = function () {
@@ -2940,7 +2941,7 @@
                     let unit_rating = document.createElement('td');
                     let tech_rating = document.createElement('td');
 
-                    map_name.innerHTML = `<a href="https://surfheaven.eu/map/${map}">${map}</a> <span>T${tiers[map]}</span>`;
+                    map_name.innerHTML = `<a href="https://csgo.surfheaven.eu/map/${map}">${map}</a> <span>T${tiers[map]}</span>`;
                     num_ratings.innerHTML = Number(maps[map].num_ratings);
                     difficulty_rating.innerHTML = Number(maps[map].difficulty_rating).toFixed(maps[map].difficulty_rating % 1 === 0 ? 0 : 2);
                     fun_factor_rating.innerHTML = Number(maps[map].fun_factor_rating).toFixed(maps[map].fun_factor_rating % 1 === 0 ? 0 : 2);
@@ -4083,7 +4084,7 @@
             for (let i = 0; i < common_maps.length; i++) {
                 let tr = document.createElement('tr');
                 let td = document.createElement('td');
-                td.innerHTML = `<a href="https://surfheaven.eu/map/${common_maps[i][0][0]}">${common_maps[i][0][0]}</a>`;
+                td.innerHTML = `<a href="https://csgo.surfheaven.eu/map/${common_maps[i][0][0]}">${common_maps[i][0][0]}</a>`;
                 tr.appendChild(td);
                 td = document.createElement('td');
                 td.innerHTML = common_maps[i][0][1];
@@ -4227,7 +4228,7 @@
             let author_link = document.createElement('a');
             author_link.innerText = author_name;
             author_name = author_name.replace(regex, '');
-            author_link.href = "https://surfheaven.eu/search/" + encodeURI(author_name);
+            author_link.href = "https://csgo.surfheaven.eu/search/" + encodeURI(author_name);
             author_element.innerHTML = "Author: ";
             author_element.appendChild(author_link);
         } else { // multiple mappers
@@ -4235,7 +4236,7 @@
                 let author_link = document.createElement('a');
                 author_link.innerText = author_name[i];
                 author_name[i] = author_name[i].replace(regex, '');
-                author_link.href = "https://surfheaven.eu/search/" + encodeURI(author_name[i]);
+                author_link.href = "https://csgo.surfheaven.eu/search/" + encodeURI(author_name[i]);
                 if (i == 0) {
                     author_element.innerHTML = "Authors: ";
                 }
@@ -4683,7 +4684,7 @@
                     target.display = "block";
                     target.innerHTML = "<b>Similarly rated maps</b>: &nbsp;";
                     for (let i = 0; i < maps.length; i++) {
-                        target.innerHTML += " <a href='https://surfheaven.eu/map/" + maps[i] + "' style='padding-left:5px; padding-right:5px'>" + maps[i] + " </a>&nbsp; <p class='small'> | </p> &nbsp;";
+                        target.innerHTML += " <a href='https://csgo.surfheaven.eu/map/" + maps[i] + "' style='padding-left:5px; padding-right:5px'>" + maps[i] + " </a>&nbsp; <p class='small'> | </p> &nbsp;";
                     }
                     target.innerHTML = target.innerHTML.slice(0, -27);
                 }
@@ -5083,7 +5084,7 @@
                         }
                         make_request('https://api.surfheaven.eu/api/playerinfo/' + ratings[i], (data) => {
                             if (data) {
-                                ratings_div_list_item.innerHTML = `<a href="https://surfheaven.eu/player/${ratings[i]}" target="_blank">${data[0].name}</a>`
+                                ratings_div_list_item.innerHTML = `<a href="https://csgo.surfheaven.eu/player/${ratings[i]}" target="_blank">${data[0].name}</a>`
                                 ratings_div_list.appendChild(ratings_div_list_item);
                                 insert_flags_to_profiles();
                             } else {
@@ -5167,7 +5168,7 @@
                 tr.appendChild(td);
                 // name
                 td = document.createElement('td');
-                td.innerHTML = `<a href="https://surfheaven.eu/player/${friend_ranks[i][3]}">${friend_ranks[i][4]}</a>`;
+                td.innerHTML = `<a href="https://csgo.surfheaven.eu/player/${friend_ranks[i][3]}">${friend_ranks[i][4]}</a>`;
                 tr.appendChild(td);
                 // time
                 td = document.createElement('td');
@@ -5480,7 +5481,7 @@
         for (let map in db) {
             let row = document.createElement('tr');
             let map_name = document.createElement('td');
-            map_name.innerHTML = `<a href="https://surfheaven.eu/map/${map}">${map}</a>`;
+            map_name.innerHTML = `<a href="https://csgo.surfheaven.eu/map/${map}">${map}</a>`;
             let tags = document.createElement('td');
             tags.innerHTML = db[map].join(', ');
             row.appendChild(map_name);
@@ -6367,7 +6368,7 @@
                     filtered_data.forEach(item => {
                         let row = document.createElement('tr');
                         row.innerHTML = `
-                            <td><a href="https://surfheaven.eu/map/${item.map}" target="_blank">${item.map}</a></td>
+                            <td><a href="https://csgo.surfheaven.eu/map/${item.map}" target="_blank">${item.map}</a></td>
                             <td>${item.difficulty_rating}</td>
                             <td>${item.fun_factor_rating}</td>
                             <td>${item.unit_rating}</td>
@@ -6553,7 +6554,7 @@
                                         rater_list.sort((a, b) => b[2] - a[2]);
                                         for (let i = 0; i < rater_list.length; i++) {
                                             let rater_li = document.createElement("li");
-                                            rater_li.innerHTML = `<a href="https://surfheaven.eu/player/${rater_list[i][0]}" target="_blank">${rater_list[i][1]}</a> <span>(${rater_list[i][2]})</span>`;
+                                            rater_li.innerHTML = `<a href="https://csgo.surfheaven.eu/player/${rater_list[i][0]}" target="_blank">${rater_list[i][1]}</a> <span>(${rater_list[i][2]})</span>`;
                                             raters_list.appendChild(rater_li);
                                         }
                                         raters_div.appendChild(raters_list);
